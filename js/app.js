@@ -310,6 +310,8 @@ const app = {
 
         // Init map
         setTimeout(() => this.initMap(match.lat, match.lng, match.location), 100);
+		// Инициализируем социальные фичи
+socialModule.showCommentsSection(matchId);
     },
 
     initMap(lat, lng, location) {
@@ -486,48 +488,96 @@ const app = {
 
     // Profile
     showProfile() {
-        screenManager.show('screen-profile');
-        
-        document.getElementById('profile-avatar').textContent = this.currentUser.nickname[0].toUpperCase();
-        document.getElementById('profile-name').textContent = this.currentUser.nickname;
-        document.getElementById('profile-role').textContent = 
-            this.currentUser.role === 'organizer' ? 'Организатор PRO' : 'Болельщик';
+    screenManager.show('screen-profile');
+    
+    document.getElementById('profile-avatar').textContent = this.currentUser.nickname[0].toUpperCase();
+    document.getElementById('profile-name').textContent = this.currentUser.nickname;
+    
+    const isOrg = this.currentUser.role === 'organizer';
+    document.getElementById('profile-role').textContent = 
+        isOrg ? 'Организатор PRO' : 'Болельщик';
 
-        const isOrg = this.currentUser.role === 'organizer';
-        utils.toggleVisibility('profile-pro-badge', isOrg);
-        utils.toggleVisibility('subscription-card', isOrg);
+    // PRO badge только для организаторов
+    utils.toggleVisibility('profile-pro-badge', isOrg);
+    
+    // Карточку подписки показываем ВСЕМ
+    utils.show('subscription-card');
+    
+    const statusEl = document.getElementById('sub-status');
+    const dateRow = document.getElementById('sub-date').parentElement;
+    const subBtn = document.querySelector('#subscription-card .btn');
+    
+    if (isOrg) {
+        // Для организатора
+        statusEl.textContent = this.currentUser.subscriptionActive ? 'Активна' : 'Неактивна';
+        statusEl.className = 'info-value ' + (this.currentUser.subscriptionActive ? 'status-active' : 'status-inactive');
+        statusEl.style.color = '';
+        dateRow.style.display = 'flex';
+        document.getElementById('sub-date').textContent = this.currentUser.subscriptionExpiry || '-';
+        subBtn.textContent = 'Продлить';
+        subBtn.onclick = () => this.initiatePayment('renew');
+    } else {
+        // Для болельщика — апгрейд
+        statusEl.textContent = 'Базовый';
+        statusEl.className = 'info-value';
+        statusEl.style.color = 'var(--text-secondary)';
+        dateRow.style.display = 'none'; // Скрываем дату окончания
+        subBtn.textContent = 'Перейти на PRO • 299 ₽';
+        subBtn.onclick = () => this.initiatePayment('upgrade');
+    }
+},
 
-        if (isOrg) {
-            const statusEl = document.getElementById('sub-status');
-            const dateEl = document.getElementById('sub-date');
+initiatePayment(type) {
+    this.paymentType = type;
+    document.getElementById('payment-modal').classList.add('active');
+    
+    // Меняем заголовок модалки
+    const title = document.querySelector('#payment-modal .modal-title');
+    if (title) {
+        title.textContent = type === 'upgrade' ? 'Оформление PRO' : 'Продление подписки';
+    }
+    
+    // Меняем текст кнопки в модалке
+    const payBtn = document.querySelector('#payment-modal .btn-gold');
+    if (payBtn) {
+        payBtn.textContent = type === 'upgrade' ? 'Оплатить 299 ₽' : 'Оплатить';
+    }
+},
+
+closePayment() {
+    document.getElementById('payment-modal').classList.remove('active');
+    this.paymentType = null;
+},
+
+processPayment() {
+    // Имитация обработки
+    setTimeout(() => {
+        if (this.paymentType === 'upgrade') {
+            // Апгрейд с Fan до Organizer
+            this.currentUser.role = 'organizer';
+            this.currentUser.subscriptionActive = true;
+            this.currentUser.subscriptionExpiry = '2025-12-31';
+            if (!this.currentUser.teams) this.currentUser.teams = [];
             
-            statusEl.textContent = this.currentUser.subscriptionActive ? 'Активна' : 'Неактивна';
-            statusEl.className = 'info-value ' + (this.currentUser.subscriptionActive ? 'status-active' : 'status-inactive');
-            dateEl.textContent = this.currentUser.subscriptionExpiry || '-';
+            alert('Добро пожаловать в PRO! Теперь вы можете создавать команды и матчи.');
+        } else {
+            // Продление
+            this.currentUser.subscriptionActive = true;
+            this.currentUser.subscriptionExpiry = '2025-12-31';
+            alert('Подписка успешно продлена!');
         }
-    },
-
-    // Payment
-    showPayment() {
-        document.getElementById('payment-modal').classList.add('active');
-    },
-
-    closePayment() {
-        document.getElementById('payment-modal').classList.remove('active');
-    },
-
-    processPayment() {
-        this.currentUser.subscriptionActive = true;
-        this.currentUser.subscriptionExpiry = '2025-12-31';
+        
         utils.storage.set('streetLeagueUser', this.currentUser);
-        
         this.closePayment();
-        alert('Подписка успешно оформлена!');
         
-        if (this.currentUser.role === 'organizer') {
+        // После апгрейда обновляем главный экран, чтобы появилось нижнее меню
+        if (this.paymentType === 'upgrade') {
             this.showMain();
+        } else {
+            this.showProfile();
         }
-    },
+    }, 500);
+},
 
     // Team Detail
     showTeam(teamId) {

@@ -254,13 +254,12 @@ input:focus, select:focus, textarea:focus {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
-    padding-top: 10px;
-    position: sticky;
-    top: 0;
-    background: var(--bg-primary);
+    margin-bottom: 20px;
+    padding: 10px 0;  /* Убрал горизонтальные padding, оставил только вертикальные */
+    background: transparent;  /* Прозрачный фон вместо var(--bg-primary) */
+    position: relative;  /* Убрал sticky, чтобы не было наложения */
+    top: auto;
     z-index: 10;
-    padding-bottom: 10px;
 }
 
 .city-selector {
@@ -540,49 +539,104 @@ input:focus, select:focus, textarea:focus {
     transform: scale(0.95);
 }
 
-/* Bottom Nav */
+/* Modern Bottom Navigation */
 .bottom-nav {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(26, 26, 26, 0.98);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid var(--border);
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 40px);
+    max-width: 400px;
+    height: 64px;
+    background: rgba(26, 26, 26, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 32px;
+    padding: 8px;
     display: flex;
-    justify-content: space-around;
-    padding: 8px 0 calc(8px + var(--safe-area-bottom));
+    justify-content: space-between;
+    align-items: center;
     z-index: 1000;
+    box-shadow: 
+        0 10px 40px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+/* Базовый стиль для ВСЕХ кнопок */
 .nav-item {
     flex: 1;
-    text-align: center;
-    padding: 8px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: var(--transition);
-    background: none;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 0;
+    background: transparent;
     border: none;
-    font-family: var(--font-body);
-}
-
-.nav-item.active {
-    color: var(--accent-green);
+    border-radius: 24px;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
 }
 
 .nav-item i {
-    font-size: 1.3rem;
-    display: block;
-    margin-bottom: 4px;
+    font-size: 1.25rem;
+    transition: all 0.2s ease;
 }
 
 .nav-item span {
     font-size: 0.65rem;
+    font-weight: 600;
     text-transform: uppercase;
-    font-weight: 500;
-    display: block;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
 }
+
+/* Hover эффект */
+.nav-item:hover {
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Active состояние (текущая страница) */
+.nav-item.active {
+    color: var(--accent-green);
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.nav-item.active i {
+    transform: translateY(-2px);
+    filter: drop-shadow(0 4px 8px rgba(0, 255, 136, 0.3));
+}
+
+/* Центральная кнопка "Создать" — только акцент цветом, без градиента */
+.nav-item-create {
+    color: var(--accent-pink);
+}
+
+.nav-item-create i {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.nav-item-create:hover {
+    color: #ff4d8d;
+    background: rgba(255, 0, 102, 0.1);
+}
+
+.nav-item-create:active {
+    transform: scale(0.95);
+}
+
+/* FAB больше не нужен */
+.fab {
+    display: none !important;
+}
+
+
 
 /* Modal */
 .modal-overlay {
@@ -1367,12 +1421,250 @@ textarea {
 
 @media (min-width: 768px) {
     .screen {
-        padding: 40px;
-    }
+    padding-top: calc(10px + env(safe-area-inset-top));  /* Уменьшил с 20px до 10px */
+}
     
     .matches-list {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 16px;
     }
+}
+
+/* Reactions */
+.match-reactions {
+    margin: 20px 0;
+    padding: 15px;
+    background: var(--bg-card);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+}
+
+.reactions-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.reaction-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1.2rem;
+    position: relative;
+}
+
+.reaction-btn:hover {
+    transform: scale(1.1);
+    border-color: var(--accent-green);
+}
+
+.reaction-btn.active {
+    background: rgba(0, 255, 136, 0.2);
+    border-color: var(--accent-green);
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.reaction-btn.has-count {
+    padding-right: 10px;
+}
+
+.reaction-count {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.1);
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 4px;
+}
+
+/* Comments Section */
+.comments-section {
+    margin-top: 30px;
+    background: var(--bg-card);
+    border-radius: 20px;
+    padding: 20px;
+    border: 1px solid var(--border);
+}
+
+.count-badge {
+    background: var(--accent-green);
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    margin-left: 8px;
+}
+
+.comments-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 15px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.empty-comments {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 30px;
+    font-style: italic;
+}
+
+.comment-item {
+    display: flex;
+    gap: 12px;
+    animation: slideIn 0.3s ease;
+}
+
+.comment-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-pink), #cc0052);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+
+.comment-content {
+    flex: 1;
+    background: var(--bg-secondary);
+    padding: 12px 16px;
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    align-items: center;
+}
+
+.comment-author {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--accent-green);
+}
+
+.comment-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.comment-text {
+    color: var(--text-primary);
+    line-height: 1.4;
+    font-size: 0.95rem;
+    word-break: break-word;
+}
+
+.comment-actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 15px;
+}
+
+.comment-like {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.85rem;
+    padding: 0;
+    transition: all 0.2s;
+}
+
+.comment-like:hover, .comment-like.liked {
+    color: var(--accent-pink);
+}
+
+.comment-like.liked i {
+    animation: heartBeat 0.3s ease;
+}
+
+@keyframes heartBeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+}
+
+/* Comment Input */
+.comment-input-area {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+}
+
+.comment-avatar-small {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.comment-input-wrapper {
+    flex: 1;
+    display: flex;
+    gap: 8px;
+    background: var(--bg-secondary);
+    border-radius: 20px;
+    padding: 4px;
+    border: 1px solid var(--border);
+}
+
+.comment-input-wrapper input {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 10px 15px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.comment-input-wrapper input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.send-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    border: none;
+    color: #000;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.send-btn:active {
+    transform: scale(0.9);
 }

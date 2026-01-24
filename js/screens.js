@@ -37,21 +37,22 @@ class ScreenManager {
         }
     }
 
-    updateBottomNav(screenId) {
-        const nav = document.getElementById('bottom-nav');
-        if (!nav) return;
+   updateBottomNav(screenId) {
+    const nav = document.getElementById('bottom-nav');
+    if (!nav) return;
 
-        const items = nav.querySelectorAll('.nav-item');
-        items.forEach(item => item.classList.remove('active'));
+    const items = nav.querySelectorAll('.nav-item');
+    items.forEach(item => item.classList.remove('active'));
 
-        if (screenId === 'screen-main') {
-            items[0]?.classList.add('active');
-        } else if (screenId === 'screen-teams') {
-            items[1]?.classList.add('active');
-        } else if (screenId === 'screen-profile') {
-            items[2]?.classList.add('active');
-        }
+    // Индексы: 0=Матчи, 1=Команды, 2=Создать, 3=Профиль
+    if (screenId === 'screen-main') {
+        items[0]?.classList.add('active');
+    } else if (screenId === 'screen-teams') {
+        items[1]?.classList.add('active');
+    } else if (screenId === 'screen-profile') {
+        items[3]?.classList.add('active');
     }
+}
 
     getCurrentScreen() {
         return this.currentScreen;

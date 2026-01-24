@@ -24,3 +24,41 @@ const mockData = {
         }
     ]
 };
+
+// Комментарии и реакции
+const socialData = {
+    comments: [
+        {
+            id: 1,
+            matchId: 1,
+            userId: 'user1',
+            userName: 'Саня',
+            avatar: '👤',
+            text: 'Кто пойдет смотреть? Буду с трибуны болеть!',
+            timestamp: new Date(Date.now() - 3600000).toISOString(),
+            likes: 5
+        },
+        {
+            id: 2,
+            matchId: 1,
+            userId: 'user2',
+            userName: 'Леха',
+            avatar: '🏆',
+            text: 'Драконы сегодня в ударе, жду красивый матч',
+            timestamp: new Date(Date.now() - 7200000).toISOString(),
+            likes: 3
+        }
+    ],
+    
+    reactions: {
+        // matchId: { userId: emoji }
+        1: {
+            'user1': '🔥',
+            'user2': '❤️',
+            'user3': '👍'
+        }
+    },
+    
+    // Доступные реакции
+    reactionTypes: ['🔥', '❤️', '👍', '😮', '🏆']
+};

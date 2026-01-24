@@ -147,9 +147,7 @@
 
             <div class="matches-list" id="matches-list"></div>
 
-            <button class="fab hidden" id="fab-create" onclick="app.showCreateMatch()">
-                <i class="fas fa-plus"></i>
-            </button>
+           
         </section>
 
         <!-- Screen: Teams -->
@@ -230,20 +228,52 @@
         </section>
 
         <!-- Screen: Match Detail -->
-        <section id="screen-match" class="screen">
-            <div class="container">
-                <button class="back-btn" onclick="app.showMain()">
-                    <i class="fas fa-arrow-left"></i> Назад
-                </button>
-                <div id="match-detail-content"></div>
-                <div id="map" class="map-container"></div>
-                <div id="challenge-section" class="challenge-section hidden">
-                    <button class="btn btn-challenge" onclick="app.challengeTeam()">
-                        <i class="fas fa-fire"></i> Бросить вызов
+<section id="screen-match" class="screen">
+    <div class="container">
+        <button class="back-btn" onclick="app.showMain()">
+            <i class="fas fa-arrow-left"></i> Назад
+        </button>
+
+        <div id="match-detail-content"></div>
+        <div id="map" class="map-container"></div>
+        
+        <!-- Реакции -->
+        <div id="match-reactions" class="match-reactions"></div>
+        
+        <!-- Кнопка вызова -->
+        <div id="challenge-section" class="challenge-section hidden">
+            <button class="btn btn-challenge" onclick="app.challengeTeam()">
+                <i class="fas fa-fire"></i> Бросить вызов
+            </button>
+        </div>
+
+        <!-- Комментарии -->
+        <div class="comments-section">
+            <h3 class="section-subtitle">
+                Комментарии 
+                <span id="comments-count" class="count-badge">0</span>
+            </h3>
+            
+            <div id="comments-list" class="comments-list">
+                <!-- Комментарии здесь -->
+            </div>
+
+           <div class="comment-input-area">
+  
+                <div class="comment-input-wrapper">
+                    <input type="text" 
+                           id="comment-input" 
+                           placeholder="Написать комментарий..." 
+                           maxlength="200"
+                           onkeypress="if(event.key === 'Enter') socialModule.addComment(app.selectedMatch.id, this.value)">
+                    <button class="send-btn" onclick="socialModule.addComment(app.selectedMatch.id, document.getElementById('comment-input').value)">
+                        <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
             </div>
-        </section>
+        </div>
+    </div>
+</section>
 
         <!-- Screen: Profile -->
         <section id="screen-profile" class="screen">
@@ -259,7 +289,7 @@
                     <h2 id="profile-name">User</h2>
                     <p id="profile-role" class="profile-role">Болельщик</p>
                 </div>
-                <div id="subscription-card" class="form-section hidden">
+                <div id="subscription-card" class="form-section hidden" style="display: none;">
                     <h3 class="form-title">Подписка PRO</h3>
                     <div class="info-row">
                         <span class="info-label">Статус</span>
@@ -452,19 +482,27 @@
     </main>
 
     <nav id="bottom-nav" class="bottom-nav hidden">
-        <button class="nav-item active" onclick="app.showMain()">
-            <i class="fas fa-calendar-alt"></i>
-            <span>Матчи</span>
-        </button>
-        <button class="nav-item" onclick="app.showTeams()">
-            <i class="fas fa-users"></i>
-            <span>Команды</span>
-        </button>
-        <button class="nav-item" onclick="app.showProfile()">
-            <i class="fas fa-user"></i>
-            <span>Профиль</span>
-        </button>
-    </nav>
+    <button type="button" class="nav-item" onclick="app.showMain()">
+        <i class="fas fa-calendar-alt"></i>
+        <span>Матчи</span>
+    </button>
+    
+    <button type="button" class="nav-item" onclick="app.showTeams()">
+        <i class="fas fa-users"></i>
+        <span>Команды</span>
+    </button>
+    
+    <!-- Центральная кнопка Создать -->
+    <button type="button" class="nav-item nav-item-create" onclick="app.showCreateMatch()">
+    <i class="fas fa-plus"></i>
+    <span>Создать</span>
+</button>
+    
+    <button type="button" class="nav-item" onclick="app.showProfile()">
+        <i class="fas fa-user"></i>
+        <span>Профиль</span>
+    </button>
+</nav>
 
     <!-- ВАЖНО: Порядок загрузки скриптов -->
     <script src="./js/data.js"></script>
@@ -472,6 +510,7 @@
     <script src="./js/screens.js"></script>
 	 <script src="./js/team.js"></script>
 	 <script src="./js/team-edit.js"></script>
+	 <script src="./js/social.js"></script>
     <script src="./js/app.js"></script>
 </body>
 </html>
