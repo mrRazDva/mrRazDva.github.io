@@ -1,0 +1,78 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    font-family: var(--font-body);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Background Pattern */
+.bg-pattern {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 0, 102, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 20%, rgba(0, 204, 255, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Screen Management */
+.screen {
+    display: none;
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
+    padding-top: calc(20px + var(--safe-area-top));
+    padding-bottom: calc(20px + var(--safe-area-bottom));
+    animation: fadeIn 0.3s ease;
+    -webkit-overflow-scrolling: touch;
+}
+
+.screen.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.hidden {
+    display: none !important;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+}

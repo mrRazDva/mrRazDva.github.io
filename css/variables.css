@@ -1,0 +1,28 @@
+:root {
+    /* Colors */
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #1a1a1a;
+    --bg-card: rgba(255, 255, 255, 0.05);
+    --accent-green: #00ff88;
+    --accent-pink: #ff0066;
+    --accent-blue: #00ccff;
+    --accent-gold: #ffd700;
+    --text-primary: #ffffff;
+    --text-secondary: #888888;
+    --border: rgba(255, 255, 255, 0.1);
+    
+    /* Spacing */
+    --safe-area-top: env(safe-area-inset-top);
+    --safe-area-bottom: env(safe-area-inset-bottom);
+    --header-height: 60px;
+    --bottom-nav-height: 60px;
+    
+    /* Typography */
+    --font-display: 'Russo One', sans-serif;
+    --font-body: 'Roboto', sans-serif;
+    
+    /* Effects */
+    --transition: all 0.3s ease;
+    --border-radius: 16px;
+    --border-radius-sm: 12px;
+}

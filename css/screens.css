@@ -1,0 +1,64 @@
+/* Screen-specific styles */
+.screen {
+    display: none;
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
+    padding-top: calc(20px + env(safe-area-inset-top));
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    animation: fadeIn 0.3s ease;
+    -webkit-overflow-scrolling: touch;
+}
+
+.screen.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Auth screens layout */
+.auth-container {
+    max-width: 400px;
+    margin: 0 auto;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px 0;
+}
+
+/* City selection layout */
+.city-grid {
+    display: grid;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+/* Main screen layout */
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+    padding-bottom: 80px;
+}
+
+/* Responsive */
+@media (max-width: 380px) {
+    .logo { font-size: 1.8rem; }
+    .role-option { font-size: 0.8rem; padding: 10px; }
+    .form-row { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 768px) {
+    .screen { padding: 40px; }
+    .matches-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+    }
+}
