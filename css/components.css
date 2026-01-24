@@ -1668,3 +1668,287 @@ textarea {
 .send-btn:active {
     transform: scale(0.9);
 }
+
+/* Hub Styles */
+.hub-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    padding-bottom: 5px;
+    scrollbar-width: none;
+}
+
+.hub-filters::-webkit-scrollbar {
+    display: none;
+}
+
+.hub-filter {
+    padding: 8px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: var(--transition);
+    font-size: 0.9rem;
+    font-family: var(--font-body);
+}
+
+.hub-filter.active {
+    background: var(--accent-green);
+    color: #000;
+    border-color: var(--accent-green);
+    font-weight: 600;
+}
+
+.hub-section {
+    margin-bottom: 30px;
+}
+
+.hub-section-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hub-section-title i {
+    color: var(--accent-green);
+}
+
+.hub-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hub-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.hub-card:hover {
+    border-color: var(--accent-green);
+    transform: translateX(5px);
+}
+
+.hub-card-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    flex-shrink: 0;
+}
+
+.hub-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.hub-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.hub-card-type {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.hub-card-price {
+    font-size: 0.85rem;
+    color: var(--accent-gold);
+    font-weight: 700;
+}
+
+.hub-card-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+}
+
+.hub-card-desc {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.hub-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.hub-card-meta i {
+    color: var(--accent-green);
+    margin-right: 4px;
+}
+
+.match-card-compact {
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hub-match-teams {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.hub-team {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.hub-team:first-child {
+    justify-content: flex-start;
+}
+
+.hub-team:last-child {
+    justify-content: flex-end;
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.hub-team-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    border: 2px solid var(--border);
+}
+
+.hub-team-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.hub-vs {
+    font-family: var(--font-display);
+    color: var(--accent-pink);
+    font-size: 0.9rem;
+    padding: 0 10px;
+}
+
+.hub-match-info {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    width: 100%;
+}
+
+.hub-match-info i {
+    color: var(--accent-green);
+    margin-right: 4px;
+}
+
+.recommendation-card {
+    align-items: center;
+}
+
+.hub-rec-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-pink));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.hub-rec-content {
+    flex: 1;
+}
+
+.hub-rec-content h4 {
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.hub-rec-content p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.btn-small {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    min-height: auto;
+    width: auto;
+    white-space: nowrap;
+}
+
+/* Адаптивное меню: когда скрыты кнопки, оставшиеся растягиваются */
+.bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+/* Когда видны только 3 кнопки (болельщик) */
+.bottom-nav:has(.nav-item:not(.hidden)) .nav-item:not(.hidden) {
+    flex: 1;
+}
+
+/* Равномерное распределение для любого количества кнопок */
+.nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 24px;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    min-width: 60px; /* Минимальная ширина для удобства нажатия */
+}
+
+/* Для старых браузеров без :has() - запасной вариант через inline-styles в JS */

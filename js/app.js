@@ -3,12 +3,12 @@ const app = {
     selectedRole: 'fan',
     currentCity: 'obninsk',
     currentFilter: 'all',
+    currentHubFilter: 'all',
     selectedMatch: null,
     map: null,
     ymapsReady: false,
 
     init() {
-        // Check for saved session
         const saved = utils.storage.get('streetLeagueUser');
         if (saved) {
             this.currentUser = saved;
@@ -18,22 +18,18 @@ const app = {
             screenManager.show('screen-role');
         }
 
-        // Init Yandex Maps
         if (typeof ymaps !== 'undefined') {
             ymaps.ready(() => {
                 this.ymapsReady = true;
             });
         }
 
-        // Render cities
         this.renderCities();
     },
 
-    // Role Selection
     selectRole(role) {
         this.selectedRole = role;
         
-        // Update UI
         document.querySelectorAll('.role-option').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.role === role);
         });
@@ -43,12 +39,10 @@ const app = {
             document.querySelector('.role-selector')
         );
 
-        // Show appropriate info
         utils.hide('role-info-fan');
         utils.hide('role-info-organizer');
         utils.show(`role-info-${role}`);
 
-        // Update continue button text
         const btn = document.getElementById('continue-btn');
         btn.textContent = role === 'organizer' ? 'Перейти к оплате' : 'Продолжить';
     },
@@ -99,7 +93,6 @@ const app = {
         this.showCitySelection();
     },
 
-    // City Selection
     renderCities() {
         const container = document.getElementById('city-list');
         if (!container) return;
@@ -127,7 +120,6 @@ const app = {
         this.currentCity = cityId;
         const cityName = mockData.cities[cityId].name;
         
-        // Update all city name elements
         document.querySelectorAll('#current-city-name').forEach(el => {
             el.textContent = cityName;
         });
@@ -135,32 +127,40 @@ const app = {
         this.showMain();
     },
 
-    // Main Screen
     showMain() {
-        screenManager.show('screen-main');
-        
-        // Update user avatar
-        const avatarLetter = document.getElementById('avatar-letter');
-        const proBadge = document.getElementById('pro-badge');
-        
-        if (avatarLetter) {
-            avatarLetter.textContent = this.currentUser.nickname[0].toUpperCase();
-        }
+    screenManager.show('screen-main');
+    
+    const avatarLetter = document.getElementById('avatar-letter');
+    const proBadge = document.getElementById('pro-badge');
+    
+    if (avatarLetter) {
+        avatarLetter.textContent = this.currentUser.nickname[0].toUpperCase();
+    }
 
-        // Show/hide organizer features
-        const isOrganizer = this.currentUser.role === 'organizer';
-        const hasActiveSub = this.currentUser.subscriptionActive;
+    const isOrganizer = this.currentUser.role === 'organizer';
+    const hasActiveSub = this.currentUser.subscriptionActive;
 
-        if (proBadge) {
-            proBadge.classList.toggle('hidden', !isOrganizer);
-        }
+    if (proBadge) {
+        proBadge.classList.toggle('hidden', !isOrganizer);
+    }
 
-        utils.toggleVisibility('fab-create', isOrganizer && hasActiveSub);
-        utils.toggleVisibility('bottom-nav', isOrganizer);
-        utils.toggleVisibility('paywall-banner', isOrganizer && !hasActiveSub);
+    // Показываем меню всегда
+    utils.toggleVisibility('bottom-nav', true);
+    
+    // Для болельщиков скрываем "Команды" и "Создать"
+    utils.toggleVisibility('nav-teams-btn', isOrganizer);
+    utils.toggleVisibility('nav-create-btn', isOrganizer && hasActiveSub);
+    
+    // Баннер просрочки только для PRO с истекшей подпиской
+    utils.toggleVisibility('paywall-banner', isOrganizer && !hasActiveSub);
 
-        this.renderMatches();
-    },
+    this.renderMatches();
+},
+
+showHub() {
+    screenManager.show('screen-hub');
+    this.renderHub();
+},
 
     renderMatches() {
         const container = document.getElementById('matches-list');
@@ -250,7 +250,6 @@ const app = {
         this.renderMatches();
     },
 
-    // Match Detail
     showMatchDetail(matchId) {
         this.selectedMatch = mockData.matches.find(m => m.id === matchId);
         if (!this.selectedMatch) return;
@@ -261,7 +260,7 @@ const app = {
 
         screenManager.show('screen-match');
 
-         const content = document.getElementById('match-detail-content');
+        const content = document.getElementById('match-detail-content');
         if (content) {
             content.innerHTML = `
                 <div class="form-section" style="text-align: center; padding: 30px 20px;">
@@ -301,17 +300,14 @@ const app = {
             `;
         }
 
-        // Show challenge button for organizers
         const canChallenge = this.currentUser.role === 'organizer' && 
             this.currentUser.subscriptionActive &&
             !this.currentUser.teams?.includes(match.team1);
         
         utils.toggleVisibility('challenge-section', canChallenge);
 
-        // Init map
         setTimeout(() => this.initMap(match.lat, match.lng, match.location), 100);
-		// Инициализируем социальные фичи
-socialModule.showCommentsSection(matchId);
+        socialModule.showCommentsSection(matchId);
     },
 
     initMap(lat, lng, location) {
@@ -343,38 +339,37 @@ socialModule.showCommentsSection(matchId);
         this.map.geoObjects.add(placemark);
     },
 
-    // Teams
     showTeams() {
         screenManager.show('screen-teams');
         this.renderMyTeams();
     },
 
     renderMyTeams() {
-    const container = document.getElementById('teams-list');
-    if (!container) return;
+        const container = document.getElementById('teams-list');
+        if (!container) return;
 
-    const myTeams = Object.values(mockData.teams).filter(t => 
-        t.owner === this.currentUser.id
-    );
+        const myTeams = Object.values(mockData.teams).filter(t => 
+            t.owner === this.currentUser.id
+        );
 
-    if (myTeams.length === 0) {
-        container.innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: 40px;">У тебя пока нет команд</div>';
-        return;
-    }
+        if (myTeams.length === 0) {
+            container.innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: 40px;">У тебя пока нет команд</div>';
+            return;
+        }
 
-    container.innerHTML = myTeams.map(team => `
-        <div class="team-manage-card" onclick="teamEditModule.show('${team.id}')">
-            <div class="team-avatar" style="width: 50px; height: 50px; font-size: 1.5rem; border-color: var(--accent-green);">
-                ${team.avatar}
+        container.innerHTML = myTeams.map(team => `
+            <div class="team-manage-card" onclick="teamEditModule.show('${team.id}')">
+                <div class="team-avatar" style="width: 50px; height: 50px; font-size: 1.5rem; border-color: var(--accent-green);">
+                    ${team.avatar}
+                </div>
+                <div class="team-info">
+                    <div class="team-name">${team.name}</div>
+                    <div class="team-stats">${team.wins} побед • ${team.players.length} игроков</div>
+                </div>
+                <i class="fas fa-chevron-right" style="color: var(--text-secondary);"></i>
             </div>
-            <div class="team-info">
-                <div class="team-name">${team.name}</div>
-                <div class="team-stats">${team.wins} побед • ${team.players.length} игроков</div>
-            </div>
-            <i class="fas fa-chevron-right" style="color: var(--text-secondary);"></i>
-        </div>
-    `).join('');
-},
+        `).join('');
+    },
 
     showCreateTeam() {
         screenManager.show('screen-create-team');
@@ -413,16 +408,9 @@ socialModule.showCommentsSection(matchId);
         this.showTeams();
     },
 
-    editTeam(teamId) {
-        // TODO: Implement team editing
-        alert('Редактирование команды: ' + teamId);
-    },
-
-    // Create Match
     showCreateMatch() {
         screenManager.show('screen-create-match');
         
-        // Populate teams select
         const myTeams = Object.values(mockData.teams).filter(t => 
             t.owner === this.currentUser.id
         );
@@ -432,7 +420,6 @@ socialModule.showCommentsSection(matchId);
             `<option value="${t.id}">${t.name}</option>`
         ).join('');
 
-        // Populate opponents
         const opponents = Object.values(mockData.teams).filter(t => 
             t.owner !== this.currentUser.id && t.city === this.currentCity
         );
@@ -486,105 +473,90 @@ socialModule.showCommentsSection(matchId);
         }
     },
 
-    // Profile
     showProfile() {
-    screenManager.show('screen-profile');
-    
-    document.getElementById('profile-avatar').textContent = this.currentUser.nickname[0].toUpperCase();
-    document.getElementById('profile-name').textContent = this.currentUser.nickname;
-    
-    const isOrg = this.currentUser.role === 'organizer';
-    document.getElementById('profile-role').textContent = 
-        isOrg ? 'Организатор PRO' : 'Болельщик';
+        screenManager.show('screen-profile');
+        
+        document.getElementById('profile-avatar').textContent = this.currentUser.nickname[0].toUpperCase();
+        document.getElementById('profile-name').textContent = this.currentUser.nickname;
+        
+        const isOrg = this.currentUser.role === 'organizer';
+        document.getElementById('profile-role').textContent = 
+            isOrg ? 'Организатор PRO' : 'Болельщик';
 
-    // PRO badge только для организаторов
-    utils.toggleVisibility('profile-pro-badge', isOrg);
-    
-    // Карточку подписки показываем ВСЕМ
-    utils.show('subscription-card');
-    
-    const statusEl = document.getElementById('sub-status');
-    const dateRow = document.getElementById('sub-date').parentElement;
-    const subBtn = document.querySelector('#subscription-card .btn');
-    
-    if (isOrg) {
-        // Для организатора
-        statusEl.textContent = this.currentUser.subscriptionActive ? 'Активна' : 'Неактивна';
-        statusEl.className = 'info-value ' + (this.currentUser.subscriptionActive ? 'status-active' : 'status-inactive');
-        statusEl.style.color = '';
-        dateRow.style.display = 'flex';
-        document.getElementById('sub-date').textContent = this.currentUser.subscriptionExpiry || '-';
-        subBtn.textContent = 'Продлить';
-        subBtn.onclick = () => this.initiatePayment('renew');
-    } else {
-        // Для болельщика — апгрейд
-        statusEl.textContent = 'Базовый';
-        statusEl.className = 'info-value';
-        statusEl.style.color = 'var(--text-secondary)';
-        dateRow.style.display = 'none'; // Скрываем дату окончания
-        subBtn.textContent = 'Перейти на PRO • 299 ₽';
-        subBtn.onclick = () => this.initiatePayment('upgrade');
-    }
-},
+        utils.toggleVisibility('profile-pro-badge', isOrg);
+        utils.show('subscription-card');
+        
+        const statusEl = document.getElementById('sub-status');
+        const dateRow = document.getElementById('sub-date').parentElement;
+        const subBtn = document.querySelector('#subscription-card .btn');
+        
+        if (isOrg) {
+            statusEl.textContent = this.currentUser.subscriptionActive ? 'Активна' : 'Неактивна';
+            statusEl.className = 'info-value ' + (this.currentUser.subscriptionActive ? 'status-active' : 'status-inactive');
+            statusEl.style.color = '';
+            dateRow.style.display = 'flex';
+            document.getElementById('sub-date').textContent = this.currentUser.subscriptionExpiry || '-';
+            subBtn.textContent = 'Продлить';
+            subBtn.onclick = () => this.initiatePayment('renew');
+        } else {
+            statusEl.textContent = 'Базовый';
+            statusEl.className = 'info-value';
+            statusEl.style.color = 'var(--text-secondary)';
+            dateRow.style.display = 'none';
+            subBtn.textContent = 'Перейти на PRO • 299 ₽';
+            subBtn.onclick = () => this.initiatePayment('upgrade');
+        }
+    },
 
-initiatePayment(type) {
-    this.paymentType = type;
-    document.getElementById('payment-modal').classList.add('active');
-    
-    // Меняем заголовок модалки
-    const title = document.querySelector('#payment-modal .modal-title');
-    if (title) {
-        title.textContent = type === 'upgrade' ? 'Оформление PRO' : 'Продление подписки';
-    }
-    
-    // Меняем текст кнопки в модалке
-    const payBtn = document.querySelector('#payment-modal .btn-gold');
-    if (payBtn) {
-        payBtn.textContent = type === 'upgrade' ? 'Оплатить 299 ₽' : 'Оплатить';
-    }
-},
+    initiatePayment(type) {
+        this.paymentType = type;
+        document.getElementById('payment-modal').classList.add('active');
+        
+        const title = document.querySelector('#payment-modal .modal-title');
+        if (title) {
+            title.textContent = type === 'upgrade' ? 'Оформление PRO' : 'Продление подписки';
+        }
+        
+        const payBtn = document.querySelector('#payment-modal .btn-gold');
+        if (payBtn) {
+            payBtn.textContent = type === 'upgrade' ? 'Оплатить 299 ₽' : 'Оплатить';
+        }
+    },
 
-closePayment() {
-    document.getElementById('payment-modal').classList.remove('active');
-    this.paymentType = null;
-},
+    closePayment() {
+        document.getElementById('payment-modal').classList.remove('active');
+        this.paymentType = null;
+    },
 
-processPayment() {
-    // Имитация обработки
-    setTimeout(() => {
-        if (this.paymentType === 'upgrade') {
-            // Апгрейд с Fan до Organizer
-            this.currentUser.role = 'organizer';
-            this.currentUser.subscriptionActive = true;
-            this.currentUser.subscriptionExpiry = '2025-12-31';
-            if (!this.currentUser.teams) this.currentUser.teams = [];
+    processPayment() {
+        setTimeout(() => {
+            if (this.paymentType === 'upgrade') {
+                this.currentUser.role = 'organizer';
+                this.currentUser.subscriptionActive = true;
+                this.currentUser.subscriptionExpiry = '2025-12-31';
+                if (!this.currentUser.teams) this.currentUser.teams = [];
+                
+                alert('Добро пожаловать в PRO! Теперь вы можете создавать команды и матчи.');
+            } else {
+                this.currentUser.subscriptionActive = true;
+                this.currentUser.subscriptionExpiry = '2025-12-31';
+                alert('Подписка успешно продлена!');
+            }
             
-            alert('Добро пожаловать в PRO! Теперь вы можете создавать команды и матчи.');
-        } else {
-            // Продление
-            this.currentUser.subscriptionActive = true;
-            this.currentUser.subscriptionExpiry = '2025-12-31';
-            alert('Подписка успешно продлена!');
-        }
-        
-        utils.storage.set('streetLeagueUser', this.currentUser);
-        this.closePayment();
-        
-        // После апгрейда обновляем главный экран, чтобы появилось нижнее меню
-        if (this.paymentType === 'upgrade') {
-            this.showMain();
-        } else {
-            this.showProfile();
-        }
-    }, 500);
-},
+            utils.storage.set('streetLeagueUser', this.currentUser);
+            this.closePayment();
+            
+            if (this.paymentType === 'upgrade') {
+                this.showMain();
+            } else {
+                this.showProfile();
+            }
+        }, 500);
+    },
 
-    // Team Detail
     showTeam(teamId) {
         const team = mockData.teams[teamId];
         if (!team) return;
-
-        // For now just alert, can be expanded to separate screen
         alert(`Команда: ${team.name}\nПобед: ${team.wins}\nИгроков: ${team.players.length}`);
     },
 
@@ -596,14 +568,161 @@ processPayment() {
         }
     },
 
-    // Logout
     logout() {
         utils.storage.remove('streetLeagueUser');
         location.reload();
+    },
+
+    showHub() {
+        screenManager.show('screen-hub');
+        this.renderHub();
+    },
+
+    renderHub() {
+        this.renderHubEvents();
+        this.renderHubMatches();
+        this.renderHubRecommended();
+    },
+
+    renderHubEvents() {
+        const container = document.getElementById('hub-events-list');
+        if (!container) return;
+
+        let events = mockData.events.filter(e => e.city === this.currentCity);
+        
+        if (this.currentHubFilter !== 'all' && this.currentHubFilter !== 'matches') {
+            events = events.filter(e => e.type === this.currentHubFilter || e.category === this.currentHubFilter);
+        }
+
+        if (events.length === 0) {
+            container.innerHTML = '<div class="empty-state">Нет событий на ближайшие дни</div>';
+            return;
+        }
+
+        container.innerHTML = events.map(event => `
+            <div class="hub-card event-card" onclick="app.showEventDetail('${event.id}')" style="--event-color: ${event.color}">
+                <div class="hub-card-icon" style="background: ${event.color}20; color: ${event.color}">
+                    ${event.image}
+                </div>
+                <div class="hub-card-content">
+                    <div class="hub-card-header">
+                        <span class="hub-card-type">${this.getEventTypeName(event.type)}</span>
+                        <span class="hub-card-price">${event.price}</span>
+                    </div>
+                    <h4 class="hub-card-title">${event.title}</h4>
+                    <p class="hub-card-desc">${event.description}</p>
+                    <div class="hub-card-meta">
+                        <span><i class="far fa-clock"></i> ${event.date}</span>
+                        <span><i class="fas fa-map-marker-alt"></i> ${event.location}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    },
+
+    renderHubMatches() {
+        const container = document.getElementById('hub-matches-list');
+        if (!container) return;
+
+        const weekMatches = mockData.matches.filter(m => {
+            const t1 = mockData.teams[m.team1];
+            const t2 = mockData.teams[m.team2];
+            return (t1?.city === this.currentCity || t2?.city === this.currentCity) && 
+                   m.status === 'upcoming';
+        }).slice(0, 3);
+
+        if (weekMatches.length === 0) {
+            container.innerHTML = '<div class="empty-state">Нет предстоящих матчей</div>';
+            return;
+        }
+
+        container.innerHTML = weekMatches.map(match => {
+            const t1 = mockData.teams[match.team1];
+            const t2 = mockData.teams[match.team2];
+            return `
+                <div class="hub-card match-card-compact" onclick="app.showMatchDetail(${match.id})">
+                    <div class="hub-match-teams">
+                        <div class="hub-team">
+                            <span class="hub-team-avatar">${t1?.avatar || '?'}</span>
+                            <span class="hub-team-name">${t1?.name || 'TBD'}</span>
+                        </div>
+                        <span class="hub-vs">VS</span>
+                        <div class="hub-team">
+                            <span class="hub-team-avatar">${t2?.avatar || '?'}</span>
+                            <span class="hub-team-name">${t2?.name || 'TBD'}</span>
+                        </div>
+                    </div>
+                    <div class="hub-match-info">
+                        <span class="hub-match-time"><i class="far fa-clock"></i> ${match.date}</span>
+                        <span class="hub-match-location"><i class="fas fa-map-marker-alt"></i> ${match.location}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    renderHubRecommended() {
+        const container = document.getElementById('hub-recommended-list');
+        if (!container) return;
+
+        const recommended = [
+            {
+                title: 'Новая площадка',
+                desc: 'Открытие футбольного поля с искусственным газоном',
+                icon: '🏟️',
+                action: 'Посмотреть'
+            },
+            {
+                title: 'Набор в команду',
+                desc: 'Драконы ищут защитника',
+                icon: '👥',
+                action: 'Подробнее'
+            }
+        ];
+
+        container.innerHTML = recommended.map(item => `
+            <div class="hub-card recommendation-card">
+                <div class="hub-rec-icon">${item.icon}</div>
+                <div class="hub-rec-content">
+                    <h4>${item.title}</h4>
+                    <p>${item.desc}</p>
+                </div>
+                <button class="btn btn-small btn-secondary">${item.action}</button>
+            </div>
+        `).join('');
+    },
+
+    filterHub(type) {
+        this.currentHubFilter = type;
+        
+        document.querySelectorAll('.hub-filter').forEach(btn => {
+            btn.classList.toggle('active', btn.textContent.toLowerCase().includes(
+                type === 'all' ? 'всё' : 
+                type === 'events' ? 'события' :
+                type === 'matches' ? 'матчи' : 'тренировки'
+            ));
+        });
+
+        this.renderHub();
+    },
+
+    getEventTypeName(type) {
+        const names = {
+            masterclass: 'Мастер-класс',
+            training: 'Тренировка',
+            tournament: 'Турнир'
+        };
+        return names[type] || type;
+    },
+
+    showEventDetail(eventId) {
+        const event = mockData.events.find(e => e.id === eventId);
+        if (!event) return;
+        
+        alert(`${event.title}\n\n${event.description}\n\n📍 ${event.location}\n🕐 ${event.date}\n💰 ${event.price}`);
     }
 };
 
-// Helper for visibility
 utils.toggleVisibility = (id, show) => {
     const el = document.getElementById(id);
     if (el) {
@@ -611,7 +730,6 @@ utils.toggleVisibility = (id, show) => {
     }
 };
 
-// Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     app.init();
 });

@@ -6,12 +6,10 @@ class ScreenManager {
     }
 
     show(screenId, addToHistory = true) {
-        // Hide all screens
         this.screens.forEach(screen => {
             screen.classList.remove('active');
         });
 
-        // Show target screen
         const target = document.getElementById(screenId);
         if (target) {
             target.classList.add('active');
@@ -21,10 +19,7 @@ class ScreenManager {
                 this.history.push(screenId);
             }
 
-            // Scroll to top
             window.scrollTo(0, 0);
-            
-            // Update bottom nav if needed
             this.updateBottomNav(screenId);
         }
     }
@@ -37,20 +32,27 @@ class ScreenManager {
         }
     }
 
-   updateBottomNav(screenId) {
+    updateBottomNav(screenId) {
     const nav = document.getElementById('bottom-nav');
     if (!nav) return;
 
     const items = nav.querySelectorAll('.nav-item');
     items.forEach(item => item.classList.remove('active'));
 
-    // Индексы: 0=Матчи, 1=Команды, 2=Создать, 3=Профиль
-    if (screenId === 'screen-main') {
-        items[0]?.classList.add('active');
-    } else if (screenId === 'screen-teams') {
-        items[1]?.classList.add('active');
-    } else if (screenId === 'screen-profile') {
-        items[3]?.classList.add('active');
+    // Маппинг экранов на data-screen атрибуты
+    const screenMap = {
+        'screen-main': 'main',
+        'screen-teams': 'teams',
+        'screen-hub': 'hub',
+        'screen-profile': 'profile'
+    };
+
+    const targetScreen = screenMap[screenId];
+    if (targetScreen) {
+        const activeBtn = nav.querySelector(`[data-screen="${targetScreen}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
     }
 }
 
@@ -59,5 +61,4 @@ class ScreenManager {
     }
 }
 
-// Initialize
 const screenManager = new ScreenManager();

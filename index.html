@@ -150,6 +150,49 @@
            
         </section>
 
+        <!-- Screen: Hub -->
+        <section id="screen-hub" class="screen">
+            <div class="container">
+                <header class="header">
+                    <h2 class="section-title">Хаб событий</h2>
+                    <button class="user-avatar" onclick="app.showProfile()">
+                        <i class="fas fa-user"></i>
+                    </button>
+                </header>
+
+                <div class="hub-filters">
+                    <button class="hub-filter active" onclick="app.filterHub('all')">Всё</button>
+                    <button class="hub-filter" onclick="app.filterHub('events')">События</button>
+                    <button class="hub-filter" onclick="app.filterHub('matches')">Матчи</button>
+                    <button class="hub-filter" onclick="app.filterHub('training')">Тренировки</button>
+                </div>
+
+                <div class="hub-section">
+                    <h3 class="hub-section-title">
+                        <i class="fas fa-fire"></i>
+                        Ближайшие события
+                    </h3>
+                    <div id="hub-events-list" class="hub-list"></div>
+                </div>
+
+                <div class="hub-section">
+                    <h3 class="hub-section-title">
+                        <i class="fas fa-calendar-week"></i>
+                        Матчи на этой неделе
+                    </h3>
+                    <div id="hub-matches-list" class="hub-list"></div>
+                </div>
+
+                <div class="hub-section">
+                    <h3 class="hub-section-title">
+                        <i class="fas fa-star"></i>
+                        Рекомендуем
+                    </h3>
+                    <div id="hub-recommended-list" class="hub-list"></div>
+                </div>
+            </div>
+        </section>
+
         <!-- Screen: Teams -->
         <section id="screen-teams" class="screen">
             <div class="container">
@@ -228,52 +271,47 @@
         </section>
 
         <!-- Screen: Match Detail -->
-<section id="screen-match" class="screen">
-    <div class="container">
-        <button class="back-btn" onclick="app.showMain()">
-            <i class="fas fa-arrow-left"></i> Назад
-        </button>
+        <section id="screen-match" class="screen">
+            <div class="container">
+                <button class="back-btn" onclick="app.showMain()">
+                    <i class="fas fa-arrow-left"></i> Назад
+                </button>
 
-        <div id="match-detail-content"></div>
-        <div id="map" class="map-container"></div>
-        
-        <!-- Реакции -->
-        <div id="match-reactions" class="match-reactions"></div>
-        
-        <!-- Кнопка вызова -->
-        <div id="challenge-section" class="challenge-section hidden">
-            <button class="btn btn-challenge" onclick="app.challengeTeam()">
-                <i class="fas fa-fire"></i> Бросить вызов
-            </button>
-        </div>
-
-        <!-- Комментарии -->
-        <div class="comments-section">
-            <h3 class="section-subtitle">
-                Комментарии 
-                <span id="comments-count" class="count-badge">0</span>
-            </h3>
-            
-            <div id="comments-list" class="comments-list">
-                <!-- Комментарии здесь -->
-            </div>
-
-           <div class="comment-input-area">
-  
-                <div class="comment-input-wrapper">
-                    <input type="text" 
-                           id="comment-input" 
-                           placeholder="Написать комментарий..." 
-                           maxlength="200"
-                           onkeypress="if(event.key === 'Enter') socialModule.addComment(app.selectedMatch.id, this.value)">
-                    <button class="send-btn" onclick="socialModule.addComment(app.selectedMatch.id, document.getElementById('comment-input').value)">
-                        <i class="fas fa-paper-plane"></i>
+                <div id="match-detail-content"></div>
+                <div id="map" class="map-container"></div>
+                
+                <div id="match-reactions" class="match-reactions"></div>
+                
+                <div id="challenge-section" class="challenge-section hidden">
+                    <button class="btn btn-challenge" onclick="app.challengeTeam()">
+                        <i class="fas fa-fire"></i> Бросить вызов
                     </button>
                 </div>
+
+                <div class="comments-section">
+                    <h3 class="section-subtitle">
+                        Комментарии 
+                        <span id="comments-count" class="count-badge">0</span>
+                    </h3>
+                    
+                    <div id="comments-list" class="comments-list">
+                    </div>
+
+                   <div class="comment-input-area">
+                        <div class="comment-input-wrapper">
+                            <input type="text" 
+                                   id="comment-input" 
+                                   placeholder="Написать комментарий..." 
+                                   maxlength="200"
+                                   onkeypress="if(event.key === 'Enter') socialModule.addComment(app.selectedMatch.id, this.value)">
+                            <button class="send-btn" onclick="socialModule.addComment(app.selectedMatch.id, document.getElementById('comment-input').value)">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-</section>
+        </section>
 
         <!-- Screen: Profile -->
         <section id="screen-profile" class="screen">
@@ -336,8 +374,8 @@
                 <p class="demo-hint">Демо-режим</p>
             </div>
         </div>
-		
-		<!-- Screen: Team Profile -->
+        
+        <!-- Screen: Team Profile -->
         <section id="screen-team" class="screen">
             <div class="container">
                 <button class="back-btn" onclick="teamModule.back()">
@@ -374,20 +412,18 @@
                 <div class="team-section">
                     <h3 class="section-subtitle">Состав команды</h3>
                     <div class="team-roster" id="team-roster">
-                        <!-- Игроки здесь -->
                     </div>
                 </div>
 
                 <div class="team-section">
                     <h3 class="section-subtitle">История матчей</h3>
                     <div class="team-match-history" id="team-match-history">
-                        <!-- История здесь -->
                     </div>
                 </div>
             </div>
         </section>
-		
-		 <!-- Screen: Team Edit -->
+        
+         <!-- Screen: Team Edit -->
         <section id="screen-team-edit" class="screen">
             <div class="container">
                 <button class="back-btn" onclick="screenManager.show('screen-teams')">
@@ -396,7 +432,6 @@
 
                 <h2 class="section-title">Редактирование команды</h2>
 
-                <!-- Основная информация -->
                 <div class="form-section">
                     <h3 class="form-title">Основная информация</h3>
                     
@@ -415,7 +450,6 @@
                     </div>
                 </div>
 
-                <!-- Состав команды -->
                 <div class="form-section">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h3 class="form-title" style="margin: 0;">Состав команды</h3>
@@ -425,7 +459,6 @@
                     </div>
 
                     <div id="edit-roster-list" class="edit-roster-list">
-                        <!-- Список игроков -->
                     </div>
                 </div>
 
@@ -434,8 +467,7 @@
                 </button>
             </div>
 
-           <!-- Modal: Add/Edit Player -->
-<div id="player-form-modal" class="modal-overlay hidden" onclick="if(event.target === this) teamEditModule.hidePlayerForm()">
+           <div id="player-form-modal" class="modal-overlay hidden" onclick="if(event.target === this) teamEditModule.hidePlayerForm()">
                 <div class="modal-content">
                     <h3 id="player-form-title" style="margin-bottom: 20px; font-family: var(--font-display);">Новый игрок</h3>
                     
@@ -478,39 +510,44 @@
                 </div>
             </div>
         </section>
-		
+        
     </main>
 
-    <nav id="bottom-nav" class="bottom-nav hidden">
-    <button type="button" class="nav-item" onclick="app.showMain()">
+   <nav id="bottom-nav" class="bottom-nav hidden">
+    <button type="button" class="nav-item" data-screen="main" onclick="app.showMain()">
         <i class="fas fa-calendar-alt"></i>
         <span>Матчи</span>
     </button>
     
-    <button type="button" class="nav-item" onclick="app.showTeams()">
+    <!-- Кнопка Команды - только для PRO -->
+    <button type="button" class="nav-item" id="nav-teams-btn" data-screen="teams" onclick="app.showTeams()">
         <i class="fas fa-users"></i>
         <span>Команды</span>
     </button>
     
-    <!-- Центральная кнопка Создать -->
-    <button type="button" class="nav-item nav-item-create" onclick="app.showCreateMatch()">
-    <i class="fas fa-plus"></i>
-    <span>Создать</span>
-</button>
+    <!-- Кнопка Создать - только для PRO -->
+    <button type="button" class="nav-item nav-item-create" id="nav-create-btn" data-screen="create" onclick="app.showCreateMatch()">
+        <i class="fas fa-plus"></i>
+        <span>Создать</span>
+    </button>
     
-    <button type="button" class="nav-item" onclick="app.showProfile()">
+    <button type="button" class="nav-item" data-screen="hub" onclick="app.showHub()">
+        <i class="fas fa-compass"></i>
+        <span>Хаб</span>
+    </button>
+    
+    <button type="button" class="nav-item" data-screen="profile" onclick="app.showProfile()">
         <i class="fas fa-user"></i>
         <span>Профиль</span>
     </button>
 </nav>
 
-    <!-- ВАЖНО: Порядок загрузки скриптов -->
     <script src="./js/data.js"></script>
     <script src="./js/utils.js"></script>
     <script src="./js/screens.js"></script>
-	 <script src="./js/team.js"></script>
-	 <script src="./js/team-edit.js"></script>
-	 <script src="./js/social.js"></script>
+    <script src="./js/team.js"></script>
+    <script src="./js/team-edit.js"></script>
+    <script src="./js/social.js"></script>
     <script src="./js/app.js"></script>
 </body>
 </html>

@@ -22,10 +22,63 @@ const mockData = {
             date: 'Сегодня, 19:00', location: 'Стадион "Белкино"',
             lat: 55.1156, lng: 36.5950, status: 'upcoming', score: '0:0'
         }
+    ],
+    events: [
+        {
+            id: 'event1',
+            type: 'masterclass',
+            title: 'Мастер-класс по йоге',
+            description: 'Бесплатное занятие для начинающих. Приносите коврик!',
+            date: 'Завтра, 10:00',
+            location: 'Парк Победы, площадка #3',
+            category: 'wellness',
+            price: 'Бесплатно',
+            image: '🧘',
+            color: '#9b59b6',
+            city: 'obninsk'
+        },
+        {
+            id: 'event2',
+            type: 'training',
+            title: 'Бокс для всех',
+            description: 'Открытая тренировка. Перчатки выдаем',
+            date: 'Суббота, 14:00',
+            location: 'Спортзал "Боец"',
+            category: 'boxing',
+            price: '500 ₽',
+            image: '🥊',
+            color: '#e74c3c',
+            city: 'obninsk'
+        },
+        {
+            id: 'event3',
+            type: 'tournament',
+            title: 'Уличный турнир 3x3',
+            description: 'Баскетбольный турнир. Призовой фонд: 10 000 ₽',
+            date: 'Воскресенье, 12:00',
+            location: 'Корты "Олимп"',
+            category: 'basketball',
+            price: 'Взнос 300 ₽',
+            image: '🏀',
+            color: '#f39c12',
+            city: 'obninsk'
+        },
+        {
+            id: 'event4',
+            type: 'masterclass',
+            title: 'Работа с мячом',
+            description: 'Техника ведения от профи',
+            date: 'Пятница, 18:00',
+            location: 'Стадион "Белкино"',
+            category: 'football',
+            price: 'Бесплатно',
+            image: '⚽',
+            color: '#00ff88',
+            city: 'obninsk'
+        }
     ]
 };
 
-// Комментарии и реакции
 const socialData = {
     comments: [
         {
@@ -51,7 +104,6 @@ const socialData = {
     ],
     
     reactions: {
-        // matchId: { userId: emoji }
         1: {
             'user1': '🔥',
             'user2': '❤️',
@@ -59,6 +111,5 @@ const socialData = {
         }
     },
     
-    // Доступные реакции
     reactionTypes: ['🔥', '❤️', '👍', '😮', '🏆']
 };
