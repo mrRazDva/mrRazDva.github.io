@@ -2,7 +2,7 @@
 const authModule = {
   API_URL: window.location.hostname === 'localhost' 
     ? 'http://localhost:3000' 
-    : 'https://ваш-бэкенд.onrender.com',
+    : 'https://street-league-backend.onrender.com',
   
   currentUser: null,
   token: null,

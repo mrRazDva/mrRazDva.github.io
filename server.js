@@ -1,552 +1,288 @@
-// server.js - основной серверный файл
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
-const path = require('path');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ========== ПОДКЛЮЧЕНИЕ К БАЗЕ ==========
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
+
 // ========== MIDDLEWARE ==========
-app.use(cors());
+// Разрешаем все CORS запросы
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    next();
+});
+
 app.use(express.json());
 
-// Раздача статических файлов (ваш фронтенд)
-app.use(express.static(path.join(__dirname)));
-
-// ========== ПОДКЛЮЧЕНИЕ К БАЗЕ ДАННЫХ ==========
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false // Обязательно для Render
-  }
+// ========== ПРОВЕРКА ЗДОРОВЬЯ ==========
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        message: 'Street League API работает',
+        cors: 'enabled'
+    });
 });
 
-// Проверка подключения к БД
-pool.connect((err, client, release) => {
-  if (err) {
-    console.error('❌ Ошибка подключения к PostgreSQL:', err.message);
-  } else {
-    console.log('✅ Подключено к PostgreSQL');
-    release();
-  }
-});
+// ========== АВТОРИЗАЦИЯ ==========
+const SECRET_KEY = process.env.JWT_SECRET || 'street-league-secret-key-2024';
 
-// ========== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ ==========
+// Создание таблиц при запуске
 async function initDatabase() {
-  try {
-    await pool.query(`
-      -- Таблица пользователей
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        nickname VARCHAR(100) NOT NULL,
-        password_hash VARCHAR(255),
-        role VARCHAR(20) DEFAULT 'fan',
-        subscription_active BOOLEAN DEFAULT false,
-        subscription_expiry DATE,
-        phone VARCHAR(20),
-        city VARCHAR(100),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      -- Таблица команд
-      CREATE TABLE IF NOT EXISTS teams (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        city VARCHAR(100) NOT NULL,
-        sport VARCHAR(50) NOT NULL,
-        avatar VARCHAR(10) DEFAULT '⚽',
-        wins INTEGER DEFAULT 0,
-        losses INTEGER DEFAULT 0,
-        draws INTEGER DEFAULT 0,
-        owner_id INTEGER REFERENCES users(id),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      -- Таблица игроков
-      CREATE TABLE IF NOT EXISTS players (
-        id SERIAL PRIMARY KEY,
-        team_id INTEGER REFERENCES teams(id) ON DELETE CASCADE,
-        name VARCHAR(255) NOT NULL,
-        number INTEGER,
-        role VARCHAR(100),
-        photo_url TEXT,
-        info TEXT,
-        is_captain BOOLEAN DEFAULT false,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      -- Таблица матчей
-      CREATE TABLE IF NOT EXISTS matches (
-        id SERIAL PRIMARY KEY,
-        sport VARCHAR(50) NOT NULL,
-        team1_id INTEGER REFERENCES teams(id),
-        team2_id INTEGER REFERENCES teams(id),
-        date TIMESTAMP NOT NULL,
-        location VARCHAR(255) NOT NULL,
-        lat DECIMAL(9,6),
-        lng DECIMAL(9,6),
-        status VARCHAR(20) DEFAULT 'upcoming',
-        score VARCHAR(10) DEFAULT '0:0',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      -- Таблица комментариев
-      CREATE TABLE IF NOT EXISTS comments (
-        id SERIAL PRIMARY KEY,
-        match_id INTEGER REFERENCES matches(id),
-        user_id INTEGER REFERENCES users(id),
-        text TEXT NOT NULL,
-        likes INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      -- Таблица реакций
-      CREATE TABLE IF NOT EXISTS reactions (
-        id SERIAL PRIMARY KEY,
-        match_id INTEGER REFERENCES matches(id),
-        user_id INTEGER REFERENCES users(id),
-        emoji VARCHAR(10) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(match_id, user_id)
-      );
-    `);
-    console.log('✅ Таблицы созданы/проверены');
-  } catch (error) {
-    console.error('❌ Ошибка инициализации БД:', error.message);
-  }
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                nickname VARCHAR(100) NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                role VARCHAR(20) DEFAULT 'fan',
+                subscription_active BOOLEAN DEFAULT false,
+                subscription_expiry DATE,
+                phone VARCHAR(20),
+                city VARCHAR(100),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE IF NOT EXISTS teams (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                city VARCHAR(100) NOT NULL,
+                sport VARCHAR(50) NOT NULL,
+                avatar VARCHAR(10) DEFAULT '⚽',
+                wins INTEGER DEFAULT 0,
+                losses INTEGER DEFAULT 0,
+                draws INTEGER DEFAULT 0,
+                owner_id INTEGER REFERENCES users(id),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        console.log('✅ Таблицы созданы/проверены');
+    } catch (error) {
+        console.error('❌ Ошибка создания таблиц:', error.message);
+    }
 }
 
-// ========== API ENDPOINTS ==========
-
-// Проверка здоровья сервера
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    message: 'Street League API работает'
-  });
-});
-
-// Регистрация пользователя
-app.post('/api/register', async (req, res) => {
-  try {
-    const { nickname, email, password, role, phone } = req.body;
+// Регистрация
+app.post('/api/auth/register', async (req, res) => {
+    console.log('📝 Регистрация пользователя:', req.body);
     
-    // В реальном приложении нужно хэшировать пароль!
-    const result = await pool.query(
-      `INSERT INTO users (nickname, email, password_hash, role, phone) 
-       VALUES ($1, $2, $3, $4, $5) 
-       RETURNING id, nickname, email, role, created_at`,
-      [nickname, email, password, role || 'fan', phone]
-    );
-    
-    res.json({ 
-      success: true, 
-      user: result.rows[0],
-      token: 'demo-token-' + Date.now() // В реальном приложении - JWT
-    });
-  } catch (error) {
-    console.error('Ошибка регистрации:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// Получение матчей по городу
-app.get('/api/matches/:city', async (req, res) => {
-  try {
-    const { city } = req.params;
-    const { sport } = req.query; // фильтр по виду спорта
-    
-    let query = `
-      SELECT m.*, 
-        t1.name as team1_name, t1.avatar as team1_avatar,
-        t2.name as team2_name, t2.avatar as team2_avatar,
-        t1.city as team1_city, t2.city as team2_city
-      FROM matches m
-      LEFT JOIN teams t1 ON m.team1_id = t1.id
-      LEFT JOIN teams t2 ON m.team2_id = t2.id
-      WHERE (t1.city = $1 OR t2.city = $1)
-    `;
-    
-    const params = [city];
-    
-    if (sport && sport !== 'all') {
-      query += ' AND m.sport = $2';
-      params.push(sport);
+    try {
+        const { nickname, email, password, role, phone } = req.body;
+        
+        if (!nickname || !email || !password) {
+            return res.status(400).json({
+                success: false,
+                error: 'Заполните все обязательные поля'
+            });
+        }
+        
+        // Проверяем существующего пользователя
+        const existingUser = await pool.query(
+            'SELECT * FROM users WHERE email = $1 OR nickname = $2',
+            [email, nickname]
+        );
+        
+        if (existingUser.rows.length > 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Пользователь с таким email или никнеймом уже существует'
+            });
+        }
+        
+        // Хэшируем пароль (в демо-режиме просто сохраняем как есть)
+        const hashedPassword = password; // В реальном приложении: await bcrypt.hash(password, 10)
+        
+        // Создаем пользователя
+        const result = await pool.query(
+            `INSERT INTO users (nickname, email, password_hash, role, phone, subscription_active, subscription_expiry) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7) 
+             RETURNING id, nickname, email, role, phone, subscription_active, subscription_expiry, created_at`,
+            [
+                nickname,
+                email,
+                hashedPassword,
+                role || 'fan',
+                phone || null,
+                role === 'organizer', // Если организатор - активная подписка
+                role === 'organizer' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null
+            ]
+        );
+        
+        const user = result.rows[0];
+        
+        // Создаем JWT токен
+        const token = jwt.sign(
+            { 
+                userId: user.id, 
+                email: user.email,
+                role: user.role 
+            },
+            SECRET_KEY,
+            { expiresIn: '30d' }
+        );
+        
+        res.json({
+            success: true,
+            user: {
+                id: user.id,
+                nickname: user.nickname,
+                email: user.email,
+                role: user.role,
+                subscriptionActive: user.subscription_active,
+                subscriptionExpiry: user.subscription_expiry,
+                phone: user.phone
+            },
+            token
+        });
+        
+    } catch (error) {
+        console.error('❌ Ошибка регистрации:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера при регистрации' 
+        });
     }
-    
-    query += ' ORDER BY m.date DESC';
-    
-    const result = await pool.query(query, params);
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Ошибка получения матчей:', error);
-    res.status(500).json({ error: error.message });
-  }
 });
 
-// Создание команды
-app.post('/api/teams', async (req, res) => {
-  try {
-    const { name, city, sport, avatar, owner_id } = req.body;
+// Вход
+app.post('/api/auth/login', async (req, res) => {
+    console.log('🔑 Вход пользователя:', req.body.email);
     
-    const result = await pool.query(
-      `INSERT INTO teams (name, city, sport, avatar, owner_id) 
-       VALUES ($1, $2, $3, $4, $5) 
-       RETURNING *`,
-      [name, city, sport, avatar || '⚽', owner_id]
-    );
-    
-    // Создаем капитана (владельца) в таблице игроков
-    await pool.query(
-      `INSERT INTO players (team_id, name, number, role, is_captain)
-       VALUES ($1, $2, $3, $4, true)`,
-      [result.rows[0].id, 'Владелец', 1, 'Капитан']
-    );
-    
-    res.json({ success: true, team: result.rows[0] });
-  } catch (error) {
-    console.error('Ошибка создания команды:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+    try {
+        const { email, password } = req.body;
+        
+        // Ищем пользователя
+        const result = await pool.query(
+            'SELECT * FROM users WHERE email = $1',
+            [email]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(401).json({
+                success: false,
+                error: 'Неверный email или пароль'
+            });
+        }
+        
+        const user = result.rows[0];
+        
+        // Проверяем пароль (в демо-режиме просто сравниваем строки)
+        const isValidPassword = user.password_hash === password; // В реальном приложении: await bcrypt.compare(password, user.password_hash)
+        
+        if (!isValidPassword) {
+            return res.status(401).json({
+                success: false,
+                error: 'Неверный email или пароль'
+            });
+        }
+        
+        // Создаем JWT токен
+        const token = jwt.sign(
+            { 
+                userId: user.id, 
+                email: user.email,
+                role: user.role 
+            },
+            SECRET_KEY,
+            { expiresIn: '30d' }
+        );
+        
+        res.json({
+            success: true,
+            user: {
+                id: user.id,
+                nickname: user.nickname,
+                email: user.email,
+                role: user.role,
+                subscriptionActive: user.subscription_active,
+                subscriptionExpiry: user.subscription_expiry,
+                phone: user.phone
+            },
+            token
+        });
+        
+    } catch (error) {
+        console.error('❌ Ошибка входа:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера при входе' 
+        });
+    }
 });
 
-// Получение команд пользователя
-app.get('/api/users/:userId/teams', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    
-    const result = await pool.query(
-      `SELECT t.*, 
-        COUNT(p.id) as players_count
-       FROM teams t
-       LEFT JOIN players p ON t.id = p.team_id
-       WHERE t.owner_id = $1
-       GROUP BY t.id
-       ORDER BY t.created_at DESC`,
-      [userId]
-    );
-    
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Ошибка получения команд:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Получение деталей команды
-app.get('/api/teams/:teamId', async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    
-    const teamResult = await pool.query(
-      'SELECT * FROM teams WHERE id = $1',
-      [teamId]
-    );
-    
-    const playersResult = await pool.query(
-      'SELECT * FROM players WHERE team_id = $1 ORDER BY number',
-      [teamId]
-    );
-    
-    const matchesResult = await pool.query(
-      `SELECT * FROM matches 
-       WHERE team1_id = $1 OR team2_id = $1
-       ORDER BY date DESC`,
-      [teamId]
-    );
-    
-    res.json({
-      team: teamResult.rows[0],
-      players: playersResult.rows,
-      matches: matchesResult.rows
-    });
-  } catch (error) {
-    console.error('Ошибка получения команды:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Создание матча
-app.post('/api/matches', async (req, res) => {
-  try {
-    const { team_id, opponent_id, date, location, sport } = req.body;
-    
-    const result = await pool.query(
-      `INSERT INTO matches (team1_id, team2_id, date, location, sport) 
-       VALUES ($1, $2, $3, $4, $5) 
-       RETURNING *`,
-      [team_id, opponent_id || null, date, location, sport]
-    );
-    
-    res.json({ success: true, match: result.rows[0] });
-  } catch (error) {
-    console.error('Ошибка создания матча:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// ========== ЗАГРУЗКА СТАТИЧЕСКИХ ФАЙЛОВ ==========
-// Все запросы, которые не API, отправляем на index.html
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api/')) {
-    res.sendFile(path.join(__dirname, 'index.html'));
-  }
+// Проверка токена
+app.get('/api/auth/profile', async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                error: 'Токен не предоставлен'
+            });
+        }
+        
+        const decoded = jwt.verify(token, SECRET_KEY);
+        
+        const result = await pool.query(
+            'SELECT id, nickname, email, role, subscription_active, subscription_expiry, phone, city, created_at FROM users WHERE id = $1',
+            [decoded.userId]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Пользователь не найден'
+            });
+        }
+        
+        res.json({
+            success: true,
+            user: result.rows[0]
+        });
+        
+    } catch (error) {
+        console.error('❌ Ошибка проверки профиля:', error);
+        return res.status(403).json({
+            success: false,
+            error: 'Недействительный токен'
+        });
+    }
 });
 
 // ========== ЗАПУСК СЕРВЕРА ==========
 app.listen(PORT, async () => {
-  console.log(`🚀 Сервер запущен на порту ${PORT}`);
-  console.log(`📡 API доступно по адресу: http://localhost:${PORT}/api`);
-  console.log(`🌐 Фронтенд доступен по адресу: http://localhost:${PORT}`);
-  
-  // Инициализируем базу данных
-  await initDatabase();
-  
-  // Добавляем тестовые данные, если таблицы пустые
-  try {
-    const usersCount = await pool.query('SELECT COUNT(*) FROM users');
-    if (parseInt(usersCount.rows[0].count) === 0) {
-      console.log('📝 Добавляю тестовые данные...');
-      // Здесь можно добавить тестовые данные
+    console.log(`🚀 Сервер запущен на порту ${PORT}`);
+    console.log(`📡 API доступно по адресу: http://localhost:${PORT}/api`);
+    console.log(`🌐 CORS разрешен для всех доменов`);
+    
+    // Инициализируем базу данных
+    await initDatabase();
+    
+    // Проверяем подключение
+    try {
+        const client = await pool.connect();
+        console.log('✅ Подключено к PostgreSQL');
+        client.release();
+    } catch (error) {
+        console.error('❌ Ошибка подключения к PostgreSQL:', error.message);
     }
-  } catch (error) {
-    console.log('Пропускаю добавление тестовых данных');
-  }
-});
-
-// ========== АВТОРИЗАЦИЯ ==========
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const SECRET_KEY = process.env.JWT_SECRET || 'street-league-secret-key-2024';
-
-// Регистрация пользователя
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    const { nickname, email, password, role, phone } = req.body;
-    
-    // Проверяем, существует ли пользователь
-    const existingUser = await pool.query(
-      'SELECT * FROM users WHERE email = $1 OR nickname = $2',
-      [email, nickname]
-    );
-    
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Пользователь с таким email или никнеймом уже существует'
-      });
-    }
-    
-    // Хэшируем пароль
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    
-    // Создаем пользователя
-    const result = await pool.query(
-      `INSERT INTO users (nickname, email, password_hash, role, phone, subscription_active, subscription_expiry) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) 
-       RETURNING id, nickname, email, role, phone, subscription_active, subscription_expiry, created_at`,
-      [
-        nickname,
-        email,
-        hashedPassword,
-        role || 'fan',
-        phone,
-        role === 'organizer', // Если организатор - подписка активна
-        role === 'organizer' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null
-      ]
-    );
-    
-    // Создаем JWT токен
-    const user = result.rows[0];
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email,
-        role: user.role 
-      },
-      SECRET_KEY,
-      { expiresIn: '30d' }
-    );
-    
-    res.json({
-      success: true,
-      user: {
-        id: user.id,
-        nickname: user.nickname,
-        email: user.email,
-        role: user.role,
-        subscriptionActive: user.subscription_active,
-        subscriptionExpiry: user.subscription_expiry,
-        phone: user.phone
-      },
-      token
-    });
-    
-  } catch (error) {
-    console.error('Ошибка регистрации:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Ошибка сервера при регистрации' 
-    });
-  }
-});
-
-// Вход пользователя
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    
-    // Ищем пользователя
-    const result = await pool.query(
-      'SELECT * FROM users WHERE email = $1',
-      [email]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(401).json({
-        success: false,
-        error: 'Неверный email или пароль'
-      });
-    }
-    
-    const user = result.rows[0];
-    
-    // Проверяем пароль
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
-    if (!isValidPassword) {
-      return res.status(401).json({
-        success: false,
-        error: 'Неверный email или пароль'
-      });
-    }
-    
-    // Создаем JWT токен
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email,
-        role: user.role 
-      },
-      SECRET_KEY,
-      { expiresIn: '30d' }
-    );
-    
-    res.json({
-      success: true,
-      user: {
-        id: user.id,
-        nickname: user.nickname,
-        email: user.email,
-        role: user.role,
-        subscriptionActive: user.subscription_active,
-        subscriptionExpiry: user.subscription_expiry,
-        phone: user.phone
-      },
-      token
-    });
-    
-  } catch (error) {
-    console.error('Ошибка входа:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Ошибка сервера при входе' 
-    });
-  }
-});
-
-// Проверка токена (middleware)
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  
-  if (!token) {
-    return res.status(401).json({ 
-      success: false, 
-      error: 'Требуется авторизация' 
-    });
-  }
-  
-  jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) {
-      return res.status(403).json({ 
-        success: false, 
-        error: 'Недействительный токен' 
-      });
-    }
-    req.user = user;
-    next();
-  });
-};
-
-// Получение профиля пользователя
-app.get('/api/auth/profile', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT id, nickname, email, role, subscription_active, subscription_expiry, phone, city, created_at FROM users WHERE id = $1',
-      [req.user.userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Пользователь не найден'
-      });
-    }
-    
-    res.json({
-      success: true,
-      user: result.rows[0]
-    });
-  } catch (error) {
-    console.error('Ошибка получения профиля:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Ошибка сервера' 
-    });
-  }
-});
-
-// Обновление токена (refresh)
-app.post('/api/auth/refresh', (req, res) => {
-  const { token } = req.body;
-  
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      error: 'Токен не предоставлен'
-    });
-  }
-  
-  jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) {
-      return res.status(403).json({
-        success: false,
-        error: 'Недействительный токен'
-      });
-    }
-    
-    // Создаем новый токен
-    const newToken = jwt.sign(
-      { 
-        userId: user.userId, 
-        email: user.email,
-        role: user.role 
-      },
-      SECRET_KEY,
-      { expiresIn: '30d' }
-    );
-    
-    res.json({
-      success: true,
-      token: newToken
-    });
-  });
 });
