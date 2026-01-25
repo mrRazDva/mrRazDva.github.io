@@ -3,6 +3,7 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -17,7 +18,7 @@ const pool = new Pool({
 });
 
 // ========== MIDDLEWARE ==========
-// Разрешаем все CORS запросы
+// CORS для всех доменов
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -30,6 +31,12 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+
+// ========== СТАТИЧЕСКИЕ ФАЙЛЫ ==========
+// Раздаём все статические файлы
+app.use(express.static(__dirname)); // Раздаём файлы из корня
+app.use('/css', express.static(path.join(__dirname, 'css')));
+app.use('/js', express.static(path.join(__dirname, 'js')));
 
 // ========== ПРОВЕРКА ЗДОРОВЬЯ ==========
 app.get('/api/health', (req, res) => {
@@ -44,7 +51,7 @@ app.get('/api/health', (req, res) => {
 // ========== АВТОРИЗАЦИЯ ==========
 const SECRET_KEY = process.env.JWT_SECRET || 'street-league-secret-key-2024';
 
-// Создание таблиц при запуске
+// Создание таблиц при запуске (только для локальной разработки)
 async function initDatabase() {
     try {
         await pool.query(`
@@ -268,27 +275,73 @@ app.get('/api/auth/profile', async (req, res) => {
     }
 });
 
+// Тестовый эндпоинт для проверки базы
+app.get('/api/test-db', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT NOW()');
+        res.json({
+            success: true,
+            message: '✅ Подключение к Supabase успешно',
+            time: result.rows[0].now,
+            environment: process.env.NODE_ENV || 'development'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Тестовый эндпоинт для проверки env переменных
+app.get('/api/check-env', (req, res) => {
+    res.json({
+        hasDbUrl: !!process.env.DATABASE_URL,
+        hasJwtSecret: !!process.env.JWT_SECRET,
+        nodeEnv: process.env.NODE_ENV || 'development'
+    });
+});
+
+// ========== SPA РОУТИНГ ==========
+// Все маршруты, которые не являются API или статикой, отправляем на index.html
+app.get('*', (req, res, next) => {
+    // Если это API запрос - пропускаем дальше
+    if (req.path.startsWith('/api/')) {
+        return next();
+    }
+    
+    // Если запрос к файлу с расширением (css, js, etc.) - пропускаем
+    if (req.path.includes('.')) {
+        return next();
+    }
+    
+    // Все остальные запросы отправляем на index.html
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // ========== ЗАПУСК СЕРВЕРА ==========
 if (process.env.NODE_ENV === 'production') {
-  // Для Vercel Serverless Functions
-  module.exports = app;
+    // Для Vercel Serverless Functions
+    module.exports = app;
 } else {
-  // Для локальной разработки
-  app.listen(PORT, async () => {
-    console.log(`🚀 Сервер запущен на порту ${PORT}`);
-    console.log(`📡 API доступно по адресу: http://localhost:${PORT}/api`);
-    console.log(`🌐 CORS разрешен для всех доменов`);
-    
-    // Инициализируем базу данных
-    await initDatabase();
-    
-    // Проверяем подключение
-    try {
-      const client = await pool.connect();
-      console.log('✅ Подключено к PostgreSQL');
-      client.release();
-    } catch (error) {
-      console.error('❌ Ошибка подключения к PostgreSQL:', error.message);
-    }
-  });
+    // Локальная разработка
+    app.listen(PORT, async () => {
+        console.log(`🚀 Сервер запущен на порту ${PORT}`);
+        console.log(`📡 API доступно по адресу: http://localhost:${PORT}/api`);
+        console.log(`🌍 Фронтенд доступен по адресу: http://localhost:${PORT}`);
+        console.log(`🌐 CORS разрешен для всех доменов`);
+        
+        // Инициализируем базу данных
+        await initDatabase();
+        
+        // Проверяем подключение
+        try {
+            const client = await pool.connect();
+            console.log('✅ Подключено к PostgreSQL (Supabase)');
+            client.release();
+        } catch (error) {
+            console.error('❌ Ошибка подключения к PostgreSQL:', error.message);
+            console.log('💡 Проверьте DATABASE_URL в переменных окружения');
+        }
+    });
 }
