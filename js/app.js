@@ -1,3 +1,4 @@
+// js/app.js - исправленная версия
 const app = {
     currentUser: null,
     selectedRole: 'fan',
@@ -9,22 +10,24 @@ const app = {
     ymapsReady: false,
 
     init() {
-        const saved = utils.storage.get('streetLeagueUser');
-        if (saved) {
-            this.currentUser = saved;
-            this.selectedRole = saved.role;
-            this.showCitySelection();
+        // Загружаем города
+        this.renderCities();
+        
+        // Проверяем авторизацию через authModule
+        if (typeof authModule !== 'undefined' && authModule.isAuthenticated()) {
+            // Показываем главный экран
+            this.showMain();
         } else {
+            // Показываем выбор роли
             screenManager.show('screen-role');
         }
 
+        // Инициализация Яндекс Карт
         if (typeof ymaps !== 'undefined') {
             ymaps.ready(() => {
                 this.ymapsReady = true;
             });
         }
-
-        this.renderCities();
     },
 
     selectRole(role) {
@@ -69,28 +72,63 @@ const app = {
         screenManager.show('screen-role');
     },
 
-    register() {
+    // Регистрация через authModule
+    async register() {
         const nickname = document.getElementById('reg-nickname').value;
         const email = document.getElementById('reg-email').value;
         const password = document.getElementById('reg-password').value;
+        const phone = document.getElementById('reg-phone')?.value;
 
         if (!nickname || !email || !password) {
-            alert('Заполните все поля');
+            alert('Заполните все обязательные поля');
             return;
         }
 
-        this.currentUser = {
-            nickname,
-            email,
-            id: 'user_' + Date.now(),
-            role: this.selectedRole,
-            subscriptionActive: this.selectedRole === 'organizer',
-            subscriptionExpiry: this.selectedRole === 'organizer' ? '2025-12-31' : null,
-            teams: []
-        };
+        // Проверяем пароль
+        if (password.length < 6) {
+            alert('Пароль должен быть не менее 6 символов');
+            return;
+        }
 
-        utils.storage.set('streetLeagueUser', this.currentUser);
-        this.showCitySelection();
+        // Показываем загрузку
+        const regBtn = document.getElementById('reg-btn');
+        const originalText = regBtn.textContent;
+        regBtn.textContent = 'Регистрация...';
+        regBtn.disabled = true;
+
+        try {
+            const userData = {
+                nickname,
+                email,
+                password,
+                role: this.selectedRole,
+                phone: this.selectedRole === 'organizer' ? phone : null
+            };
+
+            const result = await authModule.register(userData);
+
+            if (result.success) {
+                // Регистрация успешна
+                this.currentUser = result.user;
+                
+                // Если организатор, показываем оплату
+                if (this.selectedRole === 'organizer') {
+                    this.showPayment();
+                } else {
+                    // Болельщик - сразу к выбору города
+                    this.showCitySelection();
+                }
+            } else {
+                alert('Ошибка регистрации: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Ошибка регистрации:', error);
+            alert('Ошибка регистрации. Попробуйте позже.');
+        } finally {
+            // Восстанавливаем кнопку
+            regBtn.textContent = originalText;
+            regBtn.disabled = false;
+        }
     },
 
     renderCities() {
@@ -128,39 +166,43 @@ const app = {
     },
 
     showMain() {
-    screenManager.show('screen-main');
-    
-    const avatarLetter = document.getElementById('avatar-letter');
-    const proBadge = document.getElementById('pro-badge');
-    
-    if (avatarLetter) {
-        avatarLetter.textContent = this.currentUser.nickname[0].toUpperCase();
-    }
-
-    const isOrganizer = this.currentUser.role === 'organizer';
-    const hasActiveSub = this.currentUser.subscriptionActive;
-
-    if (proBadge) {
-        proBadge.classList.toggle('hidden', !isOrganizer);
-    }
-
-    // Показываем меню всегда
-    utils.toggleVisibility('bottom-nav', true);
-    
-    // Для болельщиков скрываем "Команды" и "Создать"
-    utils.toggleVisibility('nav-teams-btn', isOrganizer);
-    utils.toggleVisibility('nav-create-btn', isOrganizer && hasActiveSub);
-    
-    // Баннер просрочки только для PRO с истекшей подпиской
-    utils.toggleVisibility('paywall-banner', isOrganizer && !hasActiveSub);
-
-    this.renderMatches();
-},
-
-showHub() {
-    screenManager.show('screen-hub');
-    this.renderHub();
-},
+        screenManager.show('screen-main');
+        
+        // Проверяем, авторизован ли пользователь
+        if (authModule.isAuthenticated()) {
+            const user = authModule.currentUser;
+            
+            // Аватар
+            const avatarLetter = document.getElementById('avatar-letter');
+            if (avatarLetter) {
+                avatarLetter.textContent = user.nickname[0].toUpperCase();
+            }
+            
+            // PRO бейдж
+            const proBadge = document.getElementById('pro-badge');
+            if (proBadge) {
+                proBadge.classList.toggle('hidden', !authModule.isProActive());
+            }
+            
+            // Показываем меню
+            utils.toggleVisibility('bottom-nav', true);
+            
+            // Показываем/скрываем элементы в зависимости от роли
+            utils.toggleVisibility('nav-teams-btn', user.role === 'organizer');
+            utils.toggleVisibility('nav-create-btn', authModule.isProActive());
+            
+            // Баннер просрочки
+            utils.toggleVisibility('paywall-banner', 
+                user.role === 'organizer' && !authModule.isProActive()
+            );
+            
+            // Загружаем матчи
+            this.renderMatches();
+        } else {
+            // Если не авторизован, показываем выбор роли
+            screenManager.show('screen-role');
+        }
+    },
 
     renderMatches() {
         const container = document.getElementById('matches-list');
@@ -300,14 +342,16 @@ showHub() {
             `;
         }
 
-        const canChallenge = this.currentUser.role === 'organizer' && 
-            this.currentUser.subscriptionActive &&
-            !this.currentUser.teams?.includes(match.team1);
+        const canChallenge = authModule.isAuthenticated() && 
+            authModule.hasRole('organizer') &&
+            authModule.isProActive();
         
         utils.toggleVisibility('challenge-section', canChallenge);
 
         setTimeout(() => this.initMap(match.lat, match.lng, match.location), 100);
-        socialModule.showCommentsSection(matchId);
+        if (typeof socialModule !== 'undefined') {
+            socialModule.showCommentsSection(matchId);
+        }
     },
 
     initMap(lat, lng, location) {
@@ -340,6 +384,12 @@ showHub() {
     },
 
     showTeams() {
+        if (!authModule.isAuthenticated()) {
+            alert('Сначала войдите в систему');
+            screenManager.show('screen-role');
+            return;
+        }
+        
         screenManager.show('screen-teams');
         this.renderMyTeams();
     },
@@ -349,7 +399,7 @@ showHub() {
         if (!container) return;
 
         const myTeams = Object.values(mockData.teams).filter(t => 
-            t.owner === this.currentUser.id
+            t.owner === (authModule.currentUser?.id || '')
         );
 
         if (myTeams.length === 0) {
@@ -395,15 +445,11 @@ showHub() {
             wins: 0,
             losses: 0,
             draws: 0,
-            owner: this.currentUser.id,
+            owner: authModule.currentUser?.id || 'demo_user',
             players: [
-                { name: this.currentUser.nickname, number: 10, role: 'Капитан' }
+                { name: authModule.currentUser?.nickname || 'Игрок', number: 10, role: 'Капитан' }
             ]
         };
-
-        if (!this.currentUser.teams) this.currentUser.teams = [];
-        this.currentUser.teams.push(teamId);
-        utils.storage.set('streetLeagueUser', this.currentUser);
 
         this.showTeams();
     },
@@ -412,7 +458,7 @@ showHub() {
         screenManager.show('screen-create-match');
         
         const myTeams = Object.values(mockData.teams).filter(t => 
-            t.owner === this.currentUser.id
+            t.owner === (authModule.currentUser?.id || '')
         );
         
         const teamSelect = document.getElementById('match-team');
@@ -421,7 +467,7 @@ showHub() {
         ).join('');
 
         const opponents = Object.values(mockData.teams).filter(t => 
-            t.owner !== this.currentUser.id && t.city === this.currentCity
+            t.owner !== authModule.currentUser?.id && t.city === this.currentCity
         );
         
         const opponentSelect = document.getElementById('match-opponent');
@@ -463,8 +509,8 @@ showHub() {
     },
 
     challengeTeam() {
-        if (!this.currentUser.teams || this.currentUser.teams.length === 0) {
-            alert('Сначала создайте команду');
+        if (!authModule.isAuthenticated() || !authModule.hasRole('organizer') || !authModule.isProActive()) {
+            alert('Только организаторы с активной подпиской могут бросать вызовы');
             return;
         }
         
@@ -476,51 +522,60 @@ showHub() {
     showProfile() {
         screenManager.show('screen-profile');
         
-        document.getElementById('profile-avatar').textContent = this.currentUser.nickname[0].toUpperCase();
-        document.getElementById('profile-name').textContent = this.currentUser.nickname;
-        
-        const isOrg = this.currentUser.role === 'organizer';
-        document.getElementById('profile-role').textContent = 
-            isOrg ? 'Организатор PRO' : 'Болельщик';
-
-        utils.toggleVisibility('profile-pro-badge', isOrg);
-        utils.show('subscription-card');
-        
-        const statusEl = document.getElementById('sub-status');
-        const dateRow = document.getElementById('sub-date').parentElement;
-        const subBtn = document.querySelector('#subscription-card .btn');
-        
-        if (isOrg) {
-            statusEl.textContent = this.currentUser.subscriptionActive ? 'Активна' : 'Неактивна';
-            statusEl.className = 'info-value ' + (this.currentUser.subscriptionActive ? 'status-active' : 'status-inactive');
-            statusEl.style.color = '';
-            dateRow.style.display = 'flex';
-            document.getElementById('sub-date').textContent = this.currentUser.subscriptionExpiry || '-';
-            subBtn.textContent = 'Продлить';
-            subBtn.onclick = () => this.initiatePayment('renew');
-        } else {
-            statusEl.textContent = 'Базовый';
-            statusEl.className = 'info-value';
-            statusEl.style.color = 'var(--text-secondary)';
-            dateRow.style.display = 'none';
-            subBtn.textContent = 'Перейти на PRO • 299 ₽';
-            subBtn.onclick = () => this.initiatePayment('upgrade');
+        if (authModule.isAuthenticated()) {
+            const user = authModule.currentUser;
+            
+            document.getElementById('profile-avatar').textContent = user.nickname[0].toUpperCase();
+            document.getElementById('profile-name').textContent = user.nickname;
+            document.getElementById('profile-role').textContent = 
+                user.role === 'organizer' ? 'Организатор PRO' : 'Болельщик';
+            
+            // PRO бейдж
+            const proBadge = document.getElementById('profile-pro-badge');
+            if (proBadge) {
+                proBadge.classList.toggle('hidden', user.role !== 'organizer');
+            }
+            
+            // Карточка подписки
+            const subCard = document.getElementById('subscription-card');
+            if (subCard) {
+                subCard.classList.remove('hidden');
+                
+                const statusEl = document.getElementById('sub-status');
+                const dateEl = document.getElementById('sub-date');
+                
+                if (user.role === 'organizer') {
+                    if (user.subscriptionActive && user.subscriptionExpiry) {
+                        const expiryDate = new Date(user.subscriptionExpiry);
+                        const now = new Date();
+                        
+                        if (expiryDate > now) {
+                            statusEl.textContent = 'Активна';
+                            statusEl.className = 'info-value status-active';
+                            dateEl.textContent = expiryDate.toLocaleDateString('ru-RU');
+                        } else {
+                            statusEl.textContent = 'Истекла';
+                            statusEl.className = 'info-value status-inactive';
+                            dateEl.textContent = expiryDate.toLocaleDateString('ru-RU');
+                        }
+                    } else {
+                        statusEl.textContent = 'Неактивна';
+                        statusEl.className = 'info-value status-inactive';
+                        dateEl.textContent = '—';
+                    }
+                } else {
+                    statusEl.textContent = 'Базовый';
+                    statusEl.className = 'info-value';
+                    statusEl.style.color = 'var(--text-secondary)';
+                    dateEl.parentElement.style.display = 'none';
+                }
+            }
         }
     },
 
-    initiatePayment(type) {
-        this.paymentType = type;
+    showPayment() {
+        this.paymentType = 'upgrade';
         document.getElementById('payment-modal').classList.add('active');
-        
-        const title = document.querySelector('#payment-modal .modal-title');
-        if (title) {
-            title.textContent = type === 'upgrade' ? 'Оформление PRO' : 'Продление подписки';
-        }
-        
-        const payBtn = document.querySelector('#payment-modal .btn-gold');
-        if (payBtn) {
-            payBtn.textContent = type === 'upgrade' ? 'Оплатить 299 ₽' : 'Оплатить';
-        }
     },
 
     closePayment() {
@@ -530,27 +585,15 @@ showHub() {
 
     processPayment() {
         setTimeout(() => {
-            if (this.paymentType === 'upgrade') {
-                this.currentUser.role = 'organizer';
-                this.currentUser.subscriptionActive = true;
-                this.currentUser.subscriptionExpiry = '2025-12-31';
-                if (!this.currentUser.teams) this.currentUser.teams = [];
-                
-                alert('Добро пожаловать в PRO! Теперь вы можете создавать команды и матчи.');
-            } else {
-                this.currentUser.subscriptionActive = true;
-                this.currentUser.subscriptionExpiry = '2025-12-31';
-                alert('Подписка успешно продлена!');
+            if (authModule.isAuthenticated()) {
+                authModule.currentUser.subscriptionActive = true;
+                authModule.currentUser.subscriptionExpiry = '2025-12-31';
+                authModule.saveToStorage();
+                alert('Подписка успешно оформлена!');
             }
             
-            utils.storage.set('streetLeagueUser', this.currentUser);
             this.closePayment();
-            
-            if (this.paymentType === 'upgrade') {
-                this.showMain();
-            } else {
-                this.showProfile();
-            }
+            this.showMain();
         }, 500);
     },
 
@@ -569,8 +612,14 @@ showHub() {
     },
 
     logout() {
-        utils.storage.remove('streetLeagueUser');
-        location.reload();
+        if (confirm('Выйти из аккаунта?')) {
+            if (typeof authModule !== 'undefined') {
+                authModule.logout();
+            }
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        }
     },
 
     showHub() {
@@ -723,6 +772,7 @@ showHub() {
     }
 };
 
+// Вспомогательная функция для toggleVisibility
 utils.toggleVisibility = (id, show) => {
     const el = document.getElementById(id);
     if (el) {
@@ -730,6 +780,7 @@ utils.toggleVisibility = (id, show) => {
     }
 };
 
+// Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', () => {
     app.init();
 });

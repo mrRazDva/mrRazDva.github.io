@@ -320,3 +320,233 @@ app.listen(PORT, async () => {
     console.log('Пропускаю добавление тестовых данных');
   }
 });
+
+// ========== АВТОРИЗАЦИЯ ==========
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const SECRET_KEY = process.env.JWT_SECRET || 'street-league-secret-key-2024';
+
+// Регистрация пользователя
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { nickname, email, password, role, phone } = req.body;
+    
+    // Проверяем, существует ли пользователь
+    const existingUser = await pool.query(
+      'SELECT * FROM users WHERE email = $1 OR nickname = $2',
+      [email, nickname]
+    );
+    
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Пользователь с таким email или никнеймом уже существует'
+      });
+    }
+    
+    // Хэшируем пароль
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    
+    // Создаем пользователя
+    const result = await pool.query(
+      `INSERT INTO users (nickname, email, password_hash, role, phone, subscription_active, subscription_expiry) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) 
+       RETURNING id, nickname, email, role, phone, subscription_active, subscription_expiry, created_at`,
+      [
+        nickname,
+        email,
+        hashedPassword,
+        role || 'fan',
+        phone,
+        role === 'organizer', // Если организатор - подписка активна
+        role === 'organizer' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null
+      ]
+    );
+    
+    // Создаем JWT токен
+    const user = result.rows[0];
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        email: user.email,
+        role: user.role 
+      },
+      SECRET_KEY,
+      { expiresIn: '30d' }
+    );
+    
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        nickname: user.nickname,
+        email: user.email,
+        role: user.role,
+        subscriptionActive: user.subscription_active,
+        subscriptionExpiry: user.subscription_expiry,
+        phone: user.phone
+      },
+      token
+    });
+    
+  } catch (error) {
+    console.error('Ошибка регистрации:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Ошибка сервера при регистрации' 
+    });
+  }
+});
+
+// Вход пользователя
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Ищем пользователя
+    const result = await pool.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        success: false,
+        error: 'Неверный email или пароль'
+      });
+    }
+    
+    const user = result.rows[0];
+    
+    // Проверяем пароль
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        success: false,
+        error: 'Неверный email или пароль'
+      });
+    }
+    
+    // Создаем JWT токен
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        email: user.email,
+        role: user.role 
+      },
+      SECRET_KEY,
+      { expiresIn: '30d' }
+    );
+    
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        nickname: user.nickname,
+        email: user.email,
+        role: user.role,
+        subscriptionActive: user.subscription_active,
+        subscriptionExpiry: user.subscription_expiry,
+        phone: user.phone
+      },
+      token
+    });
+    
+  } catch (error) {
+    console.error('Ошибка входа:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Ошибка сервера при входе' 
+    });
+  }
+});
+
+// Проверка токена (middleware)
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Требуется авторизация' 
+    });
+  }
+  
+  jwt.verify(token, SECRET_KEY, (err, user) => {
+    if (err) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Недействительный токен' 
+      });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// Получение профиля пользователя
+app.get('/api/auth/profile', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, nickname, email, role, subscription_active, subscription_expiry, phone, city, created_at FROM users WHERE id = $1',
+      [req.user.userId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Пользователь не найден'
+      });
+    }
+    
+    res.json({
+      success: true,
+      user: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Ошибка получения профиля:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Ошибка сервера' 
+    });
+  }
+});
+
+// Обновление токена (refresh)
+app.post('/api/auth/refresh', (req, res) => {
+  const { token } = req.body;
+  
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      error: 'Токен не предоставлен'
+    });
+  }
+  
+  jwt.verify(token, SECRET_KEY, (err, user) => {
+    if (err) {
+      return res.status(403).json({
+        success: false,
+        error: 'Недействительный токен'
+      });
+    }
+    
+    // Создаем новый токен
+    const newToken = jwt.sign(
+      { 
+        userId: user.userId, 
+        email: user.email,
+        role: user.role 
+      },
+      SECRET_KEY,
+      { expiresIn: '30d' }
+    );
+    
+    res.json({
+      success: true,
+      token: newToken
+    });
+  });
+});
