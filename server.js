@@ -269,7 +269,12 @@ app.get('/api/auth/profile', async (req, res) => {
 });
 
 // ========== ЗАПУСК СЕРВЕРА ==========
-app.listen(PORT, async () => {
+if (process.env.NODE_ENV === 'production') {
+  // Для Vercel Serverless Functions
+  module.exports = app;
+} else {
+  // Для локальной разработки
+  app.listen(PORT, async () => {
     console.log(`🚀 Сервер запущен на порту ${PORT}`);
     console.log(`📡 API доступно по адресу: http://localhost:${PORT}/api`);
     console.log(`🌐 CORS разрешен для всех доменов`);
@@ -279,10 +284,11 @@ app.listen(PORT, async () => {
     
     // Проверяем подключение
     try {
-        const client = await pool.connect();
-        console.log('✅ Подключено к PostgreSQL');
-        client.release();
+      const client = await pool.connect();
+      console.log('✅ Подключено к PostgreSQL');
+      client.release();
     } catch (error) {
-        console.error('❌ Ошибка подключения к PostgreSQL:', error.message);
+      console.error('❌ Ошибка подключения к PostgreSQL:', error.message);
     }
-});
+  });
+}
