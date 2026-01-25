@@ -74,31 +74,31 @@ const authModule = {
   },
   
   // Вход
-  async login(credentials) {
+ async login(credentials) {
     try {
-      const response = await fetch(`${this.API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(credentials)
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        this.currentUser = data.user;
-        this.token = data.token;
-        this.saveToStorage();
-        return { success: true, user: data.user };
-      } else {
-        return { success: false, error: data.error };
-      }
+        const response = await fetch(`${this.API_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(credentials)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            this.currentUser = data.user;
+            this.token = data.token;
+            this.saveToStorage();
+            return { success: true, user: data.user };
+        } else {
+            return { success: false, error: data.error };
+        }
     } catch (error) {
-      console.error('Ошибка входа:', error);
-      return { success: false, error: 'Ошибка сети' };
+        console.error('Ошибка входа:', error);
+        return { success: false, error: 'Ошибка сети' };
     }
-  },
+},
   
   // Выход
   logout() {

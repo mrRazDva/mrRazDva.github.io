@@ -30,6 +30,46 @@ const app = {
         }
     },
 
+ showLogin() {
+        screenManager.show('screen-login');
+    },
+    
+    async handleLogin() {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        if (!email || !password) {
+            alert('Заполните все поля');
+            return;
+        }
+
+        const loginBtn = document.getElementById('login-btn');
+        const originalText = loginBtn.textContent;
+        loginBtn.textContent = 'Вход...';
+        loginBtn.disabled = true;
+
+        try {
+            const result = await authModule.login({ email, password });
+            
+            if (result.success) {
+                this.currentUser = result.user;
+                this.showMain();
+            } else {
+                alert('Ошибка входа: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Ошибка входа:', error);
+            alert('Ошибка входа. Попробуйте позже.');
+        } finally {
+            loginBtn.textContent = originalText;
+            loginBtn.disabled = false;
+        }
+    },
+    
+    showForgotPassword() {
+        alert('Функция восстановления пароля в разработке. Обратитесь к администратору.');
+    },
+
     selectRole(role) {
         this.selectedRole = role;
         
@@ -784,3 +824,4 @@ utils.toggleVisibility = (id, show) => {
 document.addEventListener('DOMContentLoaded', () => {
     app.init();
 });
+

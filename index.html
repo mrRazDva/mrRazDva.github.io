@@ -64,6 +64,9 @@
                 <button class="btn btn-primary" id="continue-btn" onclick="app.goToAuth()">
                     Продолжить
                 </button>
+				<button class="btn btn-secondary" onclick="app.showLogin()" style="margin-top: 10px;">
+    Уже есть аккаунт? Войти
+</button>
             </div>
         </section>
 
@@ -106,46 +109,45 @@
             </div>
         </section>
 
-<!-- Screen: Login -->
 <section id="screen-login" class="screen">
-  <div class="auth-container">
-    <button class="back-btn" onclick="app.backToRole()">
-      <i class="fas fa-arrow-left"></i> Назад
-    </button>
-    
-    <h1 class="logo">ВХОД</h1>
-    <p class="subtitle">Войди в свой аккаунт</p>
+    <div class="auth-container">
+        <button class="back-btn" onclick="app.backToRole()">
+            <i class="fas fa-arrow-left"></i> Назад
+        </button>
+        
+        <h1 class="logo">ВХОД</h1>
+        <p class="subtitle">Войди в свой аккаунт</p>
 
-    <form id="login-form" onsubmit="event.preventDefault(); app.handleLogin();">
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="login-email" placeholder="email@example.com" required>
-      </div>
-      
-      <div class="form-group">
-        <label>Пароль</label>
-        <input type="password" id="login-password" placeholder="••••••••" required>
-        <div style="text-align: right; margin-top: 5px;">
-          <a href="#" onclick="app.showForgotPassword()" style="color: var(--accent-blue); font-size: 0.8rem;">
-            Забыли пароль?
-          </a>
-        </div>
-      </div>
+        <form id="login-form" onsubmit="event.preventDefault(); app.handleLogin();">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="login-email" placeholder="email@example.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Пароль</label>
+                <input type="password" id="login-password" placeholder="••••••••" required>
+                <div style="text-align: right; margin-top: 5px;">
+                    <a href="#" onclick="app.showForgotPassword()" style="color: var(--accent-blue); font-size: 0.8rem;">
+                        Забыли пароль?
+                    </a>
+                </div>
+            </div>
 
-      <button type="submit" class="btn btn-primary" id="login-btn">
-        Войти
-      </button>
-      
-      <div style="text-align: center; margin-top: 20px;">
-        <span style="color: var(--text-secondary); font-size: 0.9rem;">
-          Нет аккаунта? 
-        </span>
-        <a href="#" onclick="app.goToAuth()" style="color: var(--accent-green); font-weight: 500;">
-          Зарегистрироваться
-        </a>
-      </div>
-    </form>
-  </div>
+            <button type="submit" class="btn btn-primary" id="login-btn">
+                Войти
+            </button>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">
+                    Нет аккаунта? 
+                </span>
+                <a href="#" onclick="app.goToAuth()" style="color: var(--accent-green); font-weight: 500;">
+                    Зарегистрироваться
+                </a>
+            </div>
+        </form>
+    </div>
 </section>
 
         <!-- Screen: City -->
