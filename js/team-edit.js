@@ -1,55 +1,121 @@
+// team-edit.js - исправленный
 const teamEditModule = {
     currentTeam: null,
     editingPlayer: null,
     nameChangeCost: 299,
 
-    init() {
-        // Проверяем LocalStorage для отслеживания бесплатной смены названия
-        if (!utils.storage.get('teamNameChanges')) {
-            utils.storage.set('teamNameChanges', {});
+    async show(teamId) {
+        try {
+            // Загружаем команду с игроками
+            const { data: team, error } = await app.supabase
+                .from('teams')
+                .select(`
+                    *,
+                    players:team_players(*)
+                `)
+                .eq('id', teamId)
+                .single();
+
+            if (error) throw error;
+
+            // Проверяем, является ли пользователь владельцем
+            if (team.owner_id !== authModule.getUserId()) {
+                alert('У вас нет прав на редактирование этой команды');
+                return;
+            }
+
+            this.currentTeam = team;
+            this.render();
+            screenManager.show('screen-team-edit');
+            
+        } catch (error) {
+            console.error('❌ Ошибка загрузки команды:', error);
+            alert('Ошибка загрузки команды');
         }
     },
 
-    show(teamId) {
-        const team = mockData.teams[teamId];
-        if (!team || team.owner !== app.currentUser.id) {
-            alert('У вас нет прав на редактирование этой команды');
-            return;
-        }
+    async render() {
+        if (!this.currentTeam) return;
 
-        this.currentTeam = team;
-        this.render();
-        screenManager.show('screen-team-edit');
-    },
-
-    render() {
         // Заполняем форму
         document.getElementById('edit-team-name').value = this.currentTeam.name;
         document.getElementById('edit-team-avatar').value = this.currentTeam.avatar;
         
-        // Проверяем возможность смены названия
-        this.checkNameChangeAvailability();
-
         // Рендерим состав
         this.renderRoster();
+
+        // Проверяем возможность смены названия
+        await this.checkNameChangeAvailability();
     },
 
-    checkNameChangeAvailability() {
-        const nameChanges = utils.storage.get('teamNameChanges') || {};
-        const lastChange = nameChanges[this.currentTeam.id];
+    async checkNameChangeAvailability() {
         const changeBtn = document.getElementById('change-name-btn');
         const changeInfo = document.getElementById('name-change-info');
 
-        if (!lastChange) {
-            // Еще не меняли - можно бесплатно
-            changeInfo.innerHTML = '<span style="color: var(--accent-green);">✓ Бесплатная смена доступна (1 раз в год)</span>';
-            changeBtn.textContent = 'Изменить название';
-            changeBtn.onclick = () => this.changeName(false);
-        } else {
-            const lastDate = new Date(lastChange);
+        try {
+            // Проверяем существование таблицы team_name_changes
+            // Делаем запрос только если app.supabase доступен
+            if (!app.supabase) {
+                console.warn('Supabase недоступен для проверки смены названия');
+                changeInfo.innerHTML = '<span style="color: var(--text-secondary);">Информация о смене названия недоступна</span>';
+                changeBtn.textContent = 'Изменить название';
+                changeBtn.onclick = () => this.changeName(false);
+                return;
+            }
+
+            const { error } = await app.supabase
+                .from('team_name_changes')
+                .select('changed_at')
+                .eq('team_id', this.currentTeam.id)
+                .order('changed_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (error && error.code === 'PGRST116') { // No data found
+                // Еще не меняли - можно бесплатно
+                changeInfo.innerHTML = '<span style="color: var(--accent-green);">✓ Бесплатная смена доступна (1 раз в год)</span>';
+                changeBtn.textContent = 'Изменить название';
+                changeBtn.onclick = () => this.changeName(false);
+                return;
+            } else if (error && error.code === '42P01') { // Table doesn't exist
+                console.warn('Таблица team_name_changes не существует');
+                changeInfo.innerHTML = '<span style="color: var(--text-secondary);">Таблица для отслеживания изменений не настроена</span>';
+                changeBtn.textContent = 'Изменить название';
+                changeBtn.onclick = () => this.changeName(false);
+                return;
+            } else if (error) {
+                // Другие ошибки
+                console.warn('Ошибка проверки смены названия:', error);
+                changeInfo.innerHTML = '<span style="color: var(--text-secondary);">Ошибка проверки данных</span>';
+                changeBtn.textContent = 'Изменить название';
+                changeBtn.onclick = () => this.changeName(false);
+                return;
+            }
+
+            // Если мы здесь, значит данные получены успешно
+            // Код для обработки даты смены названия...
+            // Обратите внимание: в оригинальном коде здесь была ошибка - мы пытались
+            // получить data, но не сохраняли её. Исправим:
+
+            const { data: nameChanges, error: dateError } = await app.supabase
+                .from('team_name_changes')
+                .select('changed_at')
+                .eq('team_id', this.currentTeam.id)
+                .order('changed_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (!nameChanges || !nameChanges.changed_at) {
+                changeInfo.innerHTML = '<span style="color: var(--accent-green);">✓ Бесплатная смена доступна</span>';
+                changeBtn.textContent = 'Изменить название';
+                changeBtn.onclick = () => this.changeName(false);
+                return;
+            }
+
+            const lastDate = new Date(nameChanges.changed_at);
             const now = new Date();
-            const diffTime = Math.abs(now - lastDate);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const diffTime = now - lastDate;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             const daysLeft = 365 - diffDays;
 
             if (daysLeft > 0) {
@@ -63,39 +129,66 @@ const teamEditModule = {
                 changeBtn.textContent = 'Изменить название';
                 changeBtn.onclick = () => this.changeName(false);
             }
+        } catch (error) {
+            console.error('❌ Ошибка проверки смены названия:', error);
+            // В случае ошибки разрешаем смену без проверки
+            changeInfo.innerHTML = '<span style="color: var(--accent-green);">Можно изменить название</span>';
+            changeBtn.textContent = 'Изменить название';
+            changeBtn.onclick = () => this.changeName(false);
         }
     },
 
-    changeName(isPaid) {
+    async changeName(isPaid) {
         const newName = document.getElementById('edit-team-name').value.trim();
         if (!newName || newName === this.currentTeam.name) return;
 
         if (isPaid) {
-            // Списываем деньги (в демо просто показываем алерт)
             if (!confirm(`Списать ${this.nameChangeCost} ₽ для смены названия?`)) return;
+            
+            // Здесь должна быть интеграция с платежной системой
+            // Временно просто обновляем
         }
 
-        // Сохраняем старое название для истории
-        if (!this.currentTeam.nameHistory) this.currentTeam.nameHistory = [];
-        this.currentTeam.nameHistory.push({
-            name: this.currentTeam.name,
-            date: new Date().toISOString()
-        });
+        try {
+            // Обновляем название команды
+            const { error } = await app.supabase
+                .from('teams')
+                .update({ name: newName })
+                .eq('id', this.currentTeam.id);
 
-        // Меняем название
-        this.currentTeam.name = newName;
-        
-        // Запоминаем дату изменения
-        const nameChanges = utils.storage.get('teamNameChanges') || {};
-        nameChanges[this.currentTeam.id] = new Date().toISOString();
-        utils.storage.set('teamNameChanges', nameChanges);
+            if (error) throw error;
 
-        // Обновляем UI
-        this.checkNameChangeAvailability();
-        alert('Название команды изменено!');
-        
-        // Обновляем в списке команд если виден
-        if (app.renderMyTeams) app.renderMyTeams();
+            // Пытаемся записать изменение названия (если таблица существует)
+            try {
+                await app.supabase
+                    .from('team_name_changes')
+                    .insert([{
+                        team_id: this.currentTeam.id,
+                        old_name: this.currentTeam.name,
+                        new_name: newName,
+                        is_paid: isPaid,
+                        changed_at: new Date().toISOString()
+                    }]);
+            } catch (dbError) {
+                console.warn('Не удалось записать историю смены названия:', dbError);
+                // Игнорируем, если таблицы нет
+            }
+
+            // Обновляем текущую команду
+            this.currentTeam.name = newName;
+
+            alert('Название команды изменено!');
+            this.checkNameChangeAvailability();
+
+            // Обновляем в других местах
+            if (typeof app.renderMyTeams === 'function') {
+                await app.renderMyTeams();
+            }
+
+        } catch (error) {
+            console.error('❌ Ошибка смены названия:', error);
+            alert('Ошибка смены названия команды');
+        }
     },
 
     showPaymentForNameChange() {
@@ -126,17 +219,17 @@ const teamEditModule = {
     // Управление составом
     renderRoster() {
         const container = document.getElementById('edit-roster-list');
-        if (!container) return;
+        if (!container || !this.currentTeam.players) return;
 
-        if (!this.currentTeam.players || this.currentTeam.players.length === 0) {
+        if (this.currentTeam.players.length === 0) {
             container.innerHTML = '<div class="empty-state">Нет игроков. Добавьте первого!</div>';
             return;
         }
 
         container.innerHTML = this.currentTeam.players.map((player, index) => `
             <div class="edit-player-card">
-                <div class="player-photo-small" onclick="teamEditModule.changePlayerPhoto(${index})">
-                    ${player.photo ? `<img src="${player.photo}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` : 
+                <div class="player-photo-small" onclick="teamEditModule.changePlayerPhoto('${player.id}')">
+                    ${player.photo_url ? `<img src="${player.photo_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` : 
                       `<i class="fas fa-user" style="color: var(--text-secondary);"></i>`}
                     <div class="photo-overlay"><i class="fas fa-camera"></i></div>
                 </div>
@@ -146,10 +239,10 @@ const teamEditModule = {
                     ${player.info ? `<div class="player-bio">${player.info}</div>` : ''}
                 </div>
                 <div class="player-actions">
-                    <button class="icon-btn" onclick="teamEditModule.editPlayer(${index})">
+                    <button class="icon-btn" onclick="teamEditModule.editPlayer('${player.id}')">
                         <i class="fas fa-pen"></i>
                     </button>
-                    <button class="icon-btn delete" onclick="teamEditModule.deletePlayer(${index})">
+                    <button class="icon-btn delete" onclick="teamEditModule.deletePlayer('${player.id}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -157,54 +250,65 @@ const teamEditModule = {
         `).join('');
     },
 
-showAddPlayerForm() {
-    this.editingPlayer = null;
-    document.getElementById('player-form-title').textContent = 'Новый игрок';
-    document.getElementById('player-name-input').value = '';
-    document.getElementById('player-number-input').value = '';
-    document.getElementById('player-role-input').value = '';
-    document.getElementById('player-info-input').value = '';
-    document.getElementById('player-photo-preview').innerHTML = '<i class="fas fa-user"></i>';
-    
-    // Показываем модал
-    const modal = document.getElementById('player-form-modal');
-    modal.classList.remove('hidden');
-    modal.classList.add('active');
-},
-
-hidePlayerForm() {
-    const modal = document.getElementById('player-form-modal');
-    modal.classList.remove('active');
-    modal.classList.add('hidden');
-    this.editingPlayer = null;
-},
-
-    editPlayer(index) {
-        this.editingPlayer = index;
-        const player = this.currentTeam.players[index];
+    showAddPlayerForm() {
+        this.editingPlayer = null;
+        document.getElementById('player-form-title').textContent = 'Новый игрок';
+        document.getElementById('player-name-input').value = '';
+        document.getElementById('player-number-input').value = '';
+        document.getElementById('player-role-input').value = '';
+        document.getElementById('player-info-input').value = '';
+        document.getElementById('player-photo-preview').innerHTML = '<i class="fas fa-user"></i>';
         
-        document.getElementById('player-form-title').textContent = 'Редактировать игрока';
-        document.getElementById('player-name-input').value = player.name;
-        document.getElementById('player-number-input').value = player.number;
-        document.getElementById('player-role-input').value = player.role;
-        document.getElementById('player-info-input').value = player.info || '';
-        
-        const preview = document.getElementById('player-photo-preview');
-        if (player.photo) {
-            preview.innerHTML = `<img src="${player.photo}" style="width: 100%; height: 100%; object-fit: cover;">`;
-        } else {
-            preview.innerHTML = '<i class="fas fa-user"></i>';
+        const modal = document.getElementById('player-form-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('active');
         }
-        
-        utils.show('player-form-modal');
     },
 
-    savePlayer() {
+    hidePlayerForm() {
+        const modal = document.getElementById('player-form-modal');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.classList.add('hidden');
+        }
+        this.editingPlayer = null;
+    },
+
+    async editPlayer(playerId) {
+        try {
+            const player = this.currentTeam.players.find(p => p.id === playerId);
+            if (!player) return;
+
+            this.editingPlayer = playerId;
+            
+            document.getElementById('player-form-title').textContent = 'Редактировать игрока';
+            document.getElementById('player-name-input').value = player.name;
+            document.getElementById('player-number-input').value = player.number;
+            document.getElementById('player-role-input').value = player.role || '';
+            document.getElementById('player-info-input').value = player.info || '';
+            
+            const preview = document.getElementById('player-photo-preview');
+            if (preview) {
+                if (player.photo_url) {
+                    preview.innerHTML = `<img src="${player.photo_url}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                } else {
+                    preview.innerHTML = '<i class="fas fa-user"></i>';
+                }
+            }
+            
+            this.showPlayerForm();
+
+        } catch (error) {
+            console.error('❌ Ошибка редактирования игрока:', error);
+        }
+    },
+
+    async savePlayer() {
         const name = document.getElementById('player-name-input').value.trim();
         const number = parseInt(document.getElementById('player-number-input').value);
         const role = document.getElementById('player-role-input').value.trim();
         const info = document.getElementById('player-info-input').value.trim();
-        const photoPreview = document.getElementById('player-photo-preview').querySelector('img');
 
         if (!name || !number) {
             alert('Заполните имя и номер');
@@ -212,51 +316,93 @@ hidePlayerForm() {
         }
 
         // Проверяем уникальность номера
-        const exists = this.currentTeam.players.find((p, i) => 
-            p.number === number && i !== this.editingPlayer
+        const exists = this.currentTeam.players.find(p => 
+            p.number === number && p.id !== this.editingPlayer
         );
         if (exists) {
             alert('Игрок с таким номером уже есть в команде');
             return;
         }
 
-        const playerData = {
-            name,
-            number,
-            role: role || 'Игрок',
-            info: info || '',
-            photo: photoPreview ? photoPreview.src : null
-        };
+        try {
+            if (this.editingPlayer) {
+                // Обновляем существующего игрока
+                const { error } = await app.supabase
+                    .from('team_players')
+                    .update({
+                        name,
+                        number,
+                        role: role || 'Игрок',
+                        info: info || '',
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', this.editingPlayer);
 
-        if (this.editingPlayer !== null) {
-            // Редактируем существующего
-            this.currentTeam.players[this.editingPlayer] = playerData;
-        } else {
-            // Добавляем нового
-            if (!this.currentTeam.players) this.currentTeam.players = [];
-            this.currentTeam.players.push(playerData);
+                if (error) throw error;
+            } else {
+                // Добавляем нового игрока
+                const { error } = await app.supabase
+                    .from('team_players')
+                    .insert([{
+                        team_id: this.currentTeam.id,
+                        name,
+                        number,
+                        role: role || 'Игрок',
+                        info: info || '',
+                        created_at: new Date().toISOString()
+                    }]);
+
+                if (error) throw error;
+            }
+
+            // Обновляем список игроков
+            await this.loadTeamPlayers();
+            this.hidePlayerForm();
+
+        } catch (error) {
+            console.error('❌ Ошибка сохранения игрока:', error);
+            alert('Ошибка сохранения игрока: ' + error.message);
         }
-
-        // Сортируем по номерам
-        this.currentTeam.players.sort((a, b) => a.number - b.number);
-
-        this.hidePlayerForm();
-        this.renderRoster();
     },
 
-    deletePlayer(index) {
+    async deletePlayer(playerId) {
         if (!confirm('Удалить игрока из команды?')) return;
         
-        this.currentTeam.players.splice(index, 1);
-        this.renderRoster();
+        try {
+            const { error } = await app.supabase
+                .from('team_players')
+                .delete()
+                .eq('id', playerId);
+
+            if (error) throw error;
+
+            // Обновляем список игроков
+            await this.loadTeamPlayers();
+
+        } catch (error) {
+            console.error('❌ Ошибка удаления игрока:', error);
+            alert('Ошибка удаления игрока');
+        }
     },
 
-    hidePlayerForm() {
-        utils.hide('player-form-modal');
-        this.editingPlayer = null;
+    async loadTeamPlayers() {
+        try {
+            const { data: players, error } = await app.supabase
+                .from('team_players')
+                .select('*')
+                .eq('team_id', this.currentTeam.id)
+                .order('number');
+
+            if (error) throw error;
+
+            this.currentTeam.players = players;
+            this.renderRoster();
+
+        } catch (error) {
+            console.error('❌ Ошибка загрузки игроков:', error);
+        }
     },
 
-    // Загрузка фото
     handlePhotoUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -269,45 +415,103 @@ hidePlayerForm() {
         const reader = new FileReader();
         reader.onload = (e) => {
             const preview = document.getElementById('player-photo-preview');
-            preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            if (preview) {
+                preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            }
+            
+            // Здесь можно загрузить фото на Supabase Storage
+            // и сохранить URL в базе данных
         };
         reader.readAsDataURL(file);
     },
 
-    changePlayerPhoto(index) {
-        // Для простоты используем input type=file через клик
+    async changePlayerPhoto(playerId) {
+        // Для простоты используем input type=file
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
-        input.onchange = (e) => {
+        input.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
             
+            // Здесь должна быть загрузка в Supabase Storage
+            // и обновление player.photo_url
+            
+            // Временно просто обновляем локально
             const reader = new FileReader();
             reader.onload = (ev) => {
-                this.currentTeam.players[index].photo = ev.target.result;
-                this.renderRoster();
+                // Находим игрока и обновляем фото
+                const player = this.currentTeam.players.find(p => p.id === playerId);
+                if (player) {
+                    player.photo_url = ev.target.result;
+                    this.renderRoster();
+                }
             };
             reader.readAsDataURL(file);
         };
         input.click();
     },
 
-    saveTeamChanges() {
-        // Сохраняем изменения в mockData (в реальном приложении - API запрос)
+    async saveTeamChanges() {
+        // Сохраняем изменения аватара
+        const avatar = document.getElementById('edit-team-avatar').value;
+        if (avatar !== this.currentTeam.avatar) {
+            try {
+                const { error } = await app.supabase
+                    .from('teams')
+                    .update({ avatar })
+                    .eq('id', this.currentTeam.id);
+
+                if (error) throw error;
+                
+                this.currentTeam.avatar = avatar;
+            } catch (error) {
+                console.error('❌ Ошибка обновления аватара:', error);
+            }
+        }
+
         alert('Изменения сохранены!');
         
         // Обновляем отображение в других модулях
         if (teamModule.currentTeam?.id === this.currentTeam.id) {
-            teamModule.currentTeam = this.currentTeam;
+            await teamModule.show(this.currentTeam.id);
         }
         
-        if (app.renderMyTeams) app.renderMyTeams();
+        if (app.renderMyTeams) await app.renderMyTeams();
         screenManager.show('screen-teams');
+    },
+
+    showPlayerForm() {
+        const modal = document.getElementById('player-form-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('active');
+        }
+    },
+
+    // Добавим простую инициализацию, которая будет вызвана из app.js
+    init: async function() {
+        try {
+            // Проверяем существование таблицы team_name_changes
+            // Ждем, пока app.supabase будет доступен
+            if (!app.supabase) {
+                console.warn('Supabase еще не инициализирован, пропускаем инициализацию teamEditModule');
+                return;
+            }
+            
+            const { error } = await app.supabase
+                .from('team_name_changes')
+                .select('*')
+                .limit(1);
+
+            if (error && error.code === '42P01') {
+                console.log('Таблица team_name_changes не существует');
+            }
+        } catch (error) {
+            console.error('❌ Ошибка инициализации teamEditModule:', error);
+        }
     }
 };
 
-// Инициализация при загрузке
-document.addEventListener('DOMContentLoaded', () => {
-    teamEditModule.init();
-});
+// УДАЛИТЕ весь блок с DOMContentLoaded внизу файла
+// Он был причиной ошибки, так как пытался использовать app.supabase до его инициализации

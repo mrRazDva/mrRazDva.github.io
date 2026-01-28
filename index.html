@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="./css/reset.css">
     <link rel="stylesheet" href="./css/components.css">
     <link rel="stylesheet" href="./css/screens.css">
-    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://api-maps.yandex.ru/2.1/?apikey=ваш_api_ключ&lang=ru_RU"></script>
 </head>
 <body>
@@ -312,6 +312,70 @@
                     <button type="submit" class="btn btn-primary">Создать матч</button>
                 </form>
             </div>
+			<!-- После поля "Место" -->
+<div class="form-group">
+    <label>Выбрать место на карте</label>
+    <button type="button" class="btn btn-secondary" onclick="app.openMapForLocation()" style="width: 100%;">
+        <i class="fas fa-map-marker-alt"></i> Открыть карту для выбора
+    </button>
+</div>
+
+<div id="location-coordinates" style="margin-top: 10px; font-size: 0.9rem; color: var(--text-secondary);">
+    Координаты не выбраны
+</div>
+
+<!-- Скрытые поля для координат -->
+<input type="hidden" id="match-lat">
+<input type="hidden" id="match-lng">
+
+<!-- Модальное окно для выбора на карте -->
+<div id="location-picker-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="width: 95%; height: 90%; max-width: 1000px; padding: 0;">
+        <div class="modal-header" style="margin-bottom: 0;">
+            <h3 class="modal-title">Выберите место на карте</h3>
+            <button class="close-btn" onclick="app.closeLocationPicker()">&times;</button>
+        </div>
+        
+        <!-- Вертикальная компоновка: карта сверху, форма снизу -->
+        <div style="display: flex; flex-direction: column; height: calc(100% - 60px); gap: 0;">
+            <!-- Карта (занимает 70% высоты) -->
+            <div id="location-map" style="flex: 7; min-height: 300px; border-radius: 0;"></div>
+            
+            <!-- Форма (занимает 30% высоты) -->
+            <div style="flex: 3; background: var(--bg-card); padding: 20px; overflow-y: auto; border-top: 1px solid var(--border-color);">
+                <h4 style="margin-bottom: 15px;">Информация о месте</h4>
+                
+                <div class="form-group">
+                    <label>Название места</label>
+                    <input type="text" id="location-name" placeholder="Например: Стадион 'Белкино'">
+                </div>
+                
+                <div class="form-group">
+                    <label>Адрес</label>
+                    <textarea id="location-address" rows="2" placeholder="Улица, дом, район..."></textarea>
+                </div>
+                
+                <div id="selected-coordinates" class="info-box" style="margin: 15px 0; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <div style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 5px;">Координаты</div>
+                    <div id="coordinates-text" style="font-family: monospace; font-size: 0.9rem; color: var(--accent-green);">Не выбраны</div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="app.confirmLocation()" style="flex: 1;">
+                        <i class="fas fa-check"></i> Выбрать это место
+                    </button>
+                    <button class="btn btn-secondary" onclick="app.closeLocationPicker()" style="flex: 1;">
+                        Отмена
+                    </button>
+                </div>
+                
+                <div style="margin-top: 15px; color: var(--text-secondary); font-size: 0.8rem; text-align: center;">
+                    <i class="fas fa-info-circle"></i> Кликните на карте, чтобы выбрать место проведения матча
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
         </section>
 
         <!-- Screen: Match Detail -->
@@ -585,7 +649,7 @@
         <span>Профиль</span>
     </button>
 </nav>
-	
+	<script src="./js/supabase-client.js"></script>
     <script src="./js/data.js"></script>
     <script src="./js/utils.js"></script>
     <script src="./js/screens.js"></script>
