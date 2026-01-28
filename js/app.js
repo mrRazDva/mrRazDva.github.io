@@ -76,16 +76,119 @@ const app = {
         return navigationModule.showLogin();
     },
     
-    handleLogin() {
-        return navigationModule.handleLogin();
+    // Исправлено: теперь вызываем authModule.login вместо navigationModule.handleLogin
+    async handleLogin() {
+        try {
+            // Собираем данные из формы входа
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            // Валидация
+            if (!email || !password) {
+                alert('Пожалуйста, введите email и пароль');
+                return;
+            }
+
+            // Вызываем метод входа из authModule
+            const result = await authModule.login({
+                email,
+                password
+            });
+
+            if (result.success) {
+                // Успешный вход - authModule автоматически обновит состояние и перенаправит
+                console.log('✅ Вход выполнен успешно');
+
+                // Обновляем UI
+                if (typeof navigationModule !== 'undefined' && navigationModule.updateUserUI) {
+                    navigationModule.updateUserUI();
+                }
+
+                // Показываем главный экран
+                setTimeout(() => {
+                    if (typeof navigationModule !== 'undefined' && navigationModule.showMain) {
+                        navigationModule.showMain();
+                    }
+                }, 100);
+            } else {
+                alert('Ошибка входа: ' + (result.error || 'Неизвестная ошибка'));
+            }
+
+        } catch (error) {
+            console.error('❌ Ошибка в методе handleLogin:', error);
+            alert('Произошла ошибка при входе в систему');
+        }
     },
     
-    showForgotPassword() {
-        return navigationModule.showForgotPassword();
+    // Исправлено: теперь вызываем authModule.resetPassword вместо navigationModule.showForgotPassword
+    async showForgotPassword() {
+        // Запрашиваем email у пользователя через prompt (временное решение)
+        const email = prompt('Введите ваш email для восстановления пароля:');
+        if (email) {
+            const result = await authModule.resetPassword(email);
+            if (result.success) {
+                alert('Инструкции по сбросу пароля отправлены на ваш email');
+            } else {
+                alert('Ошибка: ' + result.error);
+            }
+        }
     },
     
-    register() {
-        return navigationModule.register();
+    // Исправлено: теперь вызываем authModule.register вместо navigationModule.register
+    async register() {
+        try {
+            // Собираем данные из формы
+            const nickname = document.getElementById('reg-nickname').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const phone = document.getElementById('reg-phone').value;
+            const role = this.selectedRole;
+            
+            // Валидация
+            if (!nickname || !email || !password) {
+                alert('Пожалуйста, заполните все обязательные поля');
+                return;
+            }
+            
+            if (password.length < 6) {
+                alert('Пароль должен быть не менее 6 символов');
+                return;
+            }
+            
+            // Вызываем метод регистрации из authModule
+            const result = await authModule.register({
+                nickname,
+                email,
+                password,
+                role,
+                phone: phone || null
+            });
+            
+            if (result.success) {
+                // Успешная регистрация - authModule автоматически перенаправит пользователя
+                console.log('✅ Регистрация успешна:', result.message);
+                
+                // Обновляем UI
+                if (typeof navigationModule !== 'undefined' && navigationModule.updateUserUI) {
+                    navigationModule.updateUserUI();
+                }
+                
+                // Если пользователь выбрал роль организатора, показываем платежное окно
+                if (role === 'organizer') {
+                    setTimeout(() => {
+                        if (typeof navigationModule !== 'undefined' && navigationModule.showPayment) {
+                            navigationModule.showPayment();
+                        }
+                    }, 500);
+                }
+            } else {
+                alert('Ошибка регистрации: ' + (result.error || 'Неизвестная ошибка'));
+            }
+            
+        } catch (error) {
+            console.error('❌ Ошибка в методе register:', error);
+            alert('Произошла ошибка при регистрации');
+        }
     },
     
     showCitySelection() {

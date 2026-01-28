@@ -2,7 +2,6 @@
 const authModule = {
     supabase: null,
     currentUser: null,
-    isDemoMode: false,
     
     async init() {
         try {
@@ -26,31 +25,14 @@ const authModule = {
         }
     },
   
-    // ========== РЕГИСТРАЦИЯ (универсальная) ==========
+    // ========== РЕГИСТРАЦИЯ ==========
     async register(userData) {
         try {
             const { nickname, email, password, role, phone } = userData;
             
             console.log('📝 Регистрация пользователя:', { nickname, email, role });
             
-            if (this.isDemoMode) {
-                // Демо-регистрация
-                const result = await this.supabase.auth.signUp({
-                    email,
-                    password,
-                    options: {
-                        data: { nickname, role, phone }
-                    }
-                });
-                
-                return {
-                    success: true,
-                    user: this.currentUser,
-                    message: 'Демо-регистрация успешна!'
-                };
-            }
-            
-            // Реальная регистрация в Supabase
+            // Регистрация в Supabase
             const { data: authData, error: authError } = await this.supabase.auth.signUp({
                 email,
                 password,
@@ -129,27 +111,22 @@ const authModule = {
                         : null,
                     phone: phone || null
                 },
-                message: 'Регистрация успешна!'
+                message: 'Регистрация успешна! Проверьте email для подтверждения.'
             };
             
         } catch (error) {
             console.error('❌ Ошибка регистрации:', error);
             
-            // Пробуем демо-режим как запасной вариант
-            if (!this.isDemoMode) {
-                console.log('🔄 Пробуем демо-регистрацию...');
-                this.isDemoMode = true;
-                return await this.register(userData);
-            }
-            
             let errorMessage = error.message;
             
-            if (error.message.includes('already registered')) {
+            if (error.message.includes('already registered') || error.message.includes('User already registered')) {
                 errorMessage = 'Пользователь с таким email уже существует';
-            } else if (error.message.includes('password')) {
+            } else if (error.message.includes('password') || error.message.includes('Password')) {
                 errorMessage = 'Пароль должен быть не менее 6 символов';
-            } else if (error.message.includes('email')) {
+            } else if (error.message.includes('email') || error.message.includes('Email')) {
                 errorMessage = 'Неверный формат email';
+            } else if (error.message.includes('Failed to fetch') || error.message.includes('Network error')) {
+                errorMessage = 'Проблемы с подключением к серверу. Проверьте интернет-соединение.';
             }
             
             return {
@@ -159,28 +136,14 @@ const authModule = {
         }
     },
     
-    // ========== ВХОД (универсальный) ==========
+    // ========== ВХОД ==========
     async login(credentials) {
         try {
             const { email, password } = credentials;
             
             console.log('🔑 Вход пользователя:', email);
             
-            if (this.isDemoMode) {
-                // Демо-вход
-                const result = await this.supabase.auth.signInWithPassword({
-                    email,
-                    password
-                });
-                
-                return {
-                    success: true,
-                    user: this.currentUser,
-                    session: result.data?.session
-                };
-            }
-            
-            // Реальный вход в Supabase
+            // Вход в Supabase
             const { data, error } = await this.supabase.auth.signInWithPassword({
                 email,
                 password
@@ -202,18 +165,16 @@ const authModule = {
         } catch (error) {
             console.error('❌ Ошибка входа:', error);
             
-            // Пробуем демо-режим как запасной вариант
-            if (!this.isDemoMode) {
-                console.log('🔄 Пробуем демо-вход...');
-                this.isDemoMode = true;
-                return await this.login(credentials);
-            }
-            
             let errorMessage = error.message;
+            
             if (error.message.includes('Invalid login credentials')) {
                 errorMessage = 'Неверный email или пароль';
             } else if (error.message.includes('Email not confirmed')) {
-                errorMessage = 'Подтвердите email перед входом';
+                errorMessage = 'Подтвердите email перед входом. Проверьте вашу почту.';
+            } else if (error.message.includes('Failed to fetch') || error.message.includes('Network error')) {
+                errorMessage = 'Проблемы с подключением к серверу. Проверьте интернет-соединение.';
+            } else if (error.message.includes('rate limit') || error.message.includes('too many requests')) {
+                errorMessage = 'Слишком много попыток входа. Попробуйте позже.';
             }
             
             return {
@@ -274,11 +235,6 @@ const authModule = {
             }
             
             if (!userId) return null;
-            
-            // Если в демо-режиме, возвращаем текущего пользователя
-            if (this.isDemoMode && this.currentUser) {
-                return this.currentUser;
-            }
             
             const { data: profile, error } = await this.supabase
                 .from('profiles')
@@ -420,11 +376,6 @@ const authModule = {
             return false;
         }
         
-        // В демо-режиме всегда активна для организаторов
-        if (this.isDemoMode && this.currentUser.role === 'organizer') {
-            return true;
-        }
-        
         if (!this.currentUser.subscription_active) {
             return false;
         }
@@ -467,11 +418,6 @@ const authModule = {
                 case 'SIGNED_OUT':
                     this.currentUser = null;
                     console.log('👋 Пользователь вышел');
-                    
-                    // Очищаем демо-данные
-                    if (this.isDemoMode) {
-                        utils.storage.remove('demo_user');
-                    }
                     
                     // Возвращаем на экран выбора роли
                     if (typeof screenManager !== 'undefined') {
@@ -536,25 +482,6 @@ const authModule = {
             console.error('❌ Ошибка проверки email:', error);
             return { available: false, error: error.message };
         }
-    },
-    
-    // ========== ИНИЦИАЛИЗАЦИЯ ДЕМО-РЕЖИМА ==========
-    initDemoMode() {
-        this.isDemoMode = true;
-        
-        // Создаем демо-пользователя
-        this.currentUser = {
-            id: 'demo-user',
-            nickname: 'Демо',
-            email: 'demo@example.com',
-            role: 'fan',
-            subscriptionActive: false,
-            subscriptionExpiry: null,
-            phone: null,
-            created_at: new Date().toISOString()
-        };
-        
-        console.log('🔄 Включен демо-режим');
     }
 };
 
