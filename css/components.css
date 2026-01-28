@@ -2467,7 +2467,5 @@ input[type="datetime-local"] {
     }
 }
 
-.modal-overlay.active ~ #bottom-nav {
-    display: none !important;
-}
+
 /* ƒл€ старых браузеров без :has() - запасной вариант через inline-styles в JS */
