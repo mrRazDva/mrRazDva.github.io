@@ -20,86 +20,89 @@ const mapModule = {
     },
     
     // Инициализация карты на экране деталей матча
-initMap(lat, lng, location) {
-    if (!this.ymapsReady) {
-        setTimeout(() => this.initMap(lat, lng, location), 500);
-        return;
-    }
-    
-    const mapContainer = document.getElementById('map');
-    if (!mapContainer) return;
-    
-    if (this.map) {
-        this.map.destroy();
-    }
-    
-    // Устанавливаем фиксированную высоту
-    mapContainer.style.height = '250px';
-    mapContainer.style.minHeight = '250px';
-    
-    this.map = new ymaps.Map("map", {
-        center: [lat, lng],
-        zoom: 15,
-        controls: ['zoomControl']
-    });
-    
-    const placemark = new ymaps.Placemark([lat, lng], {
-        hintContent: location,
-        balloonContent: `<strong>${location}</strong>`
-    }, {
-        preset: 'islands#greenDotIconWithCaption'
-    });
-    
-    this.map.geoObjects.add(placemark);
-    this.map.behaviors.disable('scrollZoom');
-},
+    initMap(lat, lng, location) {
+        if (!this.ymapsReady) {
+            setTimeout(() => this.initMap(lat, lng, location), 500);
+            return;
+        }
+        
+        const mapContainer = document.getElementById('map');
+        if (!mapContainer) return;
+        
+        if (this.map) {
+            this.map.destroy();
+        }
+        
+        // Устанавливаем фиксированную высоту
+        mapContainer.style.height = '250px';
+        mapContainer.style.minHeight = '250px';
+        
+        this.map = new ymaps.Map("map", {
+            center: [lat, lng],
+            zoom: 15,
+            controls: ['zoomControl']
+        });
+        
+        const placemark = new ymaps.Placemark([lat, lng], {
+            hintContent: location,
+            balloonContent: `<strong>${location}</strong>`
+        }, {
+            preset: 'islands#greenDotIconWithCaption'
+        });
+        
+        this.map.geoObjects.add(placemark);
+        this.map.behaviors.disable('scrollZoom');
+    },
     
     // Метод открытия карты для выбора местоположения
-openMapForLocation() {
-    const modal = document.getElementById('location-picker-modal');
-    modal.classList.remove('hidden');
-    modal.classList.add('active');
+    openMapForLocation() {
+        const modal = document.getElementById('location-picker-modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+        
+        // Скрываем нижнее меню
+        this.hideBottomNav();
+        
+        setTimeout(() => {
+            this.initLocationMap();
+        }, 100);
+    },
     
-    setTimeout(() => {
-        this.initLocationMap();
-    }, 100);
-},
-
-// Инициализация карты для выбора места
-initLocationMap() {
-    if (!this.ymapsReady) {
-        alert('Карты загружаются. Попробуйте через пару секунд.');
-        return;
-    }
-    
-    const mapContainer = document.getElementById('location-map');
-    if (!mapContainer) return;
-    
-    // Устанавливаем высоту контейнера в соответствии с новым дизайном
-    mapContainer.style.minHeight = '250px';
-    mapContainer.style.height = '100%';
-    
-    const city = this.app.cities[this.app.currentCity];
-    const center = city ? [city.lat, city.lng] : [55.7558, 37.6173];
-    
-    this.locationMap = new ymaps.Map("location-map", {
-        center: center,
-        zoom: 13,
-        controls: ['zoomControl', 'searchControl', 'fullscreenControl']
-    });
-    
-    this.locationMap.events.add('click', (e) => {
-        this.handleMapClick(e);
-    });
-    
-    const lat = document.getElementById('match-lat').value;
-    const lng = document.getElementById('match-lng').value;
-    
-    if (lat && lng) {
-        this.showSelectedPoint([parseFloat(lat), parseFloat(lng)]);
-        this.reverseGeocode([parseFloat(lat), parseFloat(lng)]);
-    }
-},
+    // Инициализация карты для выбора места
+    initLocationMap() {
+        if (!this.ymapsReady) {
+            alert('Карты загружаются. Попробуйте через пару секунд.');
+            return;
+        }
+        
+        const mapContainer = document.getElementById('location-map');
+        if (!mapContainer) return;
+        
+        // Устанавливаем высоту контейнера в соответствии с новым дизайном
+        mapContainer.style.minHeight = '250px';
+        mapContainer.style.height = '100%';
+        
+        const city = this.app.cities[this.app.currentCity];
+        const center = city ? [city.lat, city.lng] : [55.7558, 37.6173];
+        
+        this.locationMap = new ymaps.Map("location-map", {
+            center: center,
+            zoom: 13,
+            controls: ['zoomControl', 'searchControl', 'fullscreenControl']
+        });
+        
+        this.locationMap.events.add('click', (e) => {
+            this.handleMapClick(e);
+        });
+        
+        const lat = document.getElementById('match-lat').value;
+        const lng = document.getElementById('match-lng').value;
+        
+        if (lat && lng) {
+            this.showSelectedPoint([parseFloat(lat), parseFloat(lng)]);
+            this.reverseGeocode([parseFloat(lat), parseFloat(lng)]);
+        }
+    },
     
     // Обработка клика на карту
     handleMapClick(e) {
@@ -130,7 +133,11 @@ initLocationMap() {
         });
     },
     
-    
+    // Обновление отображения координат
+    updateCoordinatesDisplay(coords) {
+        // Если нужно отображать координаты в каком-то элементе
+        // document.getElementById('coordinates-text').textContent = coords.join(', ');
+    },
     
     // Обратное геокодирование (получение адреса по координатам)
     reverseGeocode(coords) {
@@ -170,7 +177,6 @@ initLocationMap() {
         
         this.locationMap.geoObjects.add(this.selectedPlacemark);
         this.locationMap.setCenter(coords, 15);
-        
     },
     
     // Подтверждение выбора места
@@ -207,6 +213,9 @@ initLocationMap() {
         modal.classList.remove('active');
         modal.classList.add('hidden');
         
+        // Показываем нижнее меню обратно
+        this.showBottomNav();
+        
         if (this.locationMap) {
             this.locationMap.destroy();
             this.locationMap = null;
@@ -215,6 +224,21 @@ initLocationMap() {
         
         document.getElementById('location-name').value = '';
         document.getElementById('location-address').value = '';
-        
+    },
+    
+    // Скрыть нижнее меню
+    hideBottomNav() {
+        const bottomNav = document.getElementById('bottom-nav');
+        if (bottomNav) {
+            bottomNav.classList.add('hidden');
+        }
+    },
+    
+    // Показать нижнее меню
+    showBottomNav() {
+        const bottomNav = document.getElementById('bottom-nav');
+        if (bottomNav && this.app.currentUser) { // Показываем только если пользователь авторизован
+            bottomNav.classList.remove('hidden');
+        }
     }
 };
