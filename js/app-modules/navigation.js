@@ -260,6 +260,126 @@ const navigationModule = {
         }
     },
     
+	async updateChallengesNotification() {
+    try {
+        const userId = authModule.getUserId();
+        if (!userId) return;
+        
+        // Получаем матчи пользователя, где он владелец команды 1
+        const { data: userTeams, error: teamsError } = await app.supabase
+            .from('teams')
+            .select('id')
+            .eq('owner_id', userId);
+        
+        if (teamsError) throw teamsError;
+        
+        if (!userTeams || userTeams.length === 0) return;
+        
+        const teamIds = userTeams.map(t => t.id);
+        
+        // Получаем матчи, где пользователь владелец команды 1
+        const { data: userMatches, error: matchesError } = await app.supabase
+            .from('matches')
+            .select('id')
+            .in('team1', teamIds)
+            .is('team2', null); // Только открытые матчи
+        
+        if (matchesError) throw matchesError;
+        
+        if (!userMatches || userMatches.length === 0) return;
+        
+        const matchIds = userMatches.map(m => m.id);
+        
+        // Получаем количество вызовов для матчей пользователя
+        const { data: challenges, error: challengesError } = await app.supabase
+            .from('challenges')
+            .select('match_id')
+            .eq('status', 'pending')
+            .in('match_id', matchIds);
+        
+        if (challengesError) throw challengesError;
+        
+        const totalChallenges = challenges ? challenges.length : 0;
+        
+        // Обновляем бейдж в навигации
+        this.updateNavChallengeBadge(totalChallenges);
+        
+    } catch (error) {
+        console.error('❌ Ошибка обновления уведомлений о вызовах:', error);
+    }
+},
+
+updateNavChallengeBadge(count) {
+    if (count === 0) {
+        // Удаляем бейдж, если он есть
+        const existingBadge = document.querySelector('.nav-challenges-badge');
+        if (existingBadge) {
+            existingBadge.remove();
+        }
+        return;
+    }
+    
+    // Находим кнопку матчей в навигации
+    const matchesNavItem = document.querySelector('[data-screen="main"]');
+    if (!matchesNavItem) return;
+    
+    // Проверяем, есть ли уже бейдж
+    let badge = matchesNavItem.querySelector('.nav-challenges-badge');
+    
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'nav-challenges-badge';
+        badge.style.cssText = `
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--accent-pink);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            animation: badgePulse 2s infinite;
+            border: 2px solid var(--bg-primary);
+            z-index: 1;
+        `;
+        matchesNavItem.style.position = 'relative';
+        matchesNavItem.appendChild(badge);
+    }
+    
+    badge.textContent = count > 9 ? '9+' : count;
+    badge.title = `${count} ${this.pluralizeChallenges(count)}`;
+},
+
+pluralizeChallenges(count) {
+    const mod10 = count % 10;
+    const mod100 = count % 100;
+    
+    if (mod100 >= 11 && mod100 <= 14) {
+        return 'вызовов';
+    }
+    if (mod10 === 1) {
+        return 'вызов';
+    }
+    if (mod10 >= 2 && mod10 <= 4) {
+        return 'вызова';
+    }
+    return 'вызовов';
+},
+
+// Вызываем эту функцию при загрузке главного экрана
+showMain() {
+    screenManager.show('screen-main');
+    this.updateUserUI();
+    matchesModule.renderMatches();
+    this.updateChallengesNotification(); // Добавляем вызов здесь
+},
+	
+	
     // ========== UI ОБНОВЛЕНИЯ ==========
     
     updateUserUI() {

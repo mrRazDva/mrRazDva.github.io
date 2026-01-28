@@ -283,6 +283,8 @@ const app = {
     renderMyTeams() {
         return teamsModule.renderMyTeams();
     },
+	
+	
     
     // Комментарии и реакции
     addComment(matchId, text) {

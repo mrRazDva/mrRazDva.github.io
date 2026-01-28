@@ -425,6 +425,16 @@ input:focus, select:focus, textarea:focus {
     margin-bottom: 12px;
 }
 
+.match-header-left {
+    display: flex;
+    gap: 8px;
+}
+
+.match-header-right {
+    display: flex;
+    gap: 8px;
+}
+
 .sport-badge {
     display: inline-flex;
     align-items: center;
@@ -433,17 +443,21 @@ input:focus, select:focus, textarea:focus {
     background: rgba(0, 204, 255, 0.1);
     color: var(--accent-blue);
     border-radius: 8px;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .match-status {
-    font-size: 0.7rem;
-    padding: 3px 8px;
+    font-size: 0.65rem;
+    padding: 4px 10px;
     border-radius: 8px;
     font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
+    min-width: 60px;
+    text-align: center;
 }
 
 .status-upcoming {
@@ -454,12 +468,70 @@ input:focus, select:focus, textarea:focus {
 .status-live {
     background: rgba(255, 0, 102, 0.2);
     color: var(--accent-pink);
-    animation: pulse 2s infinite;
+    animation: livePulse 2s infinite;
 }
 
-@keyframes pulse {
+@keyframes livePulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+    50% { opacity: 0.7; }
+}
+
+.status-finished {
+    background: rgba(0, 255, 136, 0.2);
+    color: var(--accent-green);
+}
+
+.status-cancelled {
+    background: rgba(136, 136, 136, 0.2);
+    color: var(--text-secondary);
+}
+
+/* Бейдж вызовов в стиле других бейджей */
+.status-challenges {
+    background: rgba(255, 0, 102, 0.2);
+    color: var(--accent-pink);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    animation: firePulse 1.5s infinite alternate;
+}
+
+.status-challenges i {
+    font-size: 0.6rem;
+}
+
+@keyframes firePulse {
+    from { 
+        opacity: 0.8;
+        transform: scale(1);
+    }
+    to { 
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+/* Для карточек с вызовами - тонкое выделение */
+.match-card.has-challenges {
+    position: relative;
+    overflow: hidden;
+}
+
+.match-card.has-challenges::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background: var(--accent-pink);
+    opacity: 0.5;
+    transition: opacity 0.3s;
+}
+
+.match-card.has-challenges:hover::before {
+    opacity: 0.8;
 }
 
 .teams-row {
@@ -635,8 +707,6 @@ input:focus, select:focus, textarea:focus {
 .fab {
     display: none !important;
 }
-
-
 
 /* Modal */
 .modal-overlay {
@@ -864,6 +934,149 @@ input:focus, select:focus, textarea:focus {
     background: var(--bg-secondary);
 }
 
+/* Стили для карты в модальном окне выбора места */
+#location-picker-modal .modal-content {
+    border-radius: 16px;
+    overflow: hidden;
+    padding: 0;
+}
+
+#location-picker-modal .map-container {
+    margin: 0;
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    height: 300px;
+    min-height: 250px;
+    flex: 1;
+}
+
+/* Адаптивность карты в модальном окне */
+@media (max-height: 700px) {
+    #location-picker-modal .map-container {
+        height: 220px;
+        min-height: 200px;
+    }
+}
+
+@media (max-height: 600px) {
+    #location-picker-modal .map-container {
+        height: 180px;
+        min-height: 180px;
+    }
+}
+
+/* Улучшенные стили для модального окна карты */
+#location-picker-modal .modal-header {
+    background: var(--bg-card);
+    padding: 20px;
+    margin: 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#location-picker-modal .modal-header .modal-title {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+#location-picker-modal .close-btn {
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+}
+
+/* Стили для формы в модальном окне карты */
+#location-picker-modal .form-group {
+    margin-bottom: 15px;
+}
+
+#location-picker-modal label {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+    display: block;
+    color: var(--text-secondary);
+}
+
+#location-picker-modal input,
+#location-picker-modal textarea {
+    padding: 12px;
+    font-size: 0.95rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    width: 100%;
+}
+
+#location-picker-modal input:focus,
+#location-picker-modal textarea:focus {
+    border-color: var(--accent-green);
+    box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+    outline: none;
+}
+
+/* Стили для блока координат */
+#selected-coordinates {
+    margin: 15px 0;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+#selected-coordinates div:first-child {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+}
+
+#coordinates-text {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: var(--accent-green);
+    font-weight: 500;
+}
+
+/* Кнопки в модальном окне карты */
+#location-picker-modal .btn {
+    padding: 12px;
+    font-size: 0.95rem;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+#location-picker-modal .btn-primary {
+    background: var(--accent-green);
+    color: #000;
+    border: none;
+}
+
+#location-picker-modal .btn-secondary {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+#location-picker-modal .btn-primary:hover {
+    opacity: 0.9;
+}
+
+#location-picker-modal .btn-secondary:hover {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+}
+
+/* Стили для подсказки внизу модального окна */
+#location-picker-modal .info-hint {
+    margin-top: 12px;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+#location-picker-modal .info-hint i {
+    margin-right: 5px;
+}
+
 /* Challenge Section */
 .challenge-section {
     margin-top: 20px;
@@ -922,6 +1135,7 @@ input:focus, select:focus, textarea:focus {
 
 .city-card::before {
     content: '';
+;
     position: absolute;
     top: 0;
     left: 0;
@@ -1417,6 +1631,15 @@ textarea {
     .role-option { font-size: 0.8rem; padding: 10px; }
     .form-row { grid-template-columns: 1fr; }
     .match-info { font-size: 0.75rem; }
+    
+    /* На очень маленьких экранах скрываем текст в бейдже вызовов, оставляем только иконку */
+    .status-challenges span {
+        display: none;
+    }
+    
+    .status-challenges i {
+        font-size: 0.7rem;
+    }
 }
 
 @media (min-width: 768px) {
@@ -1920,6 +2143,118 @@ textarea {
     white-space: nowrap;
 }
 
+/* Стили для кнопок вызовов (принять/отклонить) */
+.btn-success {
+    background: linear-gradient(135deg, var(--accent-green), #00cc6a);
+    color: #000;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--accent-pink), #cc0052);
+    color: white;
+}
+
+/* Карточка вызова */
+.challenge-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: var(--transition);
+}
+
+.challenge-card:hover {
+    border-color: var(--accent-green);
+    transform: translateY(-2px);
+}
+
+.challenge-team {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.team-avatar.small {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+}
+
+.team-info {
+    flex: 1;
+}
+
+.challenge-message {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.challenge-time {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.challenge-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.challenges-container {
+    margin: 20px 0;
+}
+
+.challenges-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Контейнер вызовов в деталях матча */
+#challenges-section {
+    margin: 25px 0;
+    padding: 20px;
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border);
+}
+
+#challenges-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+#challenges-section h3 i {
+    color: var(--accent-pink);
+}
+
+/* Плашка-предупреждение о командах с активными вызовами */
+.challenge-warning {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    color: #ffc107;
+    font-size: 0.85rem;
+}
+
 /* Адаптивное меню: когда скрыты кнопки, оставшиеся растягиваются */
 .bottom-nav {
     display: flex;
@@ -1927,7 +2262,7 @@ textarea {
     align-items: center;
 }
 
-/* Когда видны только 3 кнопки (болельщик) */
+/* Когда видно только 3 кнопки (болельщик) */
 .bottom-nav:has(.nav-item:not(.hidden)) .nav-item:not(.hidden) {
     flex: 1;
 }
@@ -1950,5 +2285,185 @@ textarea {
     position: relative;
     min-width: 60px; /* Минимальная ширина для удобства нажатия */
 }
+/* Красивое модальное окно с картой */
+#location-picker-modal .modal-content {
+    animation: modalSlideIn 0.3s ease-out;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
 
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+#location-picker-modal .close-btn {
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 300;
+}
+
+#location-picker-modal .close-btn:hover {
+    background: rgba(0, 0, 0, 0.3) !important;
+    transform: rotate(90deg);
+}
+
+/* Стили для полей ввода в модальном окне */
+.modal-input {
+    width: 100%;
+    padding: 14px 16px !important;
+    background: var(--bg-secondary) !important;
+    border: 2px solid var(--border) !important;
+    border-radius: 10px !important;
+    color: var(--text-primary) !important;
+    font-size: 0.95rem !important;
+    transition: all 0.3s ease !important;
+    font-family: var(--font-body) !important;
+}
+
+.modal-input:focus {
+    border-color: var(--accent-green) !important;
+    box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.15) !important;
+    outline: none !important;
+    transform: translateY(-1px);
+}
+
+.modal-input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.modal-textarea {
+    width: 100%;
+    padding: 14px 16px !important;
+    background: var(--bg-secondary) !important;
+    border: 2px solid var(--border) !important;
+    border-radius: 10px !important;
+    color: var(--text-primary) !important;
+    font-size: 0.95rem !important;
+    transition: all 0.3s ease !important;
+    font-family: var(--font-body) !important;
+    resize: vertical;
+    min-height: 80px;
+}
+
+.modal-textarea:focus {
+    border-color: var(--accent-green) !important;
+    box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.15) !important;
+    outline: none !important;
+    transform: translateY(-1px);
+}
+
+/* Стили для карты в модальном окне */
+#location-picker-modal .map-container {
+    position: relative;
+}
+
+#location-picker-modal .map-container::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-green), var(--accent-blue));
+    z-index: 10;
+}
+
+/* Эффекты наведения для кнопок */
+#location-picker-modal .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4) !important;
+}
+
+#location-picker-modal .btn-secondary:hover {
+    border-color: var(--accent-blue) !important;
+    color: var(--accent-blue) !important;
+    transform: translateY(-2px);
+}
+
+/* Анимация выбора координат */
+@keyframes coordinatePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.coordinate-selected {
+    animation: coordinatePulse 0.3s ease;
+}
+/* Исправления для поля datetime-local */
+input[type="datetime-local"] {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+/* Исправления для выравнивания кнопок и полей */
+.form-group .btn-secondary {
+    height: 48px;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px;
+    white-space: nowrap;
+}
+
+/* Улучшение для flex-контейнера поля места */
+.form-group > div {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.form-group > div input {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Для мобильных устройств */
+@media (max-width: 480px) {
+    .form-group > div {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .form-group > div .btn-secondary {
+        width: 100%;
+    }
+}
+/* Адаптивность */
+@media (max-height: 700px) {
+    #location-picker-modal .modal-content {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    #location-map {
+        height: 200px !important;
+    }
+}
+
+/* Темная тема для модального окна */
+@media (prefers-color-scheme: dark) {
+    #location-picker-modal .modal-content {
+        background: rgba(30, 30, 30, 0.95) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+}
 /* Для старых браузеров без :has() - запасной вариант через inline-styles в JS */
