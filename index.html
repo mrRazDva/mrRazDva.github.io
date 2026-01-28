@@ -406,17 +406,17 @@
                     </div>
 
                    <div class="comment-input-area">
-                        <div class="comment-input-wrapper">
-                            <input type="text" 
-                                   id="comment-input" 
-                                   placeholder="Написать комментарий..." 
-                                   maxlength="200"
-                                   onkeypress="if(event.key === 'Enter') socialModule.addComment(app.selectedMatch.id, this.value)">
-                            <button class="send-btn" onclick="socialModule.addComment(app.selectedMatch.id, document.getElementById('comment-input').value)">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
-                    </div>
+    <div class="comment-input-wrapper">
+        <input type="text" 
+               id="comment-input" 
+               placeholder="Написать комментарий..." 
+               maxlength="200"
+               onkeypress="if(event.key === 'Enter') app.addComment(app.selectedMatch.id, this.value)">
+        <button class="send-btn" onclick="app.addComment(app.selectedMatch.id, document.getElementById('comment-input').value)">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
                 </div>
             </div>
         </section>
@@ -650,13 +650,19 @@
     </button>
 </nav>
 	<script src="./js/supabase-client.js"></script>
-    <script src="./js/data.js"></script>
-    <script src="./js/utils.js"></script>
-    <script src="./js/screens.js"></script>
-    <script src="./js/team.js"></script>
-    <script src="./js/team-edit.js"></script>
-    <script src="./js/social.js"></script>
-    <script src="./js/app.js"></script>
+	<script src="./js/data.js"></script>
+	<script src="./js/utils.js"></script>
+	<script src="./js/screens.js"></script>
+	<script src="./js/team.js"></script>
+	<script src="./js/team-edit.js"></script>
+	<script src="./js/app.js"></script>
 	<script src="./js/auth.js"></script>
+	<script src="./js/app-modules/init.js"></script>
+	<script src="./js/app-modules/navigation.js"></script>
+	<script src="./js/app-modules/matches.js"></script>
+	<script src="./js/app-modules/teams.js"></script>
+	<script src="./js/app-modules/events.js"></script>
+	<script src="./js/app-modules/comments.js"></script>
+	<script src="./js/app-modules/map.js"></script>
 </body>
 </html>
