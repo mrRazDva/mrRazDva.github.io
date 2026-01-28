@@ -2467,5 +2467,21 @@ input[type="datetime-local"] {
     }
 }
 
+/* Скрытие нижнего меню при открытом модальном окне с картой */
+#location-picker-modal.active ~ #bottom-nav,
+#location-picker-modal.active ~ #bottom-nav {
+    display: none !important;
+}
 
+/* Гарантируем, что модальное окно перекрывает всё */
+#location-picker-modal.active {
+    z-index: 3000;
+}
+
+/* Для тёмной темы */
+@media (prefers-color-scheme: dark) {
+    #location-picker-modal.active ~ #bottom-nav {
+        display: none !important;
+    }
+}
 /* Для старых браузеров без :has() - запасной вариант через inline-styles в JS */
