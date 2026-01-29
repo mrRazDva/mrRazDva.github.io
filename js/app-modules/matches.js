@@ -775,86 +775,94 @@ async renderMatches() {
             document.getElementById('confirm-challenge').onclick = async () => {
                 const teamId = document.getElementById('challenge-team-select').value;
                 const message = document.getElementById('challenge-message').value;
-                const confirmBtn = document.getElementById('confirm-challenge');
                 
                 try {
-                    confirmBtn.disabled = true;
-                    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
-                    
-                    // Сначала пытаемся обновить существующую rejected запись
-                    const { error: updateError } = await this.app.supabase
+                    // Проверяем, есть ли уже вызов от этой команды на этот матч
+                    const { data: existingChallenge, error: checkError } = await this.app.supabase
                         .from('challenges')
-                        .update({
-                            status: 'pending',
-                            message: message.trim() || null,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString()
-                        })
+                        .select('id, status')
                         .eq('match_id', this.app.selectedMatch.id)
                         .eq('from_team_id', teamId)
-                        .eq('status', 'rejected');
+                        .maybeSingle();
                     
-                    if (updateError) {
-                        console.log('Не удалось обновить rejected запись:', updateError.message);
-                        
-                        // Пытаемся создать новую запись
-                        const { error: insertError } = await this.app.supabase
-                            .from('challenges')
-                            .insert([{
-                                match_id: this.app.selectedMatch.id,
-                                from_team_id: teamId,
-                                status: 'pending',
-                                message: message.trim() || null,
-                                created_at: new Date().toISOString()
-                            }]);
-                        
-                        if (insertError) {
-                            if (insertError.code === '23505') {
-                                // Дублирование - проверяем текущий статус
-                                const { data: existing, error: checkError } = await this.app.supabase
+                    if (checkError) {
+                        console.error('❌ Ошибка проверки вызова:', checkError);
+                        alert('Ошибка проверки существующего вызова');
+                        document.body.removeChild(dialog);
+                        return;
+                    }
+                    
+                    if (existingChallenge) {
+                        // Вызов уже существует
+                        if (existingChallenge.status === 'pending') {
+                            alert('Вы уже отправили вызов на этот матч и он ожидает рассмотрения.');
+                            document.body.removeChild(dialog);
+                            return;
+                        } else if (existingChallenge.status === 'accepted') {
+                            alert('Ваш вызов уже был принят для этого матча.');
+                            document.body.removeChild(dialog);
+                            return;
+                        } else if (existingChallenge.status === 'rejected') {
+                            // Если вызов был отклонен, спрашиваем, отправить ли заново
+                            if (confirm('Ваш предыдущий вызов был отклонен. Хотите отправить новый вызов?')) {
+                                // Обновляем существующий вызов
+                                const { error: updateError } = await this.app.supabase
                                     .from('challenges')
-                                    .select('status')
-                                    .eq('match_id', this.app.selectedMatch.id)
-                                    .eq('from_team_id', teamId)
-                                    .maybeSingle();
+                                    .update({
+                                        status: 'pending',
+                                        message: message.trim() || null,
+                                        created_at: new Date().toISOString()
+                                    })
+                                    .eq('id', existingChallenge.id);
                                 
-                                if (!checkError && existing) {
-                                    const statusMessages = {
-                                        'pending': 'Ваш вызов уже ожидает рассмотрения.',
-                                        'accepted': 'Ваш вызов уже был принят.',
-                                        'rejected': 'Попробуйте обновить страницу и отправить вызов заново.'
-                                    };
-                                    alert(statusMessages[existing.status] || 'Вызов уже существует.');
+                                if (updateError) {
+                                    console.error('❌ Ошибка обновления вызова:', updateError);
+                                    alert('Ошибка обновления вызова: ' + updateError.message);
                                 } else {
-                                    alert('Этот вызов уже существует. Пожалуйста, подождите рассмотрения.');
+                                    alert('Новый вызов отправлен!');
+                                    document.body.removeChild(dialog);
+                                    
+                                    // Обновляем отображение вызовов если пользователь владелец матча
+                                    if (this.app.selectedMatch.team1?.owner_id === userId) {
+                                        await this.renderChallenges(this.app.selectedMatch.id);
+                                    }
                                 }
                             } else {
-                                throw insertError;
+                                document.body.removeChild(dialog);
                             }
-                        } else {
-                            alert('Вызов отправлен! Ожидайте подтверждения.');
+                            return;
                         }
+                        document.body.removeChild(dialog);
+                        return;
+                    }
+                    
+                    // Если вызова нет - создаем новый
+                    const { error: insertError } = await this.app.supabase
+                        .from('challenges')
+                        .insert([{
+                            match_id: this.app.selectedMatch.id,
+                            from_team_id: teamId,
+                            status: 'pending',
+                            message: message.trim() || null,
+                            created_at: new Date().toISOString()
+                        }]);
+                    
+                    if (insertError) {
+                        console.error('❌ Ошибка отправки вызова:', insertError);
+                        alert('Ошибка отправки вызова: ' + insertError.message);
                     } else {
-                        // Успешно обновили rejected запись
-                        alert('Вызов обновлен и снова отправлен!');
+                        alert('Вызов отправлен! Ожидайте подтверждения.');
+                        document.body.removeChild(dialog);
+                        
+                        // Обновляем отображение вызовов если пользователь владелец матча
+                        if (this.app.selectedMatch.team1?.owner_id === userId) {
+                            await this.renderChallenges(this.app.selectedMatch.id);
+                        }
                     }
-                    
-                    // Обновляем UI
-                    const userId = authModule.getUserId();
-                    if (this.app.selectedMatch.team1?.owner_id === userId) {
-                        await this.renderChallenges(this.app.selectedMatch.id);
-                    }
-                    
-                    document.body.removeChild(dialog);
-                    
-                    // Обновляем список матчей, чтобы показать обновленный бейдж
-                    this.renderMatches();
                     
                 } catch (error) {
                     console.error('❌ Ошибка отправки вызова:', error);
-                    confirmBtn.disabled = false;
-                    confirmBtn.innerHTML = 'Отправить вызов';
-                    alert('Ошибка: ' + (error.message || 'Не удалось отправить вызов'));
+                    alert('Ошибка отправки вызова: ' + error.message);
                 }
             };
             
@@ -909,9 +917,6 @@ async renderMatches() {
             // Обновляем отображение матча
             await this.showMatchDetail(matchId);
             
-            // Обновляем список матчей, чтобы убрать бейдж
-            this.renderMatches();
-            
         } catch (error) {
             console.error('❌ Ошибка принятия вызова:', error);
             alert('Ошибка принятия вызова: ' + error.message);
@@ -946,9 +951,6 @@ async renderMatches() {
                     challengesSection.classList.add('hidden');
                 }
             }
-            
-            // Обновляем список матчей, чтобы обновить бейдж
-            this.renderMatches();
             
         } catch (error) {
             console.error('❌ Ошибка отклонения вызова:', error);

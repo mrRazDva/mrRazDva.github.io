@@ -255,9 +255,9 @@ input:focus, select:focus, textarea:focus {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    padding: 10px 0;  /* Убрал горизонтальные padding, оставил только вертикальные */
-    background: transparent;  /* Прозрачный фон вместо var(--bg-primary) */
-    position: relative;  /* Убрал sticky, чтобы не было наложения */
+    padding: 10px 0;  /* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ padding, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
+    background: transparent;  /* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ var(--bg-primary) */
+    position: relative;  /* пїЅпїЅпїЅпїЅпїЅ sticky, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
     top: auto;
     z-index: 10;
 }
@@ -486,7 +486,7 @@ input:focus, select:focus, textarea:focus {
     color: var(--text-secondary);
 }
 
-/* Бейдж вызовов в стиле других бейджей */
+/* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 .status-challenges {
     background: rgba(255, 0, 102, 0.2);
     color: var(--accent-pink);
@@ -512,7 +512,7 @@ input:focus, select:focus, textarea:focus {
     }
 }
 
-/* Для карточек с вызовами - тонкое выделение */
+/* пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 .match-card.has-challenges {
     position: relative;
     overflow: hidden;
@@ -635,7 +635,7 @@ input:focus, select:focus, textarea:focus {
         inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Базовый стиль для ВСЕХ кнопок */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ */
 .nav-item {
     flex: 1;
     height: 100%;
@@ -667,13 +667,13 @@ input:focus, select:focus, textarea:focus {
     transition: all 0.2s ease;
 }
 
-/* Hover эффект */
+/* Hover пїЅпїЅпїЅпїЅпїЅпїЅ */
 .nav-item:hover {
     color: rgba(255, 255, 255, 0.8);
     background: rgba(255, 255, 255, 0.05);
 }
 
-/* Active состояние (текущая страница) */
+/* Active пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ) */
 .nav-item.active {
     color: var(--accent-green);
     background: rgba(0, 255, 136, 0.1);
@@ -684,7 +684,7 @@ input:focus, select:focus, textarea:focus {
     filter: drop-shadow(0 4px 8px rgba(0, 255, 136, 0.3));
 }
 
-/* Центральная кнопка "Создать" — только акцент цветом, без градиента */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ" пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 .nav-item-create {
     color: var(--accent-pink);
 }
@@ -703,7 +703,7 @@ input:focus, select:focus, textarea:focus {
     transform: scale(0.95);
 }
 
-/* FAB больше не нужен */
+/* FAB пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ */
 .fab {
     display: none !important;
 }
@@ -934,7 +934,7 @@ input:focus, select:focus, textarea:focus {
     background: var(--bg-secondary);
 }
 
-/* Стили для карты в модальном окне выбора места */
+/* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ */
 #location-picker-modal .modal-content {
     border-radius: 16px;
     overflow: hidden;
@@ -951,7 +951,7 @@ input:focus, select:focus, textarea:focus {
     flex: 1;
 }
 
-/* Адаптивность карты в модальном окне */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ */
 @media (max-height: 700px) {
     #location-picker-modal .map-container {
         height: 220px;
@@ -966,7 +966,7 @@ input:focus, select:focus, textarea:focus {
     }
 }
 
-/* Улучшенные стили для модального окна карты */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ */
 #location-picker-modal .modal-header {
     background: var(--bg-card);
     padding: 20px;
@@ -984,7 +984,7 @@ input:focus, select:focus, textarea:focus {
     font-size: 1.5rem;
 }
 
-/* Стили для формы в модальном окне карты */
+/* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ */
 #location-picker-modal .form-group {
     margin-bottom: 15px;
 }
@@ -1014,7 +1014,7 @@ input:focus, select:focus, textarea:focus {
     outline: none;
 }
 
-/* Стили для блока координат */
+/* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 #selected-coordinates {
     margin: 15px 0;
     padding: 12px;
@@ -1036,7 +1036,7 @@ input:focus, select:focus, textarea:focus {
     font-weight: 500;
 }
 
-/* Кнопки в модальном окне карты */
+/* пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ */
 #location-picker-modal .btn {
     padding: 12px;
     font-size: 0.95rem;
@@ -1065,7 +1065,7 @@ input:focus, select:focus, textarea:focus {
     color: var(--accent-blue);
 }
 
-/* Стили для подсказки внизу модального окна */
+/* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ */
 #location-picker-modal .info-hint {
     margin-top: 12px;
     color: var(--text-secondary);
@@ -1632,7 +1632,7 @@ textarea {
     .form-row { grid-template-columns: 1fr; }
     .match-info { font-size: 0.75rem; }
     
-    /* На очень маленьких экранах скрываем текст в бейдже вызовов, оставляем только иконку */
+    /* пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ */
     .status-challenges span {
         display: none;
     }
@@ -1644,7 +1644,7 @@ textarea {
 
 @media (min-width: 768px) {
     .screen {
-    padding-top: calc(10px + env(safe-area-inset-top));  /* Уменьшил с 20px до 10px */
+    padding-top: calc(10px + env(safe-area-inset-top));  /* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ 20px пїЅпїЅ 10px */
 }
     
     .matches-list {
@@ -2143,7 +2143,7 @@ textarea {
     white-space: nowrap;
 }
 
-/* Стили для кнопок вызовов (принять/отклонить) */
+/* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅ/пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ) */
 .btn-success {
     background: linear-gradient(135deg, var(--accent-green), #00cc6a);
     color: #000;
@@ -2154,7 +2154,7 @@ textarea {
     color: white;
 }
 
-/* Карточка вызова */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ */
 .challenge-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -2221,7 +2221,7 @@ textarea {
     gap: 12px;
 }
 
-/* Контейнер вызовов в деталях матча */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ */
 #challenges-section {
     margin: 25px 0;
     padding: 20px;
@@ -2244,7 +2244,7 @@ textarea {
     color: var(--accent-pink);
 }
 
-/* Плашка-предупреждение о командах с активными вызовами */
+/* пїЅпїЅпїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 .challenge-warning {
     background: rgba(255, 193, 7, 0.1);
     border: 1px solid rgba(255, 193, 7, 0.3);
@@ -2255,19 +2255,19 @@ textarea {
     font-size: 0.85rem;
 }
 
-/* Адаптивное меню: когда скрыты кнопки, оставшиеся растягиваются */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 .bottom-nav {
     display: flex;
     justify-content: space-around;
     align-items: center;
 }
 
-/* Когда видно только 3 кнопки (болельщик) */
+/* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ 3 пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ) */
 .bottom-nav:has(.nav-item:not(.hidden)) .nav-item:not(.hidden) {
     flex: 1;
 }
 
-/* Равномерное распределение для любого количества кнопок */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ */
 .nav-item {
     flex: 1;
     display: flex;
@@ -2283,9 +2283,9 @@ textarea {
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    min-width: 60px; /* Минимальная ширина для удобства нажатия */
+    min-width: 60px; /* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 }
-/* Красивое модальное окно с картой */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ */
 #location-picker-modal .modal-content {
     animation: modalSlideIn 0.3s ease-out;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -2319,7 +2319,7 @@ textarea {
     transform: rotate(90deg);
 }
 
-/* Стили для полей ввода в модальном окне */
+/* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ */
 .modal-input {
     width: 100%;
     padding: 14px 16px !important;
@@ -2365,7 +2365,7 @@ textarea {
     transform: translateY(-1px);
 }
 
-/* Стили для карты в модальном окне */
+/* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ */
 #location-picker-modal .map-container {
     position: relative;
 }
@@ -2381,7 +2381,7 @@ textarea {
     z-index: 10;
 }
 
-/* Эффекты наведения для кнопок */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ */
 #location-picker-modal .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4) !important;
@@ -2393,7 +2393,7 @@ textarea {
     transform: translateY(-2px);
 }
 
-/* Анимация выбора координат */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 @keyframes coordinatePulse {
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
@@ -2403,7 +2403,7 @@ textarea {
 .coordinate-selected {
     animation: coordinatePulse 0.3s ease;
 }
-/* Исправления для поля datetime-local */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ datetime-local */
 input[type="datetime-local"] {
     width: 100%;
     max-width: 100%;
@@ -2413,7 +2413,7 @@ input[type="datetime-local"] {
     -moz-appearance: none;
 }
 
-/* Исправления для выравнивания кнопок и полей */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ */
 .form-group .btn-secondary {
     height: 48px;
     min-height: 48px;
@@ -2424,7 +2424,7 @@ input[type="datetime-local"] {
     white-space: nowrap;
 }
 
-/* Улучшение для flex-контейнера поля места */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ flex-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ */
 .form-group > div {
     display: flex;
     gap: 10px;
@@ -2436,7 +2436,7 @@ input[type="datetime-local"] {
     min-width: 0;
 }
 
-/* Для мобильных устройств */
+/* пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 @media (max-width: 480px) {
     .form-group > div {
         flex-direction: column;
@@ -2447,7 +2447,7 @@ input[type="datetime-local"] {
         width: 100%;
     }
 }
-/* Адаптивность */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 @media (max-height: 700px) {
     #location-picker-modal .modal-content {
         max-height: 90vh;
@@ -2459,7 +2459,7 @@ input[type="datetime-local"] {
     }
 }
 
-/* Темная тема для модального окна */
+/* пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ */
 @media (prefers-color-scheme: dark) {
     #location-picker-modal .modal-content {
         background: rgba(30, 30, 30, 0.95) !important;
@@ -2467,26 +2467,26 @@ input[type="datetime-local"] {
     }
 }
 
-/* Скрытие нижнего меню при открытом модальном окне с картой */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ */
 #location-picker-modal.active ~ #bottom-nav,
 #location-picker-modal.active ~ #bottom-nav {
     display: none !important;
 }
 
-/* Гарантируем, что модальное окно перекрывает всё */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ */
 #location-picker-modal.active {
     z-index: 3000;
 }
 
-/* Для тёмной темы */
+/* пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ */
 @media (prefers-color-scheme: dark) {
     #location-picker-modal.active ~ #bottom-nav {
         display: none !important;
     }
 }
-/* Для старых браузеров без :has() - запасной вариант через inline-styles в JS */
+/* пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ :has() - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ inline-styles пїЅ JS */
 
-/* Стили для редактора матча */
+/* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ */
 .score-editor {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -2579,7 +2579,7 @@ input[type="datetime-local"] {
     margin-top: 5px;
 }
 
-/* Предупреждения */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 .warnings-container {
     background: rgba(255, 193, 7, 0.1);
     border: 1px solid rgba(255, 193, 7, 0.3);
@@ -2604,7 +2604,7 @@ input[type="datetime-local"] {
     font-size: 0.8rem;
 }
 
-/* Кнопки состояния */
+/* пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 .btn-warning {
     background: linear-gradient(135deg, #ffc107, #ff9800);
     color: #000;
@@ -2622,7 +2622,7 @@ input[type="datetime-local"] {
 
 
 
-/* Стили для отображения счета в карточках матчей */
+/* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ */
 .match-score-display {
     font-family: var(--font-display);
     font-size: 1.4rem;
@@ -2668,7 +2668,7 @@ input[type="datetime-local"] {
     font-weight: 400;
 }
 
-/* Стили для команд в карточке */
+/* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 .team.winner .team-name {
     color: var(--accent-green);
     font-weight: 800;
@@ -2701,7 +2701,7 @@ input[type="datetime-local"] {
     color: var(--text-secondary);
 }
 
-/* Анимация для идущих матчей */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ */
 @keyframes liveScorePulse {
     0%, 100% {
         transform: scale(1);
@@ -2723,7 +2723,7 @@ input[type="datetime-local"] {
     animation: liveScorePulse 2s infinite;
 }
 
-/* Адаптивность */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 @media (max-width: 480px) {
     .match-score-display {
         font-size: 1.2rem;
@@ -2746,7 +2746,7 @@ input[type="datetime-local"] {
         padding: 2px 6px;
     }
 	
-	 /* ДОБАВИТЬ ЭТИ СТИЛИ ДЛЯ РЕДАКТОРА МАТЧА */
+	 /* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ */
     .score-teams {
         flex-direction: column;
         gap: 20px;
@@ -2801,7 +2801,7 @@ input[type="datetime-local"] {
 	
 }
 
-/* Для деталей матча */
+/* пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ */
 .detail-team.winner .team-avatar {
     border: 3px solid var(--accent-green) !important;
     box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
@@ -2820,7 +2820,7 @@ input[type="datetime-local"] {
     margin-bottom: 15px;
 }
 
-/* Этот стиль поможет центрировать VS на мобильных */
+/* пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ VS пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 .vs {
     font-family: var(--font-display);
     color: var(--accent-pink);
@@ -2828,7 +2828,7 @@ input[type="datetime-local"] {
     flex-shrink: 0;
 }
 
-/* Дополнительные стили для формата игры */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ */
 .format-badge {
     display: inline-flex;
     align-items: center;
@@ -2845,7 +2845,7 @@ input[type="datetime-local"] {
     margin-left: 8px;
 }
 
-/* Стили для ELO рейтинга команды */
+/* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ ELO пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 .elo-rating-full {
     width: 100%;
     margin-bottom: 20px;
@@ -2885,10 +2885,11 @@ input[type="datetime-local"] {
     transition: width 0.3s ease;
 }
 
-/* Статистика команды - всегда 3 колонки */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅ 3 пїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 .team-stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-bottom: 30px;
 }
+
