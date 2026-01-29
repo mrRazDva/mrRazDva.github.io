@@ -341,72 +341,7 @@
         </form>
     </div>
     
-    <!-- Модальное окно для выбора на карте -->
-<div id="location-picker-modal" class="modal-overlay hidden">
-    <div class="modal-content" style="width: 95%; max-width: 600px; padding: 0; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
-        <!-- Заголовок с градиентом -->
-        <div style="background: linear-gradient(135deg, var(--accent-green), var(--accent-blue)); padding: 20px 24px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <h3 class="modal-title" style="font-size: 1.2rem; margin: 0; color: #000; font-weight: 700;">Выберите место на карте</h3>
-                    
-                </div>
-                <button class="close-btn" onclick="app.closeLocationPicker()" 
-                        style="background: rgba(0, 0, 0, 0.2); color: #000; border: none; width: 36px; height: 36px; border-radius: 50%;">
-                    &times;
-                </button>
-            </div>
-        </div>
-
-        <div style="background: var(--bg-card);">
-            <!-- Карта -->
-            <div id="location-map" class="map-container" 
-                 style="height: 250px; margin: 0; border: none; border-bottom: 1px solid var(--border-color); border-radius: 0;"></div>
-            
-            <!-- Форма под картой (обновленная) -->
-<div style="padding: 24px;">
     
-    
-    <div class="form-group" style="margin-bottom: 20px;">
-        <label style="font-size: 0.9rem; margin-bottom: 8px; display: block; color: var(--text-secondary); font-weight: 500;">
-            <i class="fas fa-tag" style="margin-right: 8px; color: var(--accent-blue);"></i>
-            Название места
-        </label>
-        <input type="text" id="location-name" placeholder="Например: Стадион 'Белкино'" 
-               class="modal-input">
-    </div>
-    
-    <div class="form-group" style="margin-bottom: 20px;">
-        <label style="font-size: 0.9rem; margin-bottom: 8px; display: block; color: var(--text-secondary); font-weight: 500;">
-            <i class="fas fa-road" style="margin-right: 8px; color: var(--accent-blue);"></i>
-            Адрес
-        </label>
-        <textarea id="location-address" rows="2" placeholder="Улица, дом, район..." 
-                  class="modal-textarea"></textarea>
-    </div>
-    
-    <!-- Кнопки остаются -->
-    <div style="display: flex; gap: 12px; margin-top: 28px;">
-        <button class="btn btn-primary" onclick="app.confirmLocation()" 
-                style="flex: 1; padding: 14px; font-size: 1rem; border-radius: 12px; background: linear-gradient(135deg, var(--accent-green), #00cc6a); color: #000; border: none; font-weight: 700; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);">
-            <i class="fas fa-check-circle" style="margin-right: 8px;"></i>Выбрать место
-        </button>
-        <button class="btn btn-secondary" onclick="app.closeLocationPicker()" 
-                style="flex: 1; padding: 14px; font-size: 1rem; border-radius: 12px; background: transparent; border: 2px solid var(--border); color: var(--text-secondary); font-weight: 600;">
-            <i class="fas fa-times" style="margin-right: 8px;"></i>Отмена
-        </button>
-    </div>
-    
-    <div style="margin-top: 20px; padding: 12px; background: rgba(0, 204, 255, 0.05); border-radius: 10px; text-align: center;">
-        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0; line-height: 1.4;">
-            <i class="fas fa-lightbulb" style="color: var(--accent-blue); margin-right: 6px;"></i>
-            Кликните на карте, чтобы выбрать место проведения матча
-        </p>
-    </div>
-</div>
-        </div>
-    </div>
-</div>
 </section>
 
         <!-- Screen: Match Detail -->
@@ -859,7 +794,72 @@
     </div>
 </section>
 
+<!-- Модальное окно для выбора на карте -->
+	<div id="location-picker-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="width: 95%; max-width: 600px; padding: 0; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
+        <!-- Заголовок с градиентом -->
+        <div style="background: linear-gradient(135deg, var(--accent-green), var(--accent-blue)); padding: 20px 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 class="modal-title" style="font-size: 1.2rem; margin: 0; color: #000; font-weight: 700;">Выберите место на карте</h3>
+                    
+                </div>
+                <button class="close-btn" onclick="app.closeLocationPicker()" 
+                        style="background: rgba(0, 0, 0, 0.2); color: #000; border: none; width: 36px; height: 36px; border-radius: 50%;">
+                    &times;
+                </button>
+            </div>
+        </div>
 
+        <div style="background: var(--bg-card);">
+            <!-- Карта -->
+            <div id="location-map" class="map-container" 
+                 style="height: 250px; margin: 0; border: none; border-bottom: 1px solid var(--border-color); border-radius: 0;"></div>
+            
+            <!-- Форма под картой (обновленная) -->
+<div style="padding: 24px;">
+    
+    
+    <div class="form-group" style="margin-bottom: 20px;">
+        <label style="font-size: 0.9rem; margin-bottom: 8px; display: block; color: var(--text-secondary); font-weight: 500;">
+            <i class="fas fa-tag" style="margin-right: 8px; color: var(--accent-blue);"></i>
+            Название места
+        </label>
+        <input type="text" id="location-name" placeholder="Например: Стадион 'Белкино'" 
+               class="modal-input">
+    </div>
+    
+    <div class="form-group" style="margin-bottom: 20px;">
+        <label style="font-size: 0.9rem; margin-bottom: 8px; display: block; color: var(--text-secondary); font-weight: 500;">
+            <i class="fas fa-road" style="margin-right: 8px; color: var(--accent-blue);"></i>
+            Адрес
+        </label>
+        <textarea id="location-address" rows="2" placeholder="Улица, дом, район..." 
+                  class="modal-textarea"></textarea>
+    </div>
+    
+    <!-- Кнопки остаются -->
+    <div style="display: flex; gap: 12px; margin-top: 28px;">
+        <button class="btn btn-primary" onclick="app.confirmLocation()" 
+                style="flex: 1; padding: 14px; font-size: 1rem; border-radius: 12px; background: linear-gradient(135deg, var(--accent-green), #00cc6a); color: #000; border: none; font-weight: 700; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);">
+            <i class="fas fa-check-circle" style="margin-right: 8px;"></i>Выбрать место
+        </button>
+        <button class="btn btn-secondary" onclick="app.closeLocationPicker()" 
+                style="flex: 1; padding: 14px; font-size: 1rem; border-radius: 12px; background: transparent; border: 2px solid var(--border); color: var(--text-secondary); font-weight: 600;">
+            <i class="fas fa-times" style="margin-right: 8px;"></i>Отмена
+        </button>
+    </div>
+    
+    <div style="margin-top: 20px; padding: 12px; background: rgba(0, 204, 255, 0.05); border-radius: 10px; text-align: center;">
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0; line-height: 1.4;">
+            <i class="fas fa-lightbulb" style="color: var(--accent-blue); margin-right: 6px;"></i>
+            Кликните на карте, чтобы выбрать место проведения матча
+        </p>
+    </div>
+</div>
+        </div>
+    </div>
+</div>
 
             
 		
