@@ -173,6 +173,9 @@ const matchesModule = {
                         <i class="fas fa-${this.app.getSportIcon(match.sport)}"></i>
                         ${this.app.getSportName(match.sport).toUpperCase()}
                     </span>
+                    <span class="format-badge">
+                        ${this.app.getFormatText(match.format || '5x5')}
+                    </span>
                 </div>
                 <div class="match-header-right">
                     ${challengeBadgeHTML}
@@ -429,6 +432,9 @@ const matchesModule = {
                     ${teamsHTML}
                 </div>
                 <span class="match-status status-${match.status || 'upcoming'}">${this.app.getStatusText(match.status)}</span>
+                <div style="margin-top: 10px; color: var(--text-secondary); font-size: 0.9rem;">
+                    <i class="fas fa-users"></i> Формат: ${this.app.getFormatText(match.format || '5x5')}
+                </div>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
                 <div class="form-section" style="margin: 0;">
@@ -566,12 +572,13 @@ const matchesModule = {
     async createMatch() {
         const teamId = document.getElementById('match-team').value;
         const opponentId = document.getElementById('match-opponent').value;
+        const format = document.getElementById('match-format').value;
         const datetime = document.getElementById('match-datetime').value;
         const location = document.getElementById('match-location').value;
         const lat = document.getElementById('match-lat').value;
         const lng = document.getElementById('match-lng').value;
         
-        if (!teamId || !datetime || !location) {
+        if (!teamId || !format || !datetime || !location) {
             alert('Заполните все обязательные поля');
             return;
         }
@@ -599,6 +606,7 @@ const matchesModule = {
                 .from('matches')
                 .insert([{
                     sport: team.sport,
+                    format: format,
                     team1: teamId,
                     team2: opponentId || null,
                     date: datetime,

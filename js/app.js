@@ -305,6 +305,19 @@ const app = {
             return null;
         }
     },
+	
+	// Получение текста формата игры
+    getFormatText(format) {
+        const formatMap = {
+            '2x2': '2 на 2',
+            '3x3': '3 на 3',
+            '4x4': '4 на 4',
+            '5x5': '5 на 5',
+            '7x7': '7 на 7',
+            '11x11': '11 на 11'
+        };
+        return formatMap[format] || format;
+    },
     
     // ========== ОБЩИЕ УТИЛИТЫ ==========
     

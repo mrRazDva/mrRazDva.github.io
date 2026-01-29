@@ -38,7 +38,7 @@ const matchEditModule = {
             
         } catch (error) {
             console.error('❌ Ошибка загрузки матча:', error);
-            alert('Ошибка загрузки матча');
+            alert('Ошибка загрузки матча: ' + error.message);
         }
     },
 
@@ -51,8 +51,10 @@ const matchEditModule = {
         const isCancelled = match.status === 'cancelled';
         
         // Заполняем основную информацию
-        document.getElementById('edit-match-sport').textContent = 
-            app.getSportName(match.sport).toUpperCase();
+        const sportElement = document.getElementById('edit-match-sport');
+        if (sportElement) {
+            sportElement.innerHTML = `<i class="fas fa-${app.getSportIcon(match.sport)}"></i> ${app.getSportName(match.sport).toUpperCase()}`;
+        }
         
         document.getElementById('edit-match-team1-name').textContent = 
             match.team1?.name || 'Неизвестно';
@@ -68,6 +70,12 @@ const matchEditModule = {
         const [score1, score2] = match.score ? match.score.split(':').map(Number) : [0, 0];
         document.getElementById('edit-match-score1').value = score1;
         document.getElementById('edit-match-score2').value = score2;
+
+        // Формат игры
+        const formatElement = document.getElementById('edit-match-format');
+        if (formatElement) {
+            formatElement.value = match.format || '5x5';
+        }
 
         // Блокируем изменение счета для завершенных матчей
         if (isFinished) {
@@ -174,13 +182,14 @@ const matchEditModule = {
         const isCancelled = match.status === 'cancelled';
         
         if (this.isEditing) {
-            // Режим редактирования
+            // Режим редактирования - разблокируем все поля
             document.getElementById('edit-match-datetime').disabled = false;
             document.getElementById('edit-match-location').disabled = false;
-            document.getElementById('edit-match-location-btn').classList.remove('hidden');
+            document.getElementById('edit-match-location-btn').style.display = 'inline-block';
             document.getElementById('edit-match-status').disabled = false;
+            document.getElementById('edit-match-format').disabled = false;
             
-            // Блокируем статус "finished" для завершенных матчей
+            // Для завершенных матчей блокируем статус
             if (isFinished) {
                 document.getElementById('edit-match-status').disabled = true;
             }
@@ -193,11 +202,12 @@ const matchEditModule = {
             document.getElementById('cancel-match-btn').style.display = 'none';
             document.getElementById('resume-match-btn').style.display = 'none';
         } else {
-            // Режим просмотра
+            // Режим просмотра - блокируем все поля
             document.getElementById('edit-match-datetime').disabled = true;
             document.getElementById('edit-match-location').disabled = true;
-            document.getElementById('edit-match-location-btn').classList.add('hidden');
+            document.getElementById('edit-match-location-btn').style.display = 'none';
             document.getElementById('edit-match-status').disabled = true;
+            document.getElementById('edit-match-format').disabled = true;
             
             // Кнопки
             document.getElementById('edit-match-edit-btn').style.display = isOwner && !isFinished ? 'block' : 'none';
@@ -229,8 +239,6 @@ const matchEditModule = {
         }
     },
 
-    // ДОБАВЛЕННЫЕ МЕТОДЫ ДЛЯ РАБОТЫ СО СЧЕТОМ:
-    
     adjustScore(change, teamNumber) {
         const match = this.currentMatch;
         if (match.status === 'finished') {
@@ -490,11 +498,12 @@ const matchEditModule = {
         const lat = document.getElementById('edit-match-lat').value;
         const lng = document.getElementById('edit-match-lng').value;
         const status = document.getElementById('edit-match-status').value;
+        const format = document.getElementById('edit-match-format').value;
         const score1 = parseInt(document.getElementById('edit-match-score1').value) || 0;
         const score2 = parseInt(document.getElementById('edit-match-score2').value) || 0;
 
-        if (!datetime || !location) {
-            alert('Заполните дату и место проведения');
+        if (!datetime || !location || !format) {
+            alert('Заполните все обязательные поля');
             return;
         }
 
@@ -503,6 +512,7 @@ const matchEditModule = {
                 date: datetime,
                 location,
                 status,
+                format: format,
                 score: `${score1}:${score2}`,
                 lat: lat || null,
                 lng: lng || null,
@@ -660,7 +670,7 @@ const matchEditModule = {
         }
         
         this.isEditing = true;
-        this.render();
+        this.updateEditModeUI();
     },
 
     cancelEditing() {
@@ -701,8 +711,6 @@ const matchEditModule = {
         }
         screenManager.show('screen-match');
     },
-    
-    // ДОПОЛНИТЕЛЬНЫЕ МЕТОДЫ:
     
     quickScore(team1Score, team2Score) {
         const match = this.currentMatch;
