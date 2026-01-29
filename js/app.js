@@ -10,38 +10,46 @@ const app = {
     
     // Инициализация приложения
     async init() {
-        console.log('🚀 Инициализация Street League...');
-        
-        // Инициализируем Supabase
-        this.supabase = window.supabaseClient;
-        
-        if (!this.supabase) {
-            console.error('❌ Supabase клиент не найден!');
-            alert('Ошибка подключения к серверу. Пожалуйста, обновите страницу.');
-            return;
-        }
-        
-        // Инициализируем модули
-        await this.initModules();
-        
-        console.log('✅ Приложение инициализировано');
-    },
+    console.log('🚀 Инициализация Street League...');
+    
+    // Инициализируем Supabase
+    this.supabase = window.supabaseClient;
+    
+    if (!this.supabase) {
+        console.error('❌ Supabase клиент не найден!');
+        alert('Ошибка подключения к серверу. Пожалуйста, обновите страницу.');
+        return;
+    }
+    
+    // Инициализируем модули
+    await this.initModules();
+    
+    // Скрываем splash screen (ScreenManager сам решит, что показать дальше)
+    setTimeout(() => {
+        screenManager.hideSplashScreen();
+    }, 1000);
+    
+    console.log('✅ Приложение инициализировано');
+},
     
     // Инициализация всех модулей
     async initModules() {
-        // Проверяем сессию
-        await authModule.init();
-        
-        // Инициализируем модуль инициализации
-        await initModule.init(this);
-        
-        // Инициализируем остальные модули
-        navigationModule.init(this);
-        matchesModule.init(this);
-        teamsModule.init(this);
-        eventsModule.init(this);
-        commentsModule.init(this);
-        mapModule.init(this);
+    // Проверяем сессию
+    await authModule.init();
+    
+    // Инициализируем модуль инициализации
+    await initModule.init(this);
+    
+    // Добавляем небольшую задержку для плавного эффекта
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Инициализируем остальные модули
+    navigationModule.init(this);
+    matchesModule.init(this);
+    teamsModule.init(this);
+    eventsModule.init(this);
+    commentsModule.init(this);
+    mapModule.init(this);
         
         // Инициализируем teamEditModule если он существует
         if (typeof teamEditModule !== 'undefined' && typeof teamEditModule.init === 'function') {
@@ -84,47 +92,53 @@ const app = {
     
     // Исправлено: теперь вызываем authModule.login вместо navigationModule.handleLogin
     async handleLogin() {
-        try {
-            // Собираем данные из формы входа
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
+    try {
+        // Собираем данные из формы входа
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
 
-            // Валидация
-            if (!email || !password) {
-                alert('Пожалуйста, введите email и пароль');
-                return;
-            }
-
-            // Вызываем метод входа из authModule
-            const result = await authModule.login({
-                email,
-                password
-            });
-
-            if (result.success) {
-                // Успешный вход - authModule автоматически обновит состояние и перенаправит
-                console.log('✅ Вход выполнен успешно');
-
-                // Обновляем UI
-                if (typeof navigationModule !== 'undefined' && navigationModule.updateUserUI) {
-                    navigationModule.updateUserUI();
-                }
-
-                // Показываем главный экран
-                setTimeout(() => {
-                    if (typeof navigationModule !== 'undefined' && navigationModule.showMain) {
-                        navigationModule.showMain();
-                    }
-                }, 100);
-            } else {
-                alert('Ошибка входа: ' + (result.error || 'Неизвестная ошибка'));
-            }
-
-        } catch (error) {
-            console.error('❌ Ошибка в методе handleLogin:', error);
-            alert('Произошла ошибка при входе в систему');
+        // Валидация
+        if (!email || !password) {
+            alert('Пожалуйста, введите email и пароль');
+            return;
         }
-    },
+
+        // Вызываем метод входа из authModule
+        const result = await authModule.login({
+            email,
+            password
+        });
+
+        if (result.success) {
+            console.log('✅ Вход выполнен успешно');
+
+            // Обновляем UI
+            if (typeof navigationModule !== 'undefined' && navigationModule.updateUserUI) {
+                navigationModule.updateUserUI();
+            }
+
+            // ПОКАЗЫВАЕМ НИЖНЕЕ МЕНЮ
+            const bottomNav = document.getElementById('bottom-nav');
+            if (bottomNav) {
+                bottomNav.classList.remove('hidden');
+                bottomNav.style.display = 'flex';
+            }
+
+            // Показываем главный экран
+            setTimeout(() => {
+                if (typeof navigationModule !== 'undefined' && navigationModule.showMain) {
+                    navigationModule.showMain();
+                }
+            }, 100);
+        } else {
+            alert('Ошибка входа: ' + (result.error || 'Неизвестная ошибка'));
+        }
+
+    } catch (error) {
+        console.error('❌ Ошибка в методе handleLogin:', error);
+        alert('Произошла ошибка при входе в систему');
+    }
+},
     
     // Исправлено: теперь вызываем authModule.resetPassword вместо navigationModule.showForgotPassword
     async showForgotPassword() {
@@ -391,9 +405,8 @@ const app = {
 
 // Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        app.init();
-    }, 500);
+    // Запускаем инициализацию сразу, без задержки
+    app.init();
 });
 
 // Экспортируем глобально

@@ -1,4 +1,68 @@
-/* Screen-specific styles */
+/* ========== СТИЛИ ДЛЯ SPLASH SCREEN (ДОБАВЬТЕ В НАЧАЛО ФАЙЛА) ========== */
+
+/* Гарантируем, что сплэш на весь экран и поверх всего */
+#screen-splash.screen.active {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 99999;
+    padding: 0;
+    overflow: hidden;
+    background-color: var(--bg-primary);
+}
+
+.splash-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.splash-logo {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 10vw, 3.5rem);
+    text-align: center;
+    margin-bottom: 30px;
+    background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+}
+
+.splash-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid var(--border);
+    border-top: 4px solid var(--accent-green);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+.splash-text {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ========== ВАШИ ОРИГИНАЛЬНЫЕ СТИЛИ (ОСТАВЬТЕ КАК БЫЛО) ========== */
+
 .screen {
     display: none;
     height: 100%;
@@ -21,7 +85,6 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Auth screens layout */
 .auth-container {
     max-width: 400px;
     margin: 0 auto;
@@ -32,14 +95,12 @@
     padding: 20px 0;
 }
 
-/* City selection layout */
 .city-grid {
     display: grid;
     gap: 12px;
     margin-top: 20px;
 }
 
-/* Main screen layout */
 .container {
     max-width: 600px;
     margin: 0 auto;
@@ -47,7 +108,6 @@
     padding-bottom: 80px;
 }
 
-/* Responsive */
 @media (max-width: 380px) {
     .logo { font-size: 1.8rem; }
     .role-option { font-size: 0.8rem; padding: 10px; }
@@ -63,44 +123,85 @@
     }
 }
 
-/* Стили для модального окна выбора местоположения */
-#location-map {
+/* ========== СТИЛИ ТОЛЬКО ДЛЯ SPLASH SCREEN (НОВЫЙ БЛОК) ========== */
+
+#screen-splash.screen.active {
+    /* Перекрывает все остальные экраны */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 99999;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Контейнер для содержимого splash screen */
+.splash-container {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    min-height: 500px;
-}
-
-.info-box {
-    background: var(--bg-secondary);
-    border-radius: 12px;
-    padding: 15px;
-    margin: 10px 0;
-}
-
-/* Стили для координат */
-.coordinates-display {
-    font-family: monospace;
-    background: var(--bg-card);
-    padding: 10px;
-    border-radius: 8px;
-    margin: 10px 0;
-    border: 1px solid var(--border-color);
-}
-
-.location-preview {
+    background: var(--bg-primary);
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
-    margin: 10px 0;
-    padding: 10px;
-    background: var(--bg-secondary);
-    border-radius: 8px;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
 }
 
-.location-preview i {
-    color: var(--accent-green);
-    font-size: 1.2rem;
+.splash-logo {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 10vw, 3.5rem);
+    text-align: center;
+    margin-bottom: 30px;
+    background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+    animation: shimmer 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 15px rgba(0, 255, 136, 0.4));
 }
 
+@keyframes shimmer {
+    0% { 
+        background-position: 0% 50%;
+        filter: drop-shadow(0 0 15px rgba(0, 255, 136, 0.4));
+    }
+    50% { 
+        background-position: 100% 50%;
+        filter: drop-shadow(0 0 25px rgba(0, 204, 255, 0.6));
+    }
+    100% { 
+        background-position: 0% 50%;
+        filter: drop-shadow(0 0 15px rgba(0, 255, 136, 0.4));
+    }
+}
 
+.splash-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid var(--border);
+    border-top: 4px solid var(--accent-green);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
 
+.splash-text {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

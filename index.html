@@ -20,9 +20,18 @@
 <body>
     <div class="bg-pattern"></div>
     
-    <main id="app-container">
-        <!-- Screen: Role Selection -->
-        <section id="screen-role" class="screen active">
+<main id="app-container">
+    <!-- Splash Screen - ЕДИНСТВЕННЫЙ активный экран при загрузке -->
+    <section id="screen-splash" class="screen active">
+        <div class="splash-container">
+            <div class="splash-logo">STREET LEAGUE</div>
+            <div class="splash-spinner"></div>
+            <div class="splash-text">Загрузка...</div>
+        </div>
+    </section>
+
+    <!-- Screen: Role Selection (БЕЗ класса active) -->
+    <section id="screen-role" class="screen">
             <div class="auth-container">
                 <h1 class="logo">STREET LEAGUE</h1>
                 <p class="subtitle">Выбери свой путь</p>

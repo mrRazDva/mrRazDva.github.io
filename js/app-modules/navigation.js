@@ -248,18 +248,31 @@ const navigationModule = {
     
     // Выход
     async logout() {
-        if (confirm('Выйти из аккаунта?')) {
-            const result = await authModule.logout();
+    if (confirm('Выйти из аккаунта?')) {
+        const result = await authModule.logout();
+        
+        if (result.success) {
+            this.app.currentUser = null;
             
-            if (result.success) {
-                this.app.currentUser = null;
-                setTimeout(() => {
-                    this.showRoleSelection();
-                }, 500);
-            }
+            // СКРЫВАЕМ нижнее меню при возврате на экран роли
+            this.hideBottomNav();
+            
+            setTimeout(() => {
+                this.showRoleSelection();
+            }, 500);
         }
-    },
+    }
+},
     
+	// ========== НОВЫЙ МЕТОД ДЛЯ СКРЫТИЯ НАВИГАЦИИ ==========
+hideBottomNav() {
+    const bottomNav = document.getElementById('bottom-nav');
+    if (bottomNav) {
+        bottomNav.classList.add('hidden');
+        bottomNav.style.display = 'none';
+    }
+},
+	
 	async updateChallengesNotification() {
     try {
         const userId = authModule.getUserId();
