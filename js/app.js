@@ -1,5 +1,7 @@
 // js/app.js - Основной файл приложения (с прокси-методами)
 const app = {
+    // Добавляем флаг инициализации
+    isInitialized: false,
     currentUser: null,
     selectedRole: 'fan',
     currentCity: 'obninsk',
@@ -8,62 +10,78 @@ const app = {
     selectedMatch: null,
     supabase: null,
     
-    // Инициализация приложения
     async init() {
-    console.log('🚀 Инициализация Street League...');
-    
-    // Инициализируем Supabase
-    this.supabase = window.supabaseClient;
-    
-    if (!this.supabase) {
-        console.error('❌ Supabase клиент не найден!');
-        alert('Ошибка подключения к серверу. Пожалуйста, обновите страницу.');
-        return;
-    }
-    
-    // Инициализируем модули
-    await this.initModules();
-    
-    // Скрываем splash screen (ScreenManager сам решит, что показать дальше)
-    setTimeout(() => {
-        screenManager.hideSplashScreen();
-    }, 1000);
-    
-    console.log('✅ Приложение инициализировано');
-},
-    
-    // Инициализация всех модулей
-    async initModules() {
-    // Проверяем сессию
-    await authModule.init();
-    
-    // Инициализируем модуль инициализации
-    await initModule.init(this);
-    
-    // Добавляем небольшую задержку для плавного эффекта
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Инициализируем остальные модули
-    navigationModule.init(this);
-    matchesModule.init(this);
-    teamsModule.init(this);
-    eventsModule.init(this);
-    commentsModule.init(this);
-    mapModule.init(this);
+        console.log('🚀 Инициализация Street League...');
         
-        // Инициализируем teamEditModule если он существует
-        if (typeof teamEditModule !== 'undefined' && typeof teamEditModule.init === 'function') {
-            try {
-                await teamEditModule.init();
-            } catch (error) {
-                console.warn('⚠️ Ошибка инициализации teamEditModule:', error);
+        // Ждем supabase client
+        await this.waitForSupabase();
+        
+        if (!this.supabase) {
+            console.error('❌ Supabase клиент не найден!');
+            // Показываем сообщение пользователю
+            const splash = document.getElementById('screen-splash');
+            if (splash) {
+                splash.innerHTML = `
+                    <div class="splash-container">
+                        <div class="splash-logo">STREET LEAGUE</div>
+                        <div style="color: var(--accent-pink); margin-top: 20px;">
+                            Ошибка подключения. Обновите страницу.
+                        </div>
+                    </div>
+                `;
             }
+            return;
         }
         
-        // Инициализируем matchEditModule если он существует
-        if (typeof matchEditModule !== 'undefined') {
-            console.log('✅ matchEditModule загружен');
-            // Можно добавить дополнительную инициализацию если нужно
+        // Инициализируем модули
+        await this.initModules();
+        
+        this.isInitialized = true;
+        console.log('✅ Приложение инициализировано');
+        
+        // Скрываем splash screen
+        setTimeout(() => {
+            screenManager.hideSplashScreen();
+        }, 1000);
+    },
+    
+    // Ждем инициализации Supabase
+    async waitForSupabase() {
+        const maxAttempts = 50; // 5 секунд максимум
+        for (let i = 0; i < maxAttempts; i++) {
+            if (window.supabaseClient) {
+                this.supabase = window.supabaseClient;
+                console.log('✅ Supabase клиент найден');
+                return;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100)); // ждем 100ms
+        }
+        console.warn('⚠️ Supabase клиент не загрузился после ожидания');
+    },
+    
+    async initModules() {
+        // Сначала инициализируем authModule, но без вызова showMain
+        await authModule.init(this);
+        
+        // Инициализируем модуль инициализации
+        await initModule.init(this);
+        
+        // Инициализируем остальные модули
+        navigationModule.init(this);
+        matchesModule.init(this);
+        teamsModule.init(this);
+        eventsModule.init(this);
+        commentsModule.init(this);
+        mapModule.init(this);
+        
+        // Теперь, если пользователь уже авторизован, показываем главный экран
+        if (authModule.isAuthenticated()) {
+            console.log('👤 Пользователь уже авторизован, показываем главный экран');
+            setTimeout(() => {
+                if (typeof navigationModule.showMain === 'function') {
+                    navigationModule.showMain();
+                }
+            }, 500);
         }
     },
     

@@ -24,18 +24,7 @@
     justify-content: center;
 }
 
-.splash-logo {
-    font-family: var(--font-display);
-    font-size: clamp(2rem, 10vw, 3.5rem);
-    text-align: center;
-    margin-bottom: 30px;
-    background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-weight: 700;
-}
+
 
 .splash-spinner {
     width: 60px;
@@ -153,7 +142,7 @@
 
 .splash-logo {
     font-family: var(--font-display);
-    font-size: 15vw;
+    font-size: 3rem;
     text-align: center;
     margin-bottom: 30px;
     background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
