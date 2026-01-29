@@ -6,39 +6,46 @@ const matchesModule = {
     },
     
     // Загрузка матчей из Supabase
-    async renderMatches() {
-        const container = document.getElementById('matches-list');
-        if (!container) return;
+async renderMatches() {
+    const container = document.getElementById('matches-list');
+    if (!container) return;
+    
+    // ДОБАВЛЕМ ПРОВЕРКУ НАЛИЧИЯ supabase
+    if (!this.app || !this.app.supabase) {
+        console.error('❌ Supabase client not initialized');
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Ошибка инициализации...</div>';
+        return;
+    }
+    
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Загрузка матчей...</div>';
+    
+    try {
+        const { data: teamsInCity, error: teamsError } = await this.app.supabase
+            .from('teams')
+            .select('id')
+            .eq('city', this.app.currentCity);
         
-        container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Загрузка матчей...</div>';
+        if (teamsError) throw teamsError;
         
-        try {
-            const { data: teamsInCity, error: teamsError } = await this.app.supabase
-                .from('teams')
-                .select('id')
-                .eq('city', this.app.currentCity);
+        let matches = [];
+        
+        if (teamsInCity && teamsInCity.length > 0) {
+            const teamIds = teamsInCity.map(t => t.id);
+            const teamIdsString = teamIds.join(',');
             
-            if (teamsError) throw teamsError;
+            const { data: matchesData, error: matchesError } = await this.app.supabase
+                .from('matches')
+                .select(`
+                    *,
+                    team1:teams!matches_team1_fkey(*),
+                    team2:teams!matches_team2_fkey(*)
+                `)
+                .or(`team1.in.(${teamIdsString}),team2.in.(${teamIdsString})`)
+                .order('date', { ascending: true });
             
-            let matches = [];
-            
-            if (teamsInCity && teamsInCity.length > 0) {
-                const teamIds = teamsInCity.map(t => t.id);
-                const teamIdsString = teamIds.join(',');
-                
-                const { data: matchesData, error: matchesError } = await this.app.supabase
-                    .from('matches')
-                    .select(`
-                        *,
-                        team1:teams!matches_team1_fkey(*),
-                        team2:teams!matches_team2_fkey(*)
-                    `)
-                    .or(`team1.in.(${teamIdsString}),team2.in.(${teamIdsString})`)
-                    .order('date', { ascending: true });
-                
-                if (matchesError) throw matchesError;
-                matches = matchesData || [];
-            }
+            if (matchesError) throw matchesError;
+            matches = matchesData || [];
+        }
             
             // Получаем количество вызовов для матчей
             const userId = authModule.getUserId();
@@ -242,7 +249,14 @@ const matchesModule = {
     
     // Показать детали матча
     async showMatchDetail(matchId) {
-        try {
+    // ДОБАВЛЕМ ПРОВЕРКУ
+    if (!this.app || !this.app.supabase) {
+        console.error('❌ Supabase client not initialized');
+        alert('Приложение не готово. Пожалуйста, попробуйте позже.');
+        return;
+    }
+    
+    try {
             const { data: match, error } = await this.app.supabase
                 .from('matches')
                 .select(`
