@@ -2620,41 +2620,7 @@ input[type="datetime-local"] {
     color: white;
 }
 
-/* Адаптивность для редактора счета */
-@media (max-width: 480px) {
-    .score-teams {
-        flex-direction: column;
-        gap: 15px;
-    }
-    
-    .score-team {
-        flex-direction: row;
-        justify-content: space-between;
-        width: 100%;
-    }
-    
-    .score-team:first-child {
-        flex-direction: row;
-    }
-    
-    .score-team:last-child {
-        flex-direction: row-reverse;
-    }
-    
-    
-    
-    .team-avatar.large {
-        width: 60px;
-        height: 60px;
-        font-size: 2rem;
-    }
-    
-    .score-input {
-        width: 60px;
-        height: 60px;
-        font-size: 2rem;
-    }
-}
+
 
 /* Стили для отображения счета в карточках матчей */
 .match-score-display {

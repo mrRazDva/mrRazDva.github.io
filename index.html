@@ -822,57 +822,51 @@
             </div>
 
             <!-- Команды и счет -->
-            <div class="score-editor" style="margin-bottom: 25px;">
-                <div class="score-teams">
-                    <div class="score-team">
-                        <div class="team-avatar large" id="edit-match-team1-avatar">⚽</div>
-                        <div class="team-name" id="edit-match-team1-name">Команда 1</div>
-                        <div class="score-input-container">
-                            <button class="score-btn minus" onclick="matchEditModule.adjustScore(-1, 1)">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                            <input type="number" 
-                                   id="edit-match-score1" 
-                                   class="score-input"
-                                   min="0" 
-                                   max="99"
-                                   onchange="matchEditModule.updateScore()"
-                                   oninput="matchEditModule.updateUIByStatus()">
-                            <button class="score-btn plus" onclick="matchEditModule.adjustScore(1, 1)">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="vs" style="font-size: 1.5rem; color: var(--accent-pink);">VS</div>
-                    
-                    <div class="score-team">
-                        <div class="score-input-container">
-                            <button class="score-btn minus" onclick="matchEditModule.adjustScore(-1, 2)">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                            <input type="number" 
-                                   id="edit-match-score2" 
-                                   class="score-input"
-                                   min="0" 
-                                   max="99"
-                                   onchange="matchEditModule.updateScore()"
-                                   oninput="matchEditModule.updateUIByStatus()">
-                            <button class="score-btn plus" onclick="matchEditModule.adjustScore(1, 2)">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                        <div class="team-name" id="edit-match-team2-name">Команда 2</div>
-                        <div class="team-avatar large" id="edit-match-team2-avatar">⚽</div>
-                    </div>
-                </div>
-                
-                <div style="text-align: center; margin-top: 10px;">
-                    <button class="btn btn-secondary" onclick="matchEditModule.updateScore()" style="width: auto; padding: 8px 16px;">
-                        <i class="fas fa-save"></i> Сохранить счет
-                    </button>
-                </div>
-            </div>
+             <!-- Команда 1 -->
+    <div class="score-team">
+        <div class="team-avatar large" id="edit-match-team1-avatar">⚽</div>
+        <div class="team-name" id="edit-match-team1-name">Команда 1</div>
+        <div class="score-input-container">
+            <button class="score-btn minus" onclick="matchEditModule.adjustScore(-1, 1)">
+                <i class="fas fa-minus"></i>
+            </button>
+            <input type="number" 
+                   id="edit-match-score1" 
+                   class="score-input"
+                   min="0" 
+                   max="99"
+                   onchange="matchEditModule.updateScore()"
+                   oninput="matchEditModule.updateUIByStatus()">
+            <button class="score-btn plus" onclick="matchEditModule.adjustScore(1, 1)">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- VS - теперь между командами -->
+    <div class="vs" style="font-size: 1.5rem; color: var(--accent-pink);">VS</div>
+    
+    <!-- Команда 2 -->
+    <div class="score-team">
+        <div class="team-avatar large" id="edit-match-team2-avatar">⚽</div>
+        <div class="team-name" id="edit-match-team2-name">Команда 2</div>
+        <div class="score-input-container">
+            <button class="score-btn minus" onclick="matchEditModule.adjustScore(-1, 2)">
+                <i class="fas fa-minus"></i>
+            </button>
+            <input type="number" 
+                   id="edit-match-score2" 
+                   class="score-input"
+                   min="0" 
+                   max="99"
+                   onchange="matchEditModule.updateScore()"
+                   oninput="matchEditModule.updateUIByStatus()">
+            <button class="score-btn plus" onclick="matchEditModule.adjustScore(1, 2)">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    </div>
+</div>
 
             <!-- Предупреждения -->
             <div id="edit-match-warnings" class="warnings-container hidden" style="margin-bottom: 20px;"></div>
