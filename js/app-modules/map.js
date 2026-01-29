@@ -60,29 +60,6 @@ openMapForLocation() {
     modal.classList.remove('hidden');
     modal.classList.add('active');
     
-    // Скрыть нижнее меню
-    const bottomNav = document.getElementById('bottom-nav');
-    if (bottomNav) {
-        bottomNav.style.display = 'none';
-    }
-    
-    setTimeout(() => {
-        this.initLocationMap();
-    }, 100);
-}
-
-// В методе closeLocationPicker добавьте:
-closeLocationPicker() {
-    const modal = document.getElementById('location-picker-modal');
-    modal.classList.remove('active');
-    modal.classList.add('hidden');
-    
-    // Показать нижнее меню
-    const bottomNav = document.getElementById('bottom-nav');
-    if (bottomNav) {
-        bottomNav.style.display = 'flex';
-    }
-    
     setTimeout(() => {
         this.initLocationMap();
     }, 100);
