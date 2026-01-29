@@ -24,32 +24,66 @@ const teamModule = {
     },
 
     async render(team) {
-        // Основная информация
-        document.getElementById('team-profile-avatar').textContent = team.avatar;
-        document.getElementById('team-profile-name').textContent = team.name;
-        document.getElementById('team-profile-city').textContent = 
-            `${app.cities[team.city]?.name || team.city} • ${this.getSportName(team.sport)}`;
+    // Основная информация
+    document.getElementById('team-profile-avatar').textContent = team.avatar;
+    document.getElementById('team-profile-name').textContent = team.name;
+    document.getElementById('team-profile-city').textContent = 
+        `${app.cities[team.city]?.name || team.city} • ${this.getSportName(team.sport)}`;
 
-        // Загружаем статистику команды
-        await this.loadTeamStats(team.id);
+    // Загружаем статистику команды
+    await this.loadTeamStats(team.id);
+    // Отображение ELO рейтинга - теперь в отдельном блоке
+    await this.renderEloRating(team.id);
+    
+    // Показываем/скрываем кнопку редактирования для владельца
+    const isOwner = team.owner_id === app.currentUser?.id;
+    const actionsContainer = document.getElementById('team-actions');
+    if (actionsContainer) {
+        actionsContainer.innerHTML = isOwner ? 
+            `<button class="btn btn-primary" onclick="teamEditModule.show('${team.id}')">Редактировать</button>` :
+            `<button class="btn btn-challenge" onclick="teamModule.challenge()">
+                <i class="fas fa-fire"></i> Бросить вызов
+            </button>`;
+    }
 
-        // Показываем/скрываем кнопку редактирования для владельца
-        const isOwner = team.owner_id === app.currentUser?.id;
-        const actionsContainer = document.getElementById('team-actions');
-        if (actionsContainer) {
-            actionsContainer.innerHTML = isOwner ? 
-                `<button class="btn btn-primary" onclick="teamEditModule.show('${team.id}')">Редактировать</button>` :
-                `<button class="btn btn-challenge" onclick="teamModule.challenge()">
-                    <i class="fas fa-fire"></i> Бросить вызов
-                </button>`;
+    // Состав команды
+    this.renderRoster(team.players || []);
+
+    // История матчей
+    await this.renderMatchHistory(team.id);
+},
+
+async renderEloRating(teamId) {
+    try {
+        const { data: team, error } = await app.supabase
+            .from('teams')
+            .select('elo_rating')
+            .eq('id', teamId)
+            .single();
+            
+        if (error) throw error;
+        
+        const eloRating = team.elo_rating || 1000;
+        const rank = eloModule.getRank(eloRating);
+        
+        // Добавляем ELO рейтинг в отдельный контейнер
+        const eloContainer = document.getElementById('team-elo-rating');
+        if (eloContainer) {
+            eloContainer.innerHTML = `
+                <div class="stat-box" style="border: 2px solid ${rank.color}; background: rgba(0,0,0,0.3); text-align: center; margin-bottom: 20px; padding: 20px;">
+                    <div class="stat-number" style="color: ${rank.color}; font-weight: 700; font-size: 2rem; margin-bottom: 10px;">${eloRating}</div>
+                    <div class="rank-badge" style="color: ${rank.color}; font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">
+                        ${rank.name}
+                    </div>
+                    <div class="stat-label" style="font-size: 0.6rem; margin-top: 5px; opacity: 0.8;">ELO рейтинг</div>
+                </div>
+            `;
         }
-
-        // Состав команды
-        this.renderRoster(team.players || []);
-
-        // История матчей
-        await this.renderMatchHistory(team.id);
-    },
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки ELO рейтинга:', error);
+    }
+},
 
     async loadTeamStats(teamId) {
         try {

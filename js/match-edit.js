@@ -341,6 +341,18 @@ const matchEditModule = {
             return;
         }
 
+if (status === 'finished') {
+        // Применить ELO после завершения матча
+        setTimeout(async () => {
+            if (typeof eloModule !== 'undefined') {
+                const result = await eloModule.onMatchFinished(this.editingMatch.id);
+                if (result) {
+                    console.log('✅ ELO рейтинг обновлен:', result);
+                }
+            }
+        }, 500);
+    }
+
         try {
             const updates = { 
                 status: newStatus,

@@ -479,20 +479,26 @@
                     </div>
                 </div>
 
-                <div class="team-stats-grid">
-                    <div class="stat-box">
-                        <div class="stat-number" id="team-stat-wins">0</div>
-                        <div class="stat-label">Победы</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number loss" id="team-stat-losses">0</div>
-                        <div class="stat-label">Поражения</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="team-stat-winrate">0%</div>
-                        <div class="stat-label">Винрейт</div>
-                    </div>
-                </div>
+                 <!-- НОВЫЙ КОНТЕЙНЕР: ELO рейтинг (на всю ширину) -->
+        <div class="elo-rating-full" id="team-elo-rating">
+            <!-- Содержимое будет заполнено JS -->
+        </div>
+
+        <!-- ОБНОВЛЕННЫЙ КОНТЕЙНЕР: Статистика команды -->
+        <div class="team-stats-grid">
+            <div class="stat-box">
+                <div class="stat-number" id="team-stat-wins">0</div>
+                <div class="stat-label">Победы</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number loss" id="team-stat-losses">0</div>
+                <div class="stat-label">Поражения</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="team-stat-winrate">0%</div>
+                <div class="stat-label">Винрейт</div>
+            </div>
+        </div>
 
                 <div class="team-section">
                     <h3 class="section-subtitle">Состав команды</h3>
@@ -917,6 +923,7 @@
 	<script src="./js/app-modules/events.js"></script>
 	<script src="./js/app-modules/comments.js"></script>
 	<script src="./js/app-modules/map.js"></script>
+	<script src="./js/app-modules/elo.js"></script>
 
 	<!-- Компоненты -->
 	<script src="./js/team.js"></script>

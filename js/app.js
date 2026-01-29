@@ -73,6 +73,7 @@ const app = {
         eventsModule.init(this);
         commentsModule.init(this);
         mapModule.init(this);
+		eloModule.init(this);
         
         // Теперь, если пользователь уже авторизован, показываем главный экран
         if (authModule.isAuthenticated()) {

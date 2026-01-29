@@ -2844,3 +2844,51 @@ input[type="datetime-local"] {
 .match-card .format-badge {
     margin-left: 8px;
 }
+
+/* Стили для ELO рейтинга команды */
+.elo-rating-full {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.elo-rating-full .stat-box {
+    width: 100%;
+    padding: 20px;
+    border-radius: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    text-align: center;
+}
+
+.elo-progress {
+    margin-top: 15px;
+}
+
+.elo-progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+    color: var(--text-secondary);
+}
+
+.elo-progress-bar {
+    height: 6px;
+    background: var(--bg-secondary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.elo-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+/* Статистика команды - всегда 3 колонки */
+.team-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 30px;
+}
