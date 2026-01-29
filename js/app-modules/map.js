@@ -59,6 +59,12 @@ openMapForLocation() {
     const modal = document.getElementById('location-picker-modal');
     modal.classList.remove('hidden');
     modal.classList.add('active');
+	
+	 // Скрыть нижнее меню
+    const bottomNav = document.getElementById('bottom-nav');
+    if (bottomNav) {
+        bottomNav.style.display = 'none';
+    }
     
     setTimeout(() => {
         this.initLocationMap();
@@ -207,6 +213,12 @@ initLocationMap() {
         modal.classList.remove('active');
         modal.classList.add('hidden');
         
+		// Показать нижнее меню
+    const bottomNav = document.getElementById('bottom-nav');
+    if (bottomNav) {
+        bottomNav.style.display = 'flex';
+    }
+		
         if (this.locationMap) {
             this.locationMap.destroy();
             this.locationMap = null;
