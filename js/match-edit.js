@@ -43,12 +43,12 @@ const matchEditModule = {
     },
 
     render() {
-        if (!this.currentMatch) return;
+    if (!this.currentMatch) return;
 
-        const match = this.currentMatch;
-        const isOwner = this.isMatchOwner();
-        const isFinished = match.status === 'finished';
-        const isCancelled = match.status === 'cancelled';
+    const match = this.currentMatch;
+    const isOwner = this.isMatchOwner();
+    const isFinished = match.status === 'finished';
+    const isCancelled = match.status === 'cancelled';
         
         // Заполняем основную информацию
         const sportElement = document.getElementById('edit-match-sport');
@@ -100,7 +100,12 @@ const matchEditModule = {
         // Обновляем UI в зависимости от статуса и режима редактирования
         this.updateUIByStatus();
         this.updateEditModeUI();
-    },
+    // Убедимся, что поля редактирования скрыты по умолчанию
+    const editFields = document.getElementById('edit-match-fields');
+    if (!this.isEditing && editFields) {
+        editFields.classList.add('hidden');
+    }
+},
 
     isMatchOwner() {
         if (!this.currentMatch || !authModule.isAuthenticated()) return false;
@@ -176,68 +181,70 @@ const matchEditModule = {
 
     // Обновление UI в зависимости от режима редактирования
     updateEditModeUI() {
-        const isOwner = this.isMatchOwner();
-        const match = this.currentMatch;
-        const isFinished = match.status === 'finished';
-        const isCancelled = match.status === 'cancelled';
+    const isOwner = this.isMatchOwner();
+    const match = this.currentMatch;
+    const isFinished = match.status === 'finished';
+    const isCancelled = match.status === 'cancelled';
+    
+    // Управление видимостью полей редактирования
+    const editFields = document.getElementById('edit-match-fields');
+    
+    if (this.isEditing) {
+        // Режим редактирования - ПОКАЗЫВАЕМ поля
+        editFields.classList.remove('hidden');
         
-        if (this.isEditing) {
-            // Режим редактирования - разблокируем все поля
-            document.getElementById('edit-match-datetime').disabled = false;
-            document.getElementById('edit-match-location').disabled = false;
-            document.getElementById('edit-match-location-btn').style.display = 'inline-block';
-            document.getElementById('edit-match-status').disabled = false;
-            document.getElementById('edit-match-format').disabled = false;
-            
-            // Для завершенных матчей блокируем статус
-            if (isFinished) {
-                document.getElementById('edit-match-status').disabled = true;
-            }
-            
-            // Кнопки
-            document.getElementById('edit-match-edit-btn').style.display = 'none';
-            document.getElementById('edit-match-save-btn').style.display = 'block';
-            document.getElementById('edit-match-cancel-btn').style.display = 'block';
-            document.getElementById('finish-match-btn').style.display = 'none';
-            document.getElementById('cancel-match-btn').style.display = 'none';
-            document.getElementById('resume-match-btn').style.display = 'none';
-        } else {
-            // Режим просмотра - блокируем все поля
-            document.getElementById('edit-match-datetime').disabled = true;
-            document.getElementById('edit-match-location').disabled = true;
-            document.getElementById('edit-match-location-btn').style.display = 'none';
+        // Разблокируем все поля
+        document.getElementById('edit-match-datetime').disabled = false;
+        document.getElementById('edit-match-location').disabled = false;
+        document.getElementById('edit-match-location-btn').style.display = 'inline-block';
+        document.getElementById('edit-match-status').disabled = false;
+        document.getElementById('edit-match-format').disabled = false;
+        
+        // Для завершенных матчей блокируем статус
+        if (isFinished) {
             document.getElementById('edit-match-status').disabled = true;
-            document.getElementById('edit-match-format').disabled = true;
-            
-            // Кнопки
-            document.getElementById('edit-match-edit-btn').style.display = isOwner && !isFinished ? 'block' : 'none';
-            document.getElementById('edit-match-save-btn').style.display = 'none';
-            document.getElementById('edit-match-cancel-btn').style.display = 'none';
-            
-            // Кнопки управления статусом
-            const canFinish = isOwner && !isFinished && match.status !== 'cancelled' && match.team2;
-            const canCancel = isOwner && !isFinished && match.status !== 'cancelled';
-            const canResume = isOwner && isCancelled;
-            
-            document.getElementById('finish-match-btn').style.display = canFinish ? 'block' : 'none';
-            document.getElementById('cancel-match-btn').style.display = canCancel ? 'block' : 'none';
-            document.getElementById('resume-match-btn').style.display = canResume ? 'block' : 'none';
-            
-            // Блокируем кнопки +/- для завершенных матчей
-            const scoreBtns = document.querySelectorAll('.score-btn');
-            scoreBtns.forEach(btn => {
-                btn.disabled = isFinished;
-                btn.style.opacity = isFinished ? '0.5' : '1';
-            });
         }
+        
+        // Кнопки
+        document.getElementById('edit-match-edit-btn').style.display = 'none';
+        document.getElementById('edit-match-save-btn').style.display = 'block';
+        document.getElementById('edit-match-cancel-btn').style.display = 'block';
+        document.getElementById('finish-match-btn').style.display = 'none';
+        document.getElementById('cancel-match-btn').style.display = 'none';
+        document.getElementById('resume-match-btn').style.display = 'none';
+    } else {
+        // Режим просмотра - СКРЫВАЕМ поля редактирования
+        editFields.classList.add('hidden');
+        
+        // Кнопки
+        document.getElementById('edit-match-edit-btn').style.display = isOwner && !isFinished ? 'block' : 'none';
+        document.getElementById('edit-match-save-btn').style.display = 'none';
+        document.getElementById('edit-match-cancel-btn').style.display = 'none';
+        
+        // Кнопки управления статусом
+        const canFinish = isOwner && !isFinished && match.status !== 'cancelled' && match.team2;
+        const canCancel = isOwner && !isFinished && match.status !== 'cancelled';
+        const canResume = isOwner && isCancelled;
+        
+        document.getElementById('finish-match-btn').style.display = canFinish ? 'block' : 'none';
+        document.getElementById('cancel-match-btn').style.display = canCancel ? 'block' : 'none';
+        document.getElementById('resume-match-btn').style.display = canResume ? 'block' : 'none';
+        
+        // Блокируем кнопки +/- для завершенных матчей
+        const scoreBtns = document.querySelectorAll('.score-btn');
+        scoreBtns.forEach(btn => {
+            btn.disabled = isFinished;
+            btn.style.opacity = isFinished ? '0.5' : '1';
+        });
+    }
 
-        // Бейдж статуса
-        const statusBadge = document.getElementById('edit-match-status-badge');
-        if (statusBadge) {
-            statusBadge.className = `match-status status-${match.status || 'upcoming'}`;
-            statusBadge.textContent = app.getStatusText(match.status);
-        }
-    },
+    // Бейдж статуса
+    const statusBadge = document.getElementById('edit-match-status-badge');
+    if (statusBadge) {
+        statusBadge.className = `match-status status-${match.status || 'upcoming'}`;
+        statusBadge.textContent = app.getStatusText(match.status);
+    }
+},
 
     adjustScore(change, teamNumber) {
         const match = this.currentMatch;
@@ -484,40 +491,40 @@ const matchEditModule = {
     },
 
     async saveMatchChanges() {
-        const match = this.currentMatch;
-        
-        // Проверяем, не пытаются ли изменить завершенный матч
-        if (match.status === 'finished' && this.originalMatch.status !== 'finished') {
-            alert('Нельзя сохранить изменения для завершенного матча');
-            this.cancelEditing();
-            return;
-        }
-        
-        const datetime = document.getElementById('edit-match-datetime').value;
-        const location = document.getElementById('edit-match-location').value;
-        const lat = document.getElementById('edit-match-lat').value;
-        const lng = document.getElementById('edit-match-lng').value;
-        const status = document.getElementById('edit-match-status').value;
-        const format = document.getElementById('edit-match-format').value;
-        const score1 = parseInt(document.getElementById('edit-match-score1').value) || 0;
-        const score2 = parseInt(document.getElementById('edit-match-score2').value) || 0;
+    const match = this.currentMatch;
+    
+    // Проверяем, не пытаются ли изменить завершенный матч
+    if (match.status === 'finished' && this.originalMatch.status !== 'finished') {
+        alert('Нельзя сохранить изменения для завершенного матча');
+        this.cancelEditing();
+        return;
+    }
+    
+    const datetime = document.getElementById('edit-match-datetime').value;
+    const location = document.getElementById('edit-match-location').value;
+    const lat = document.getElementById('edit-match-lat').value;
+    const lng = document.getElementById('edit-match-lng').value;
+    const status = document.getElementById('edit-match-status').value;
+    const format = document.getElementById('edit-match-format').value;
+    const score1 = parseInt(document.getElementById('edit-match-score1').value) || 0;
+    const score2 = parseInt(document.getElementById('edit-match-score2').value) || 0;
 
-        if (!datetime || !location || !format) {
-            alert('Заполните все обязательные поля');
-            return;
-        }
+    if (!datetime || !location || !format) {
+        alert('Заполните все обязательные поля');
+        return;
+    }
 
-        try {
-            const updates = {
-                date: datetime,
-                location,
-                status,
-                format: format,
-                score: `${score1}:${score2}`,
-                lat: lat || null,
-                lng: lng || null,
-                updated_at: new Date().toISOString()
-            };
+    try {
+        const updates = {
+            date: datetime,
+            location,
+            status,
+            format: format,
+            score: `${score1}:${score2}`,
+            lat: lat || null,
+            lng: lng || null,
+            updated_at: new Date().toISOString()
+        };
 
             // Если статус меняется на finished
             if (status === 'finished' && match.status !== 'finished') {
@@ -556,20 +563,20 @@ const matchEditModule = {
             }
 
             // Обновляем текущий матч
-            Object.assign(match, updates);
-            this.originalMatch = JSON.parse(JSON.stringify(match));
-            this.isEditing = false;
-            
-            // Блокируем интерфейс для завершенного матча
-            if (status === 'finished') {
-                document.getElementById('edit-match-score1').readOnly = true;
-                document.getElementById('edit-match-score2').readOnly = true;
-                document.getElementById('edit-match-score1').style.opacity = '0.7';
-                document.getElementById('edit-match-score2').style.opacity = '0.7';
-            }
-            
-            alert('Изменения сохранены!');
-            this.render();
+        Object.assign(match, updates);
+        this.originalMatch = JSON.parse(JSON.stringify(match));
+        this.isEditing = false; // Выходим из режима редактирования
+        
+        // Блокируем интерфейс для завершенного матча
+        if (status === 'finished') {
+            document.getElementById('edit-match-score1').readOnly = true;
+            document.getElementById('edit-match-score2').readOnly = true;
+            document.getElementById('edit-match-score1').style.opacity = '0.7';
+            document.getElementById('edit-match-score2').style.opacity = '0.7';
+        }
+        
+        alert('Изменения сохранены!');
+        this.render(); // Обновляем UI
 
             // Обновляем в других модулях
             if (matchesModule) {
@@ -662,23 +669,23 @@ const matchEditModule = {
     },
 
     startEditing() {
-        const match = this.currentMatch;
-        
-        if (match.status === 'finished') {
-            alert('Нельзя редактировать завершенный матч');
-            return;
-        }
-        
-        this.isEditing = true;
-        this.updateEditModeUI();
-    },
+    const match = this.currentMatch;
+    
+    if (match.status === 'finished') {
+        alert('Нельзя редактировать завершенный матч');
+        return;
+    }
+    
+    this.isEditing = true;
+    this.updateEditModeUI();
+},
 
-    cancelEditing() {
-        this.isEditing = false;
-        // Восстанавливаем исходные значения
-        this.currentMatch = JSON.parse(JSON.stringify(this.originalMatch));
-        this.render();
-    },
+cancelEditing() {
+    this.isEditing = false;
+    // Восстанавливаем исходные значения
+    this.currentMatch = JSON.parse(JSON.stringify(this.originalMatch));
+    this.render();
+},
 
     openMapForLocation() {
         // Используем существующий функционал карты

@@ -662,16 +662,16 @@
         <h2 class="section-title">Управление матчем</h2>
 
         <div class="form-section">
-            <!-- Статус матча -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <span class="match-status" id="edit-match-status-badge">СКОРО</span>
-                <span class="sport-badge" id="edit-match-sport">
-                    <i class="fas fa-futbol"></i> ФУТБОЛ
-                </span>
-            </div>
+    <!-- Статус матча -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <span class="match-status" id="edit-match-status-badge">СКОРО</span>
+        <span class="sport-badge" id="edit-match-sport">
+            <i class="fas fa-futbol"></i> ФУТБОЛ
+        </span>
+    </div>
 
-            <!-- Команды и счет -->
-            <div class="score-editor" style="margin-bottom: 25px;">
+    <!-- Команды и счет -->
+    <div class="score-editor" style="margin-bottom: 25px;">
                 <div class="score-teams">
                     <div class="score-team">
                         <div class="team-avatar large" id="edit-match-team1-avatar">⚽</div>
@@ -724,60 +724,90 @@
             </div>
 
             <!-- Предупреждения -->
-            <div id="edit-match-warnings" class="warnings-container hidden" style="margin-bottom: 20px;"></div>
+    <div id="edit-match-warnings" class="warnings-container hidden" style="margin-bottom: 20px;"></div>
+<!-- КНОПКА РЕДАКТИРОВАТЬ МАТЧ (ВСЕГДА ВИДНА ЕСЛИ ЕСТЬ ПРАВА) -->
+    <div class="match-actions" style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+        <button class="btn btn-primary" 
+                id="edit-match-edit-btn"
+                onclick="matchEditModule.startEditing()">
+            <i class="fas fa-pen"></i> Редактировать матч
+        </button>
+        
+        <button class="btn btn-success" 
+                id="finish-match-btn"
+                onclick="matchEditModule.updateStatus('finished')"
+                style="display: none;">
+            <i class="fas fa-flag-checkered"></i> Завершить матч
+        </button>
+        
+        <button class="btn btn-danger" 
+                id="cancel-match-btn"
+                onclick="matchEditModule.cancelMatch()"
+                style="display: none;">
+            <i class="fas fa-times"></i> Отменить матч
+        </button>
+        
+        <button class="btn btn-warning" 
+                id="resume-match-btn"
+                onclick="matchEditModule.resumeMatch()"
+                style="display: none;">
+            <i class="fas fa-play"></i> Возобновить матч
+        </button>
+    </div>
+    <!-- КОНТЕЙНЕР ДЛЯ ПОЛЕЙ РЕДАКТИРОВАНИЯ (СКРЫТ ПО УМОЛЧАНИЮ) -->
+    <div id="edit-match-fields" class="hidden">
+        <!-- Основная информация (редактируемая) -->
+        <div id="edit-match-controls">
+            <!-- ДОБАВЛЕНО: Поле формата игры -->
+            <div class="form-group">
+                <label>Формат игры</label>
+                <select id="edit-match-format" disabled>
+                    <option value="2x2">2 на 2</option>
+                    <option value="3x3">3 на 3</option>
+                    <option value="4x4">4 на 4</option>
+                    <option value="5x5">5 на 5</option>
+                    <option value="7x7">7 на 7</option>
+                    <option value="11x11">11 на 11</option>
+                </select>
+            </div>
 
-            <!-- Основная информация (редактируемая) -->
-            <div id="edit-match-controls">
-                <!-- ДОБАВЛЕНО: Поле формата игры -->
-                <div class="form-group">
-                    <label>Формат игры</label>
-                    <select id="edit-match-format" disabled>
-                        <option value="2x2">2 на 2</option>
-                        <option value="3x3">3 на 3</option>
-                        <option value="4x4">4 на 4</option>
-                        <option value="5x5">5 на 5</option>
-                        <option value="7x7">7 на 7</option>
-                        <option value="11x11">11 на 11</option>
-                    </select>
-                </div>
+            <div class="form-group">
+                <label>Дата и время</label>
+                <input type="datetime-local" 
+                       id="edit-match-datetime" 
+                       disabled
+                       onchange="matchEditModule.updateUIByStatus()">
+            </div>
 
-                <div class="form-group">
-                    <label>Дата и время</label>
-                    <input type="datetime-local" 
-                           id="edit-match-datetime" 
+            <div class="form-group">
+                <label>Место проведения</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" 
+                           id="edit-match-location" 
+                           placeholder="Стадион"
                            disabled
-                           onchange="matchEditModule.updateUIByStatus()">
+                           style="flex: 1;">
+                    <button type="button" 
+                            class="btn btn-secondary" 
+                            id="edit-match-location-btn"
+                            onclick="matchEditModule.openMapForLocation()"
+                            style="width: auto; padding: 10px 15px; display: none;">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </button>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label>Место проведения</label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" 
-                               id="edit-match-location" 
-                               placeholder="Стадион"
-                               disabled
-                               style="flex: 1;">
-                        <button type="button" 
-                                class="btn btn-secondary" 
-                                id="edit-match-location-btn"
-                                onclick="matchEditModule.openMapForLocation()"
-                                style="width: auto; padding: 10px 15px; display: none;">
-                            <i class="fas fa-map-marker-alt"></i>
-                        </button>
-                    </div>
-                </div>
+            <div class="form-group">
+                <label>Статус матча</label>
+                <select id="edit-match-status" disabled onchange="matchEditModule.updateUIByStatus()">
+                    <option value="upcoming">Предстоящий</option>
+                    <option value="live">В процессе</option>
+                    <option value="finished">Завершен</option>
+                    <option value="cancelled">Отменен</option>
+                </select>
+            </div>
 
-                <div class="form-group">
-                    <label>Статус матча</label>
-                    <select id="edit-match-status" disabled onchange="matchEditModule.updateUIByStatus()">
-                        <option value="upcoming">Предстоящий</option>
-                        <option value="live">В процессе</option>
-                        <option value="finished">Завершен</option>
-                        <option value="cancelled">Отменен</option>
-                    </select>
-                </div>
-
-                <!-- Скрытые поля координат -->
+            <!-- Скрытые поля координат -->
                 <input type="hidden" id="edit-match-lat">
                 <input type="hidden" id="edit-match-lng">
             </div>
