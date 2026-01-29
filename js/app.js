@@ -51,6 +51,12 @@ const app = {
                 console.warn('⚠️ Ошибка инициализации teamEditModule:', error);
             }
         }
+        
+        // Инициализируем matchEditModule если он существует
+        if (typeof matchEditModule !== 'undefined') {
+            console.log('✅ matchEditModule загружен');
+            // Можно добавить дополнительную инициализацию если нужно
+        }
     },
     
     // ========== ПРОКСИ-МЕТОДЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ ==========
@@ -283,12 +289,21 @@ const app = {
     renderMyTeams() {
         return teamsModule.renderMyTeams();
     },
-	
-	
     
     // Комментарии и реакции
     addComment(matchId, text) {
         return commentsModule.addComment(matchId, text);
+    },
+    
+    // ========== НОВЫЕ МЕТОДЫ ДЛЯ РЕДАКТИРОВАНИЯ МАТЧЕЙ ==========
+    
+    showMatchEdit(matchId) {
+        if (typeof matchEditModule !== 'undefined' && matchEditModule.show) {
+            return matchEditModule.show(matchId);
+        } else {
+            alert('Модуль редактирования матчей не доступен');
+            return null;
+        }
     },
     
     // ========== ОБЩИЕ УТИЛИТЫ ==========

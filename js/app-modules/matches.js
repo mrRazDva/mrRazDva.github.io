@@ -102,6 +102,29 @@ const matchesModule = {
         const isOwner = userId && (t1?.owner_id === userId);
         const hasChallenges = isOwner && challengeCount > 0;
         
+        // Определяем, нужно ли показывать счет
+        const showScore = match.status === 'live' || match.status === 'finished';
+        const [score1, score2] = match.score ? match.score.split(':').map(Number) : [0, 0];
+        
+        // Определяем победителя для стилей
+        let team1Class = '';
+        let team2Class = '';
+        let scoreClass = '';
+        
+        if (showScore) {
+            if (score1 > score2) {
+                team1Class = 'winner';
+                team2Class = 'loser';
+                scoreClass = 'score-winner';
+            } else if (score2 > score1) {
+                team1Class = 'loser';
+                team2Class = 'winner';
+                scoreClass = 'score-winner';
+            } else {
+                scoreClass = 'score-draw';
+            }
+        }
+        
         const card = document.createElement('div');
         card.className = `match-card ${hasChallenges ? 'has-challenges' : ''}`;
         card.onclick = () => this.showMatchDetail(match.id);
@@ -129,6 +152,20 @@ const matchesModule = {
             `;
         }
         
+        // Определяем центральную часть (счет или VS)
+        let centerContent = '';
+        if (showScore) {
+            centerContent = `
+                <div class="match-score-display ${scoreClass}">
+                    <span class="score-team1 ${team1Class}">${score1}</span>
+                    <span class="score-divider">:</span>
+                    <span class="score-team2 ${team2Class}">${score2}</span>
+                </div>
+            `;
+        } else {
+            centerContent = `<div class="vs">VS</div>`;
+        }
+        
         card.innerHTML = `
             <div class="match-header">
                 <div class="match-header-left">
@@ -145,12 +182,16 @@ const matchesModule = {
                 </div>
             </div>
             <div class="teams-row">
-                <div class="team">
+                <div class="team ${team1Class}">
                     <div class="team-avatar">${t1?.avatar || '?'}</div>
                     <div class="team-name">${t1?.name || 'Команда 1'}</div>
+                   
                 </div>
-                <div class="vs">VS</div>
-                <div class="team" style="justify-content: flex-end;">
+                
+                ${centerContent}
+                
+                <div class="team ${team2Class}" style="justify-content: flex-end;">
+             
                     <div style="text-align: right; margin-right: 8px;">
                         <div class="team-name">${t2?.name || 'Команда 2'}</div>
                     </div>
@@ -251,10 +292,53 @@ const matchesModule = {
             // Показываем комментарии и реакции
             commentsModule.showCommentsSection(matchId);
             
+            // Добавляем кнопку редактирования если пользователь владелец
+            this.addEditButtonToMatchDetail();
+            
         } catch (error) {
             console.error('❌ Ошибка загрузки матча:', error);
             alert('Ошибка загрузки матча: ' + error.message);
         }
+    },
+    
+    // Добавить кнопку редактирования в детали матча
+    addEditButtonToMatchDetail() {
+        const match = this.app.selectedMatch;
+        if (!match) return;
+        
+        const userId = authModule.getUserId();
+        const isTeam1Owner = match.team1?.owner_id === userId;
+        const isTeam2Owner = match.team2?.owner_id === userId;
+        const canEdit = isTeam1Owner || isTeam2Owner;
+        
+        if (!canEdit) return;
+        
+        // Ищем контейнер для действий
+        const detailContent = document.getElementById('match-detail-content');
+        if (!detailContent) return;
+        
+        // Удаляем существующую кнопку редактирования, если есть
+        const existingEditBtn = detailContent.querySelector('.edit-match-btn');
+        if (existingEditBtn) {
+            existingEditBtn.remove();
+        }
+        
+        // Создаем кнопку редактирования
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn btn-primary edit-match-btn';
+        editBtn.style.marginTop = '20px';
+        editBtn.style.width = '100%';
+        editBtn.innerHTML = '<i class="fas fa-edit"></i> Управление матчем';
+        editBtn.onclick = () => {
+            if (typeof matchEditModule !== 'undefined') {
+                matchEditModule.show(match.id);
+            } else {
+                alert('Модуль редактирования матча не загружен');
+            }
+        };
+        
+        // Добавляем кнопку после деталей матча
+        detailContent.appendChild(editBtn);
     },
     
     renderMatchDetail(match) {
@@ -263,6 +347,26 @@ const matchesModule = {
         const t2 = match.team2;
         
         if (!content) return;
+        
+        // Определяем победителя для стилей
+        const [score1, score2] = match.score ? match.score.split(':').map(Number) : [0, 0];
+        let team1Class = '';
+        let team2Class = '';
+        let scoreClass = '';
+        
+        if (match.status === 'live' || match.status === 'finished') {
+            if (score1 > score2) {
+                team1Class = 'winner';
+                team2Class = 'loser';
+                scoreClass = 'score-winner';
+            } else if (score2 > score1) {
+                team1Class = 'loser';
+                team2Class = 'winner';
+                scoreClass = 'score-winner';
+            } else {
+                scoreClass = 'score-draw';
+            }
+        }
         
         let teamsHTML = '';
         
