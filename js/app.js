@@ -383,17 +383,21 @@ const app = {
         const names = {
             football: 'Футбол',
             volleyball: 'Волейбол',
-            basketball: 'Баскетбол'
+            basketball: 'Баскетбол',
+            hockey: 'Хоккей',
+            tabletennis: 'Настольный теннис'
         };
         return names[sport] || sport;
     },
-    
+
     // Получение иконки вида спорта
     getSportIcon(sport) {
         const icons = {
             football: 'futbol',
             volleyball: 'volleyball-ball',
-            basketball: 'basketball-ball'
+            basketball: 'basketball-ball',
+            hockey: 'hockey-puck',
+            tabletennis: 'table-tennis'
         };
         return icons[sport] || 'futbol';
     },

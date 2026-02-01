@@ -1,6 +1,7 @@
 const matchesModule = {
     app: null,
-    
+     liveUpdateInterval: null,
+    liveMatches: [],
     init(appInstance) {
         this.app = appInstance;
     },
@@ -83,7 +84,68 @@ async renderMatches() {
             container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--accent-pink);">Ошибка загрузки матчей</div>';
         }
     },
+	
+	// Запуск обновления таймеров live матчей
+startLiveTimersUpdate(matches) {
+    // Очищаем предыдущий интервал
+    if (liveUpdateInterval) {
+        clearInterval(liveUpdateInterval);
+        liveUpdateInterval = null;
+    }
     
+    // Фильтруем live матчи с started_at
+    liveMatches = matches.filter(m => m.status === 'live' && m.started_at);
+    
+    if (liveMatches.length === 0) return;
+    
+    // Обновляем сразу
+    this.updateLiveTimers();
+    
+    // И каждую секунду
+    liveUpdateInterval = setInterval(() => {
+        this.updateLiveTimers();
+    }, 1000);
+},
+
+// Остановка обновления
+stopLiveTimersUpdate() {
+    if (liveUpdateInterval) {
+        clearInterval(liveUpdateInterval);
+        liveUpdateInterval = null;
+    }
+    liveMatches = [];
+},
+
+// Обновление всех таймеров на странице
+updateLiveTimers() {
+    const now = new Date();
+    
+    liveMatches.forEach(match => {
+        const card = document.querySelector(`[data-match-id="${match.id}"]`);
+        if (!card) return;
+        
+        const timerEl = card.querySelector('.live-timer');
+        if (!timerEl) return;
+        
+        const startTime = new Date(match.started_at);
+        const diffMs = now - startTime;
+        const duration = this.formatDurationShort(diffMs);
+        
+        timerEl.innerHTML = `<i class="fas fa-stopwatch" style="animation: pulse 1s infinite;"></i> ${duration}`;
+    });
+},
+    
+	getTeamAvatarHTML(team) {
+    if (!team) return '<span>?</span>';
+    
+    if (team.logo_url) {
+        return `<img src="${team.logo_url}" alt="${team.name}" 
+                style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    } else {
+        return `<span>${team.avatar || '?'}</span>`;
+    }
+},
+	
     renderMatchesToContainer(container, matches, challengeCounts = {}, userId = null) {
     container.innerHTML = '';
     
@@ -122,44 +184,26 @@ async renderMatches() {
             if (score1 > score2) {
                 team1Class = 'winner';
                 team2Class = 'loser';
-                scoreClass = 'score-winner';
             } else if (score2 > score1) {
                 team1Class = 'loser';
                 team2Class = 'winner';
-                scoreClass = 'score-winner';
-            } else {
-                scoreClass = 'score-draw';
             }
         }
         
         const card = document.createElement('div');
         card.className = `match-card ${hasChallenges ? 'has-challenges' : ''}`;
+		
         card.onclick = () => this.showMatchDetail(match.id);
         
-        // Определяем текст для бейджа вызовов
+        // Бейдж вызовов
         let challengeBadgeHTML = '';
         if (hasChallenges) {
-            let challengeText;
-            if (challengeCount === 1) {
-                challengeText = '1 ВЫЗОВ';
-            } else if (challengeCount === 2) {
-                challengeText = '2 ВЫЗОВА';
-            } else if (challengeCount === 3) {
-                challengeText = '3 ВЫЗОВА';
-            } else if (challengeCount === 4) {
-                challengeText = '4 ВЫЗОВА';
-            } else {
-                challengeText = `${challengeCount} ВЫЗОВОВ`;
-            }
-            
-            challengeBadgeHTML = `
-                <span class="match-status status-challenges" title="${challengeText}">
-                    <i class="fas fa-fire" style="margin-right: 4px;"></i>${challengeText}
-                </span>
-            `;
+            let challengeText = challengeCount === 1 ? '1 ВЫЗОВ' : 
+                               challengeCount < 5 ? `${challengeCount} ВЫЗОВА` : `${challengeCount} ВЫЗОВОВ`;
+            challengeBadgeHTML = `<span class="match-status status-challenges"><i class="fas fa-fire"></i> ${challengeText}</span>`;
         }
         
-        // Определяем центральную часть (счет или VS)
+        // Центральная часть (счет или VS)
         let centerContent = '';
         if (showScore) {
             centerContent = `
@@ -172,7 +216,12 @@ async renderMatches() {
         } else {
             centerContent = `<div class="vs">VS</div>`;
         }
+
         
+        const timeHTML = this.getMatchTimeHTML(match);
+        const durationHTML = this.getMatchDurationHTML(match);
+        
+
         card.innerHTML = `
             <div class="match-header">
                 <div class="match-header-left">
@@ -193,29 +242,34 @@ async renderMatches() {
             </div>
             <div class="teams-row">
                 <div class="team ${team1Class}">
-                    <div class="team-avatar">${t1?.avatar || '?'}</div>
+                    <div class="team-avatar">${this.getTeamAvatarHTML(t1)}</div>
                     <div class="team-name">${t1?.name || 'Команда 1'}</div>
-                   
                 </div>
                 
                 ${centerContent}
                 
                 <div class="team ${team2Class}" style="justify-content: flex-end;">
-             
                     <div style="text-align: right; margin-right: 8px;">
                         <div class="team-name">${t2?.name || 'Команда 2'}</div>
                     </div>
-                    <div class="team-avatar">${t2?.avatar || '?'}</div>
+                    <div class="team-avatar">${this.getTeamAvatarHTML(t2)}</div>
                 </div>
             </div>
-            <div class="match-info">
-                <span><i class="far fa-clock"></i> ${this.app.formatDateTime(match.date)}</span>
+            
+           
+            <div class="match-info" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.85rem; color: var(--text-secondary); margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <span>${timeHTML}</span>
+                ${durationHTML ? `<span>${durationHTML}</span>` : ''}
                 <span><i class="fas fa-map-marker-alt"></i> ${match.location || 'Стадион'}</span>
             </div>
+            
         `;
+        
         container.appendChild(card);
     });
 },
+
+
     
     // Вспомогательная функция для правильного склонения
     pluralize(count, one, few, many) {
@@ -239,9 +293,12 @@ async renderMatches() {
         this.app.currentFilter = sport;
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.classList.toggle('active', btn.textContent.toLowerCase().includes(
-                sport === 'all' ? 'все' : 
+                sport === 'all' ? 'все' :
                 sport === 'football' ? 'футбол' :
-                sport === 'volleyball' ? 'волейбол' : 'баскетбол'
+                sport === 'volleyball' ? 'волейбол' :
+                sport === 'basketball' ? 'баскетбол' :
+                sport === 'hockey' ? 'хоккей' :
+                sport === 'tabletennis' ? 'настольный' : 'все'
             ));
         });
         this.renderMatches();
@@ -391,10 +448,9 @@ async renderMatches() {
         if (t1) {
             teamsHTML += `
                 <div class="detail-team" onclick="teamModule.show('${t1.id}')" style="cursor: pointer;">
-                    <div class="team-avatar" style="width: 80px; height: 80px; font-size: 2.5rem; margin: 0 auto 10px; border-color: var(--accent-green); transition: transform 0.2s;" 
-                         onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-                        ${t1.avatar || '⚽'}
-                    </div>
+                    <div class="team-avatar" style="width: 80px; height: 80px; font-size: 2.5rem; margin: 0 auto 10px; border-color: var(--accent-green); border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+    ${this.getTeamAvatarHTML(t1)}
+</div>
                     <div style="font-weight: 700; font-size: 1.1rem;">${t1.name || 'Команда 1'}</div>
                     <div style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 4px;">Состав →</div>
                 </div>
@@ -421,10 +477,9 @@ async renderMatches() {
         if (t2) {
             teamsHTML += `
                 <div class="detail-team" onclick="teamModule.show('${t2.id}')" style="cursor: pointer;">
-                    <div class="team-avatar" style="width: 80px; height: 80px; font-size: 2.5rem; margin: 0 auto 10px; border-color: var(--accent-green); transition: transform 0.2s;" 
-                         onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-                        ${t2.avatar || '⚽'}
-                    </div>
+                    <div class="team-avatar" style="width: 80px; height: 80px; font-size: 2.5rem; margin: 0 auto 10px; border-color: var(--accent-green); border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+    ${this.getTeamAvatarHTML(t2)}
+</div>
                     <div style="font-weight: 700; font-size: 1.1rem;">${t2.name || 'Команда 2'}</div>
                     <div style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 4px;">Состав →</div>
                 </div>
@@ -647,6 +702,38 @@ async renderMatches() {
         }
     },
     
+	
+	    // Получить HTML для таймера/длительности матча для карточки
+    getMatchDurationHTML(match) {
+        if (match.status === 'live' && match.started_at) {
+            const duration = this.formatDurationShort(new Date() - new Date(match.started_at));
+            return `<span style="color: var(--accent-green); font-weight: 700; display: inline-flex; align-items: center; gap: 4px; font-size: 0.9rem;">
+                <i class="fas fa-stopwatch" style="animation: pulse 1s infinite;"></i> ${duration}
+            </span>`;
+        } else if (match.status === 'finished' && match.started_at && match.finished_at) {
+            const duration = this.formatDurationShort(new Date(match.finished_at) - new Date(match.started_at));
+            return `<span style="color: var(--accent-blue); font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px;">
+                <i class="fas fa-clock"></i> ${duration}
+            </span>`;
+        }
+        return '';
+    },
+
+    formatDurationShort(ms) {
+        const seconds = Math.floor((ms / 1000) % 60);
+        const minutes = Math.floor((ms / (1000 * 60)) % 60);
+        const hours = Math.floor(ms / (1000 * 60 * 60));
+        if (hours > 0) return `${hours}ч ${minutes}м`;
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    },
+
+    getMatchTimeHTML(match) {
+        if (match.status === 'live') return `<span style="color: var(--accent-green); font-weight: 700;"><i class="fas fa-play-circle"></i> LIVE</span>`;
+        if (match.status === 'finished') return `<span style="color: var(--text-secondary);"><i class="fas fa-flag-checkered"></i> Завершен</span>`;
+        if (match.status === 'cancelled') return `<span style="color: var(--accent-pink);"><i class="fas fa-ban"></i> Отменен</span>`;
+        return `<span><i class="far fa-clock"></i> ${this.app.formatDateTime(match.date)}</span>`;
+    },
+	
     // Бросок вызова
     async challengeTeam() {
         if (!authModule.isAuthenticated() || !authModule.hasRole('organizer') || !authModule.isProActive()) {

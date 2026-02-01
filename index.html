@@ -196,6 +196,9 @@
                 <button class="filter-btn active" onclick="app.filterSport('all')">Все</button>
                 <button class="filter-btn" onclick="app.filterSport('football')">Футбол</button>
                 <button class="filter-btn" onclick="app.filterSport('volleyball')">Волейбол</button>
+                <button class="filter-btn" onclick="app.filterSport('basketball')">Баскетбол</button>
+                <button class="filter-btn" onclick="app.filterSport('hockey')">Хоккей</button>
+                <button class="filter-btn" onclick="app.filterSport('tabletennis')">Настольный теннис</button>
             </div>
 
             <div class="matches-list" id="matches-list"></div>
@@ -262,35 +265,72 @@
             </div>
         </section>
 
-        <!-- Screen: Create Team -->
         <section id="screen-create-team" class="screen">
-            <div class="container">
-                <button class="back-btn" onclick="app.showTeams()">
-                    <i class="fas fa-arrow-left"></i> Назад
-                </button>
-                <h2 class="section-title">Новая команда</h2>
-                <form class="form-section" onsubmit="event.preventDefault(); app.createTeam();">
-                    <div class="form-group">
-                        <label>Название</label>
-                        <input type="text" id="team-name" placeholder="Драконы" required>
+    <div class="container">
+        <button class="back-btn" onclick="app.showTeams()">
+            <i class="fas fa-arrow-left"></i> Назад
+        </button>
+        <h2 class="section-title">Новая команда</h2>
+        
+        <form class="form-section" id="create-team-form" onsubmit="event.preventDefault(); teamsModule.createTeam();">
+            <!-- Загрузка логотипа -->
+            <div class="form-group">
+                <label>Логотип команды</label>
+                <div class="logo-upload-area" id="logo-upload-area" onclick="document.getElementById('team-logo-input').click()">
+                    <input type="file" id="team-logo-input" accept="image/*" style="display: none;" onchange="teamsModule.handleLogoPreview(event)">
+                    <div class="logo-preview" id="logo-preview">
+                        <i class="fas fa-camera"></i>
+                        <span>Нажмите для загрузки</span>
+                        <small>PNG, JPG до 5MB</small>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Вид спорта</label>
-                            <select id="team-sport">
-                                <option value="football">Футбол</option>
-                                <option value="volleyball">Волейбол</option>
-                            </select>
-                        </div>
-                        <div class="form-group avatar-group">
-                            <label>Иконка</label>
-                            <input type="text" id="team-avatar" placeholder="🐲" maxlength="2">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Создать</button>
-                </form>
+                    <button type="button" class="logo-remove-btn hidden" id="logo-remove-btn" onclick="event.stopPropagation(); teamsModule.removeLogo()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </div>
-        </section>
+
+            <div class="form-group">
+                <label>Название команды *</label>
+                <input type="text" id="team-name" placeholder="Например: Драконы" required maxlength="50">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Город *</label>
+                    <select id="team-city" required>
+                        <option value="">Выберите город</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Вид спорта *</label>
+                    <select id="team-sport" required>
+                        <option value="football">Футбол</option>
+                        <option value="volleyball">Волейбол</option>
+                        <option value="basketball">Баскетбол</option>
+                        <option value="hockey">Хоккей</option>
+                        <option value="tabletennis">Настольный теннис</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Описание команды</label>
+                <textarea id="team-description" rows="3" placeholder="Расскажите о команде, достижениях, стиле игры..." maxlength="500"></textarea>
+                <small class="char-counter" id="desc-counter">0 / 500</small>
+            </div>
+
+            <!-- Fallback эмодзи (если нет логотипа) -->
+            <div class="form-group avatar-group hidden" id="emoji-fallback">
+                <label>Иконка (если нет логотипа)</label>
+                <input type="text" id="team-avatar" placeholder="🐲" maxlength="2">
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="create-team-submit">
+                <i class="fas fa-plus"></i> Создать команду
+            </button>
+        </form>
+    </div>
+</section>
 
         <!-- Screen: Create Match -->
 <section id="screen-create-match" class="screen">
@@ -611,107 +651,71 @@
 
         <h2 class="section-title">Управление матчем</h2>
 
-        <div class="form-section">
-    <!-- Статус матча -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <span class="match-status" id="edit-match-status-badge">СКОРО</span>
-        <span class="sport-badge" id="edit-match-sport">
-            <i class="fas fa-futbol"></i> ФУТБОЛ
-        </span>
-    </div>
-
-    <!-- Команды и счет -->
-    <div class="score-editor" style="margin-bottom: 25px;">
-                <div class="score-teams">
-                    <div class="score-team">
-                        <div class="team-avatar large" id="edit-match-team1-avatar">⚽</div>
-                        <div class="team-name" id="edit-match-team1-name">Команда 1</div>
-                        <div class="score-input-container">
-                            <button class="score-btn minus" onclick="matchEditModule.adjustScore(-1, 1)">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                            <input type="number" 
-                                   id="edit-match-score1" 
-                                   class="score-input"
-                                   min="0" 
-                                   max="99"
-                                   onchange="matchEditModule.updateScore()"
-                                   oninput="matchEditModule.updateUIByStatus()">
-                            <button class="score-btn plus" onclick="matchEditModule.adjustScore(1, 1)">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="vs" style="font-size: 1.5rem; color: var(--accent-pink);">VS</div>
-                    
-                    <div class="score-team">
-                        <div class="team-avatar large" id="edit-match-team2-avatar">⚽</div>
-                        <div class="team-name" id="edit-match-team2-name">Команда 2</div>
-                        <div class="score-input-container">
-                            <button class="score-btn minus" onclick="matchEditModule.adjustScore(-1, 2)">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                            <input type="number" 
-                                   id="edit-match-score2" 
-                                   class="score-input"
-                                   min="0" 
-                                   max="99"
-                                   onchange="matchEditModule.updateScore()"
-                                   oninput="matchEditModule.updateUIByStatus()">
-                            <button class="score-btn plus" onclick="matchEditModule.adjustScore(1, 2)">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                    </div>
+        <!-- Шапка: Команды и статус -->
+        <div class="form-section" style="text-align: center; padding: 20px;">
+            <span class="match-status" id="edit-match-status-badge" style="font-size: 0.9rem; padding: 8px 16px;">
+                ЗАГРУЗКА...
+            </span>
+            
+            <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin: 25px 0;">
+                <div style="text-align: center;">
+                    <div class="team-avatar" id="edit-match-team1-avatar" style="width: 60px; height: 60px; font-size: 2rem; margin: 0 auto 8px;">⚽</div>
+                    <div id="edit-match-team1-name" style="font-weight: 700; font-size: 0.9rem;">Команда 1</div>
                 </div>
                 
-                <div style="text-align: center; margin-top: 10px;">
-                    <button class="btn btn-secondary" onclick="matchEditModule.updateScore()" style="width: auto; padding: 8px 16px;">
-                        <i class="fas fa-save"></i> Сохранить счет
-                    </button>
+                <div style="font-size: 1.8rem; color: var(--accent-pink); font-family: var(--font-display);">VS</div>
+                
+                <div style="text-align: center;">
+                    <div class="team-avatar" id="edit-match-team2-avatar" style="width: 60px; height: 60px; font-size: 2rem; margin: 0 auto 8px;">⚽</div>
+                    <div id="edit-match-team2-name" style="font-weight: 700; font-size: 0.9rem;">Команда 2</div>
                 </div>
             </div>
+            
+            <span class="sport-badge" id="edit-match-sport">
+                <i class="fas fa-futbol"></i> ФУТБОЛ
+            </span>
+        </div>
 
-            <!-- Предупреждения -->
-    <div id="edit-match-warnings" class="warnings-container hidden" style="margin-bottom: 20px;"></div>
-<!-- КНОПКА РЕДАКТИРОВАТЬ МАТЧ (ВСЕГДА ВИДНА ЕСЛИ ЕСТЬ ПРАВА) -->
-    <div class="match-actions" style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
-        <button class="btn btn-primary" 
-                id="edit-match-edit-btn"
-                onclick="matchEditModule.startEditing()">
-            <i class="fas fa-pen"></i> Редактировать матч
-        </button>
-        
-        <button class="btn btn-success" 
-                id="finish-match-btn"
-                onclick="matchEditModule.updateStatus('finished')"
-                style="display: none;">
-            <i class="fas fa-flag-checkered"></i> Завершить матч
-        </button>
-        
-        <button class="btn btn-danger" 
-                id="cancel-match-btn"
-                onclick="matchEditModule.cancelMatch()"
-                style="display: none;">
-            <i class="fas fa-times"></i> Отменить матч
-        </button>
-        
-        <button class="btn btn-warning" 
-                id="resume-match-btn"
-                onclick="matchEditModule.resumeMatch()"
-                style="display: none;">
-            <i class="fas fa-play"></i> Возобновить матч
-        </button>
-    </div>
-    <!-- КОНТЕЙНЕР ДЛЯ ПОЛЕЙ РЕДАКТИРОВАНИЯ (СКРЫТ ПО УМОЛЧАНИЮ) -->
-    <div id="edit-match-fields" class="hidden">
-        <!-- Основная информация (редактируемая) -->
-        <div id="edit-match-controls">
-            <!-- ДОБАВЛЕНО: Поле формата игры -->
+        <!-- Счет -->
+        <div class="form-section" id="score-section">
+            <h3 class="form-title" style="text-align: center; margin-bottom: 20px;">
+                <i class="fas fa-trophy"></i> Счет
+            </h3>
+            
+            <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 15px;">
+                <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+                    <button class="score-btn" onclick="matchEditModule.adjustScore(1, 1)" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--accent-green); background: transparent; color: var(--accent-green); font-size: 1.2rem;">+</button>
+                    <input type="number" id="edit-match-score1" value="0" min="0" max="99" style="width: 70px; height: 70px; font-size: 2rem; text-align: center; border-radius: 15px; border: 3px solid var(--accent-green); background: var(--bg-card); color: var(--text-primary); font-weight: 700;">
+                    <button class="score-btn" onclick="matchEditModule.adjustScore(-1, 1)" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--accent-pink); background: transparent; color: var(--accent-pink); font-size: 1.2rem;">-</button>
+                </div>
+                
+                <div style="font-size: 1.5rem; color: var(--text-secondary);">:</div>
+                
+                <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+                    <button class="score-btn" onclick="matchEditModule.adjustScore(1, 2)" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--accent-green); background: transparent; color: var(--accent-green); font-size: 1.2rem;">+</button>
+                    <input type="number" id="edit-match-score2" value="0" min="0" max="99" style="width: 70px; height: 70px; font-size: 2rem; text-align: center; border-radius: 15px; border: 3px solid var(--accent-green); background: var(--bg-card); color: var(--text-primary); font-weight: 700;">
+                    <button class="score-btn" onclick="matchEditModule.adjustScore(-1, 2)" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--accent-pink); background: transparent; color: var(--accent-pink); font-size: 1.2rem;">-</button>
+                </div>
+            </div>
+            
+            <div id="score-status-message" style="text-align: center; color: var(--text-secondary); font-size: 0.85rem; font-style: italic;"></div>
+        </div>
+   <!-- Таймер матча -->
+        <div class="form-section" id="match-timer-section">
+            <div id="match-timer" style="text-align: center;">
+                <!-- Таймер будет вставлен JS -->
+            </div>
+        </div>
+        <!-- Предупреждения -->
+        <div id="edit-match-warnings" class="warnings-container hidden" style="margin-bottom: 15px; background: rgba(255,193,7,0.1); border: 1px solid rgba(255,193,7,0.3); border-radius: 10px; padding: 12px; color: #ffc107; font-size: 0.9rem;"></div>
+
+        <!-- Информация о матче -->
+        <div class="form-section" id="match-info-section">
+            <h3 class="form-title"><i class="fas fa-info-circle"></i> Детали</h3>
+            
             <div class="form-group">
-                <label>Формат игры</label>
-                <select id="edit-match-format" disabled>
+                <label>Формат</label>
+                <select id="edit-match-format" class="form-control" disabled style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);">
                     <option value="2x2">2 на 2</option>
                     <option value="3x3">3 на 3</option>
                     <option value="4x4">4 на 4</option>
@@ -723,87 +727,28 @@
 
             <div class="form-group">
                 <label>Дата и время</label>
-                <input type="datetime-local" 
-                       id="edit-match-datetime" 
-                       disabled
-                       onchange="matchEditModule.updateUIByStatus()">
+                <input type="datetime-local" id="edit-match-datetime" class="form-control" disabled style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);">
             </div>
 
             <div class="form-group">
-                <label>Место проведения</label>
+                <label>Место</label>
                 <div style="display: flex; gap: 8px;">
-                    <input type="text" 
-                           id="edit-match-location" 
-                           placeholder="Стадион"
-                           disabled
-                           style="flex: 1;">
-                    <button type="button" 
-                            class="btn btn-secondary" 
-                            id="edit-match-location-btn"
-                            onclick="matchEditModule.openMapForLocation()"
-                            style="width: auto; padding: 10px 15px; display: none;">
+                    <input type="text" id="edit-match-location" class="form-control" disabled style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);">
+                    <button type="button" class="btn btn-secondary" id="edit-match-location-btn" onclick="matchEditModule.openMapForLocation()" style="display: none; padding: 10px 15px;">
                         <i class="fas fa-map-marker-alt"></i>
                     </button>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Статус матча</label>
-                <select id="edit-match-status" disabled onchange="matchEditModule.updateUIByStatus()">
-                    <option value="upcoming">Предстоящий</option>
-                    <option value="live">В процессе</option>
-                    <option value="finished">Завершен</option>
-                    <option value="cancelled">Отменен</option>
-                </select>
-            </div>
+            <input type="hidden" id="edit-match-lat">
+            <input type="hidden" id="edit-match-lng">
+        </div>
 
-            <!-- Скрытые поля координат -->
-                <input type="hidden" id="edit-match-lat">
-                <input type="hidden" id="edit-match-lng">
-            </div>
-
-            <!-- Кнопки управления -->
-            <div class="match-actions" style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
-                <button class="btn btn-primary" 
-                        id="edit-match-edit-btn"
-                        onclick="matchEditModule.startEditing()">
-                    <i class="fas fa-pen"></i> Редактировать матч
-                </button>
-                
-                <button class="btn btn-success" 
-                        id="finish-match-btn"
-                        onclick="matchEditModule.updateStatus('finished')"
-                        style="display: none;">
-                    <i class="fas fa-flag-checkered"></i> Завершить матч
-                </button>
-                
-                <button class="btn btn-danger" 
-                        id="cancel-match-btn"
-                        onclick="matchEditModule.cancelMatch()"
-                        style="display: none;">
-                    <i class="fas fa-times"></i> Отменить матч
-                </button>
-                
-                <button class="btn btn-warning" 
-                        id="resume-match-btn"
-                        onclick="matchEditModule.resumeMatch()"
-                        style="display: none;">
-                    <i class="fas fa-play"></i> Возобновить матч
-                </button>
-                
-                <button class="btn btn-primary" 
-                        id="edit-match-save-btn"
-                        onclick="matchEditModule.saveMatchChanges()"
-                        style="display: none;">
-                    <i class="fas fa-save"></i> Сохранить изменения
-                </button>
-                
-                <button class="btn btn-secondary" 
-                        id="edit-match-cancel-btn"
-                        onclick="matchEditModule.cancelEditing()"
-                        style="display: none;">
-                    <i class="fas fa-times"></i> Отменить редактирование
-                </button>
+        <!-- Действия -->
+        <div class="form-section" style="background: rgba(0,255,136,0.05); border: 1px solid rgba(0,255,136,0.2);">
+            <h3 class="form-title" style="text-align: center;"><i class="fas fa-sliders-h"></i> Действия</h3>
+            <div id="match-status-controls" style="display: flex; flex-direction: column; gap: 10px;">
+                <!-- JS вставит кнопки -->
             </div>
         </div>
     </div>

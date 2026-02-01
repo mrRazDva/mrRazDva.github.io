@@ -1,12 +1,12 @@
-// js/match-edit.js - Редактирование матчей, счет, завершение
+// js/match-edit.js - Редактирование матчей с таймером
 const matchEditModule = {
     currentMatch: null,
     originalMatch: null,
     isEditing: false,
+    timerInterval: null,
 
     async show(matchId) {
         try {
-            // Загружаем матч с командами
             const { data: match, error } = await app.supabase
                 .from('matches')
                 .select(`
@@ -19,13 +19,12 @@ const matchEditModule = {
 
             if (error) throw error;
 
-            // Проверяем, является ли пользователь владельцем одной из команд
             const userId = authModule.getUserId();
             const isTeam1Owner = match.team1?.owner_id === userId;
             const isTeam2Owner = match.team2?.owner_id === userId;
             
             if (!isTeam1Owner && !isTeam2Owner) {
-                alert('Только владельцы команд могут редактировать матч');
+                alert('Только владельцы команд могут управлять матчем');
                 return;
             }
 
@@ -35,6 +34,7 @@ const matchEditModule = {
             
             this.render();
             screenManager.show('screen-match-edit');
+            this.updateMatchTimer();
             
         } catch (error) {
             console.error('❌ Ошибка загрузки матча:', error);
@@ -43,703 +43,393 @@ const matchEditModule = {
     },
 
     render() {
-    if (!this.currentMatch) return;
-
-    const match = this.currentMatch;
-    const isOwner = this.isMatchOwner();
-    const isFinished = match.status === 'finished';
-    const isCancelled = match.status === 'cancelled';
-        
-        // Заполняем основную информацию
-        const sportElement = document.getElementById('edit-match-sport');
-        if (sportElement) {
-            sportElement.innerHTML = `<i class="fas fa-${app.getSportIcon(match.sport)}"></i> ${app.getSportName(match.sport).toUpperCase()}`;
-        }
-        
-        document.getElementById('edit-match-team1-name').textContent = 
-            match.team1?.name || 'Неизвестно';
-        document.getElementById('edit-match-team1-avatar').textContent = 
-            match.team1?.avatar || '?';
-            
-        document.getElementById('edit-match-team2-name').textContent = 
-            match.team2?.name || 'Неизвестно';
-        document.getElementById('edit-match-team2-avatar').textContent = 
-            match.team2?.avatar || '?';
-
-        // Текущий счет
-        const [score1, score2] = match.score ? match.score.split(':').map(Number) : [0, 0];
-        document.getElementById('edit-match-score1').value = score1;
-        document.getElementById('edit-match-score2').value = score2;
-
-        // Формат игры
-        const formatElement = document.getElementById('edit-match-format');
-        if (formatElement) {
-            formatElement.value = match.format || '5x5';
-        }
-
-        // Блокируем изменение счета для завершенных матчей
-        if (isFinished) {
-            document.getElementById('edit-match-score1').readOnly = true;
-            document.getElementById('edit-match-score2').readOnly = true;
-            document.getElementById('edit-match-score1').style.opacity = '0.7';
-            document.getElementById('edit-match-score2').style.opacity = '0.7';
-        }
-
-        // Статус
-        document.getElementById('edit-match-status').value = match.status || 'upcoming';
-        
-        // Даты
-        const dateTime = match.date ? utils.formatDateTimeLocal(match.date) : '';
-        document.getElementById('edit-match-datetime').value = dateTime;
-        
-        // Место
-        document.getElementById('edit-match-location').value = match.location || '';
-        document.getElementById('edit-match-lat').value = match.lat || '';
-        document.getElementById('edit-match-lng').value = match.lng || '';
-
-        // Обновляем UI в зависимости от статуса и режима редактирования
-        this.updateUIByStatus();
-        this.updateEditModeUI();
-    // Убедимся, что поля редактирования скрыты по умолчанию
-    const editFields = document.getElementById('edit-match-fields');
-    if (!this.isEditing && editFields) {
-        editFields.classList.add('hidden');
-    }
-},
-
-    isMatchOwner() {
-        if (!this.currentMatch || !authModule.isAuthenticated()) return false;
-        const userId = authModule.getUserId();
+        if (!this.currentMatch) return;
         const match = this.currentMatch;
-        
-        return match.team1?.owner_id === userId || match.team2?.owner_id === userId;
+        this.renderTeamsInfo(match);
+        this.renderScoreSection(match);
+        this.renderMatchInfo(match);
+        this.renderStatusControls(match);
+        this.renderWarnings(match);
     },
 
-    updateUIByStatus() {
+    updateMatchTimer() {
         const match = this.currentMatch;
         if (!match) return;
-
-        const score1 = parseInt(document.getElementById('edit-match-score1').value) || 0;
-        const score2 = parseInt(document.getElementById('edit-match-score2').value) || 0;
-        const hasScore = score1 > 0 || score2 > 0;
-        const bothTeamsPresent = match.team1 && match.team2;
-
-        // Обновляем кнопку завершения
-        const finishBtn = document.getElementById('finish-match-btn');
-        if (finishBtn) {
-            const isOwner = this.isMatchOwner();
-            const isFinished = match.status === 'finished';
-            const canFinish = isOwner && match.status !== 'finished' && bothTeamsPresent && hasScore;
+        
+        const timerEl = document.getElementById('match-timer');
+        if (!timerEl) return;
+        
+        if (match.status === 'live' && match.started_at) {
+            const startTime = new Date(match.started_at);
+            const duration = this.formatDuration(new Date() - startTime);
             
-            finishBtn.disabled = !canFinish;
-            finishBtn.style.display = !this.isEditing && canFinish ? 'block' : 'none';
+            timerEl.innerHTML = `
+                <div style="color: var(--accent-green); font-weight: 700; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <i class="fas fa-stopwatch" style="animation: pulse 1s infinite;"></i>
+                    <span id="timer-value">${duration}</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
+                    Начало: ${startTime.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}
+                </div>
+            `;
+            timerEl.classList.remove('hidden');
             
-            if (!bothTeamsPresent) {
-                finishBtn.title = 'Нужны обе команды';
-            } else if (!hasScore) {
-                finishBtn.title = 'Установите счет';
-            } else if (isFinished) {
-                finishBtn.title = 'Матч уже завершен';
+            if (this.timerInterval) clearInterval(this.timerInterval);
+            this.timerInterval = setInterval(() => {
+                const dur = this.formatDuration(new Date() - startTime);
+                const span = document.getElementById('timer-value');
+                if (span) span.textContent = dur;
+            }, 1000);
+            
+        } else if (match.status === 'finished' && match.started_at && match.finished_at) {
+            const startTime = new Date(match.started_at);
+            const endTime = new Date(match.finished_at);
+            const duration = this.formatDuration(endTime - startTime);
+            
+            timerEl.innerHTML = `
+                <div style="color: var(--accent-blue); font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <i class="fas fa-clock"></i>
+                    <span>Длительность: ${duration}</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
+                    ${startTime.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})} - ${endTime.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}
+                </div>
+            `;
+            timerEl.classList.remove('hidden');
+            if (this.timerInterval) clearInterval(this.timerInterval);
+            
+        } else if (match.status === 'cancelled') {
+            timerEl.innerHTML = `<div style="color: var(--accent-pink); font-size: 1rem;"><i class="fas fa-ban"></i> Матч отменен</div>`;
+            timerEl.classList.remove('hidden');
+            if (this.timerInterval) clearInterval(this.timerInterval);
+            
+        } else if (match.date) {
+            const matchDate = new Date(match.date);
+            const diffMs = matchDate - new Date();
+            
+            if (diffMs > 0) {
+                timerEl.innerHTML = `<div style="color: var(--text-secondary); font-size: 1rem;"><i class="fas fa-hourglass-start"></i> До начала: <span style="color: var(--accent-green); font-weight: 700;">${this.formatDuration(diffMs)}</span></div>`;
+                timerEl.classList.remove('hidden');
+                if (this.timerInterval) clearInterval(this.timerInterval);
+                this.timerInterval = setInterval(() => {
+                    const diff = matchDate - new Date();
+                    if (diff <= 0) { this.updateMatchTimer(); return; }
+                    const span = timerEl.querySelector('span');
+                    if (span) span.textContent = this.formatDuration(diff);
+                }, 1000);
             } else {
-                finishBtn.title = 'Завершить матч';
+                timerEl.innerHTML = `<div style="color: var(--accent-pink); font-size: 0.9rem;"><i class="fas fa-exclamation-triangle"></i> Время матча прошло</div>`;
+                timerEl.classList.remove('hidden');
             }
         }
-
-        // Обновляем предупреждения
-        this.updateWarnings();
     },
 
-    updateWarnings() {
-        const match = this.currentMatch;
-        const warningsEl = document.getElementById('edit-match-warnings');
-        
-        if (!warningsEl) return;
+    formatDuration(ms) {
+        const seconds = Math.floor((ms / 1000) % 60);
+        const minutes = Math.floor((ms / (1000 * 60)) % 60);
+        const hours = Math.floor(ms / (1000 * 60 * 60));
+        if (hours > 0) return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    },
 
-        let warnings = [];
-
-        if (!match.team2) {
-            warnings.push('• В матче нет второй команды');
+    clearTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
         }
+    },
 
-        if (match.status === 'upcoming' && new Date(match.date) < new Date()) {
-            warnings.push('• Время матча уже прошло');
-        }
-
-        if (match.status === 'finished' && !match.score) {
-            warnings.push('• У завершенного матча нет счета');
-        }
-
-        if (warnings.length > 0) {
-            warningsEl.innerHTML = warnings.map(w => 
-                `<div class="warning-item"><i class="fas fa-exclamation-triangle"></i> ${w}</div>`
-            ).join('');
-            warningsEl.classList.remove('hidden');
+    renderTeamsInfo(match) {
+    const sportElement = document.getElementById('edit-match-sport');
+    if (sportElement) sportElement.innerHTML = `<i class="fas fa-${app.getSportIcon(match.sport)}"></i> ${app.getSportName(match.sport).toUpperCase()}`;
+    
+    // Команда 1
+    const team1AvatarEl = document.getElementById('edit-match-team1-avatar');
+    if (team1AvatarEl) {
+        if (match.team1?.logo_url) {
+            team1AvatarEl.innerHTML = `
+                <img src="${match.team1.logo_url}" 
+                     alt="${match.team1.name}" 
+                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"
+                     onerror="this.style.display='none'; this.parentElement.textContent='${match.team1?.avatar || '⚽'}'">
+            `;
         } else {
-            warningsEl.classList.add('hidden');
+            team1AvatarEl.textContent = match.team1?.avatar || '⚽';
         }
-    },
-
-    // Обновление UI в зависимости от режима редактирования
-    updateEditModeUI() {
-    const isOwner = this.isMatchOwner();
-    const match = this.currentMatch;
-    const isFinished = match.status === 'finished';
-    const isCancelled = match.status === 'cancelled';
+    }
+    document.getElementById('edit-match-team1-name').textContent = match.team1?.name || 'Неизвестно';
     
-    // Управление видимостью полей редактирования
-    const editFields = document.getElementById('edit-match-fields');
-    
-    if (this.isEditing) {
-        // Режим редактирования - ПОКАЗЫВАЕМ поля
-        editFields.classList.remove('hidden');
-        
-        // Разблокируем все поля
-        document.getElementById('edit-match-datetime').disabled = false;
-        document.getElementById('edit-match-location').disabled = false;
-        document.getElementById('edit-match-location-btn').style.display = 'inline-block';
-        document.getElementById('edit-match-status').disabled = false;
-        document.getElementById('edit-match-format').disabled = false;
-        
-        // Для завершенных матчей блокируем статус
-        if (isFinished) {
-            document.getElementById('edit-match-status').disabled = true;
+    // Команда 2
+    const team2AvatarEl = document.getElementById('edit-match-team2-avatar');
+    if (team2AvatarEl) {
+        if (match.team2?.logo_url) {
+            team2AvatarEl.innerHTML = `
+                <img src="${match.team2.logo_url}" 
+                     alt="${match.team2.name}" 
+                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"
+                     onerror="this.style.display='none'; this.parentElement.textContent='${match.team2?.avatar || '⚽'}'">
+            `;
+        } else {
+            team2AvatarEl.textContent = match.team2?.avatar || '⚽';
         }
-        
-        // Кнопки
-        document.getElementById('edit-match-edit-btn').style.display = 'none';
-        document.getElementById('edit-match-save-btn').style.display = 'block';
-        document.getElementById('edit-match-cancel-btn').style.display = 'block';
-        document.getElementById('finish-match-btn').style.display = 'none';
-        document.getElementById('cancel-match-btn').style.display = 'none';
-        document.getElementById('resume-match-btn').style.display = 'none';
-    } else {
-        // Режим просмотра - СКРЫВАЕМ поля редактирования
-        editFields.classList.add('hidden');
-        
-        // Кнопки
-        document.getElementById('edit-match-edit-btn').style.display = isOwner && !isFinished ? 'block' : 'none';
-        document.getElementById('edit-match-save-btn').style.display = 'none';
-        document.getElementById('edit-match-cancel-btn').style.display = 'none';
-        
-        // Кнопки управления статусом
-        const canFinish = isOwner && !isFinished && match.status !== 'cancelled' && match.team2;
-        const canCancel = isOwner && !isFinished && match.status !== 'cancelled';
-        const canResume = isOwner && isCancelled;
-        
-        document.getElementById('finish-match-btn').style.display = canFinish ? 'block' : 'none';
-        document.getElementById('cancel-match-btn').style.display = canCancel ? 'block' : 'none';
-        document.getElementById('resume-match-btn').style.display = canResume ? 'block' : 'none';
-        
-        // Блокируем кнопки +/- для завершенных матчей
-        const scoreBtns = document.querySelectorAll('.score-btn');
-        scoreBtns.forEach(btn => {
-            btn.disabled = isFinished;
-            btn.style.opacity = isFinished ? '0.5' : '1';
-        });
     }
-
-    // Бейдж статуса
-    const statusBadge = document.getElementById('edit-match-status-badge');
-    if (statusBadge) {
-        statusBadge.className = `match-status status-${match.status || 'upcoming'}`;
-        statusBadge.textContent = app.getStatusText(match.status);
-    }
+    document.getElementById('edit-match-team2-name').textContent = match.team2?.name || 'Неизвестно';
 },
 
-    adjustScore(change, teamNumber) {
-        const match = this.currentMatch;
-        if (match.status === 'finished') {
-            alert('Нельзя изменить счет завершенного матча');
-            return;
+    renderScoreSection(match) {
+        const [score1, score2] = match.score ? match.score.split(':').map(Number) : [0, 0];
+        const score1Input = document.getElementById('edit-match-score1');
+        const score2Input = document.getElementById('edit-match-score2');
+        const scoreBtns = document.querySelectorAll('.score-btn');
+        const scoreMessage = document.getElementById('score-status-message');
+        
+        score1Input.value = score1;
+        score2Input.value = score2;
+        
+        if (match.status === 'upcoming') {
+            score1Input.disabled = true; score2Input.disabled = true;
+            scoreBtns.forEach(btn => btn.style.display = 'none');
+            if (scoreMessage) scoreMessage.textContent = 'Счет будет доступен после начала матча';
+            score1Input.classList.remove('final-score'); score2Input.classList.remove('final-score');
+        } else if (match.status === 'live') {
+            score1Input.disabled = false; score2Input.disabled = false;
+            scoreBtns.forEach(btn => btn.style.display = 'flex');
+            if (scoreMessage) scoreMessage.textContent = 'Установите счет и нажмите "Завершить матч"';
+            score1Input.classList.remove('final-score'); score2Input.classList.remove('final-score');
+        } else if (match.status === 'finished') {
+            score1Input.disabled = true; score2Input.disabled = true;
+            scoreBtns.forEach(btn => btn.style.display = 'none');
+            score1Input.classList.add('final-score'); score2Input.classList.add('final-score');
+            if (scoreMessage) scoreMessage.innerHTML = '<span style="color: var(--accent-green); font-weight: 700;"><i class="fas fa-check-circle"></i> Матч завершен</span>';
+        } else if (match.status === 'cancelled') {
+            score1Input.disabled = true; score2Input.disabled = true;
+            scoreBtns.forEach(btn => btn.style.display = 'none');
+            score1Input.classList.remove('final-score'); score2Input.classList.remove('final-score');
+            if (scoreMessage) scoreMessage.textContent = 'Матч отменен';
         }
-        
-        const inputId = teamNumber === 1 ? 'edit-match-score1' : 'edit-match-score2';
-        const input = document.getElementById(inputId);
-        let value = parseInt(input.value) || 0;
-        
-        value += change;
-        if (value < 0) value = 0;
-        if (value > 99) value = 99;
-        
-        input.value = value;
-        this.updateUIByStatus();
     },
 
-    async updateScore() {
-        const match = this.currentMatch;
-        if (match.status === 'finished') {
-            alert('Счет завершенного матча нельзя изменить');
-            return;
-        }
+    renderMatchInfo(match) {
+        const formatSelect = document.getElementById('edit-match-format');
+        const datetimeInput = document.getElementById('edit-match-datetime');
+        const locationInput = document.getElementById('edit-match-location');
+        const locationBtn = document.getElementById('edit-match-location-btn');
         
-        const score1 = parseInt(document.getElementById('edit-match-score1').value) || 0;
-        const score2 = parseInt(document.getElementById('edit-match-score2').value) || 0;
+        if (formatSelect) formatSelect.value = match.format || '5x5';
+        if (datetimeInput) datetimeInput.value = match.date ? utils.formatDateTimeLocal(match.date) : '';
+        if (locationInput) locationInput.value = match.location || '';
         
-        if (score1 < 0 || score2 < 0) {
-            alert('Счет не может быть отрицательным');
-            return;
+        const isEditable = match.status === 'upcoming';
+        if (formatSelect) formatSelect.disabled = !isEditable;
+        if (datetimeInput) datetimeInput.disabled = !isEditable;
+        if (locationInput) locationInput.disabled = !isEditable;
+        if (locationBtn) locationBtn.style.display = isEditable ? 'inline-flex' : 'none';
+        
+        const statusBadge = document.getElementById('edit-match-status-badge');
+        if (statusBadge) {
+            const config = {
+                'upcoming': { text: 'ПРЕДСТОИТ', class: 'status-upcoming', icon: 'fa-clock' },
+                'live': { text: 'ИДЁТ СЕЙЧАС', class: 'status-live', icon: 'fa-play-circle' },
+                'finished': { text: 'ЗАВЕРШЁН', class: 'status-finished', icon: 'fa-flag-checkered' },
+                'cancelled': { text: 'ОТМЕНЁН', class: 'status-cancelled', icon: 'fa-ban' }
+            }[match.status] || { text: 'ПРЕДСТОИТ', class: 'status-upcoming', icon: 'fa-clock' };
+            statusBadge.className = `match-status ${config.class}`;
+            statusBadge.innerHTML = `<i class="fas ${config.icon}"></i> ${config.text}`;
         }
+    },
 
-        const newScore = `${score1}:${score2}`;
+    renderStatusControls(match) {
+        const container = document.getElementById('match-status-controls');
+        if (!container) return;
+        container.innerHTML = '';
         
+        const userId = authModule.getUserId();
+        const isOwner = match.team1?.owner_id === userId || match.team2?.owner_id === userId;
+        if (!isOwner) return;
+        
+        const buttons = [];
+        switch (match.status) {
+            case 'upcoming':
+                if (match.team2) buttons.push({ text: 'Начать матч', icon: 'fa-play', class: 'btn-success', confirm: 'Начать матч? Таймер начнет отсчет.', handler: () => this.startMatch() });
+                else buttons.push({ text: 'Ожидание соперника', icon: 'fa-clock', class: 'btn-secondary', disabled: true, handler: () => {} });
+                buttons.push({ text: 'Редактировать', icon: 'fa-pen', class: 'btn-primary', handler: () => this.isEditing ? this.saveMatchChanges() : this.startEditing() });
+                buttons.push({ text: 'Отменить матч', icon: 'fa-ban', class: 'btn-danger', confirm: 'Отменить матч? Его можно будет возобновить позже.', handler: () => this.cancelMatch() });
+                break;
+            case 'live':
+                buttons.push({ text: 'Завершить матч', icon: 'fa-flag-checkered', class: 'btn-success', confirm: 'Завершить матч? После завершения данные нельзя изменить!', handler: () => this.finishMatch() });
+                buttons.push({ text: 'Отменить матч', icon: 'fa-ban', class: 'btn-danger', confirm: 'Прервать и отменить текущий матч?', handler: () => this.cancelMatch() });
+                break;
+            case 'finished':
+                buttons.push({ text: 'Назад', icon: 'fa-arrow-left', class: 'btn-secondary', handler: () => this.back() });
+                break;
+            case 'cancelled':
+                buttons.push({ text: 'Возобновить матч', icon: 'fa-redo', class: 'btn-warning', confirm: 'Возобновить матч?', handler: () => this.resumeMatch() });
+                buttons.push({ text: 'Назад', icon: 'fa-arrow-left', class: 'btn-secondary', handler: () => this.back() });
+                break;
+        }
+        
+        buttons.forEach(btn => {
+            const button = document.createElement('button');
+            button.className = `btn ${btn.class}`;
+            button.innerHTML = `<i class="fas ${btn.icon}"></i> ${btn.text}`;
+            if (btn.disabled) button.disabled = true;
+            if (btn.confirm && !btn.disabled) button.onclick = () => { if (confirm(btn.confirm)) btn.handler(); };
+            else button.onclick = btn.handler;
+            container.appendChild(button);
+        });
+    },
+
+    renderWarnings(match) {
+        const warningsEl = document.getElementById('edit-match-warnings');
+        if (!warningsEl) return;
+        let warnings = [];
+        if (!match.team2) warnings.push('⚠️ Добавьте соперника для начала матча');
+        if (match.status === 'upcoming' && new Date(match.date) < new Date()) warnings.push('⏰ Время матча уже прошло');
+        if (warnings.length > 0) {
+            warningsEl.innerHTML = warnings.map(w => `<div class="warning-item">${w}</div>`).join('');
+            warningsEl.classList.remove('hidden');
+        } else warningsEl.classList.add('hidden');
+    },
+
+    async startMatch() {
         try {
-            const { error } = await app.supabase
-                .from('matches')
-                .update({ 
-                    score: newScore,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', match.id);
-
+            if (!this.currentMatch?.team2) { alert('Нельзя начать матч без соперника'); return; }
+            const { error } = await app.supabase.from('matches').update({ 
+                status: 'live', started_at: new Date().toISOString(), updated_at: new Date().toISOString()
+            }).eq('id', this.currentMatch.id);
             if (error) throw error;
-
-            match.score = newScore;
-            this.updateUIByStatus();
-            
-            // Обновляем на главном экране
-            if (matchesModule) {
-                await matchesModule.renderMatches();
-                if (app.selectedMatch?.id === match.id) {
-                    matchesModule.showMatchDetail(match.id);
-                }
-            }
-
-            alert('Счет обновлен!');
-
-        } catch (error) {
-            console.error('❌ Ошибка обновления счета:', error);
-            alert('Ошибка обновления счета');
-        }
+            this.currentMatch.status = 'live';
+            this.currentMatch.started_at = new Date().toISOString();
+            alert('Матч начался! Таймер запущен.');
+            this.render(); this.updateMatchTimer();
+            if (matchesModule) await matchesModule.renderMatches();
+        } catch (error) { alert('Ошибка: ' + error.message); }
     },
 
-    async updateStatus(newStatus) {
-        const match = this.currentMatch;
-        
-        if (newStatus === 'finished') {
-            // Предупреждение о последствиях завершения матча
-            const warningMessage = `ВНИМАНИЕ! После завершения матча:
-• Счет нельзя будет изменить
-• Матч нельзя будет возобновить
-• Статус матча нельзя будет изменить
-
-Вы уверены, что хотите завершить матч?`;
-            
-            if (!confirm(warningMessage)) {
-                return;
-            }
-            
+    async finishMatch() {
+        try {
+            if (!this.currentMatch) return;
             const score1 = parseInt(document.getElementById('edit-match-score1').value) || 0;
             const score2 = parseInt(document.getElementById('edit-match-score2').value) || 0;
+            if (!confirm(`Завершить матч со счетом ${score1}:${score2}?`)) return;
             
-            if (score1 === 0 && score2 === 0) {
-                if (!confirm('Счет 0:0. Все равно завершить матч?')) {
-                    return;
-                }
-            }
-        } else if (match.status === 'finished') {
-            alert('Нельзя изменить статус завершенного матча');
-            return;
-        }
+            const { error } = await app.supabase.from('matches').update({ 
+                status: 'finished', score: `${score1}:${score2}`, finished_at: new Date().toISOString(), updated_at: new Date().toISOString()
+            }).eq('id', this.currentMatch.id);
+            if (error) throw error;
 
-if (status === 'finished') {
-        // Применить ELO после завершения матча
-        setTimeout(async () => {
-            if (typeof eloModule !== 'undefined') {
-                const result = await eloModule.onMatchFinished(this.editingMatch.id);
-                if (result) {
-                    console.log('✅ ELO рейтинг обновлен:', result);
-                }
-            }
-        }, 500);
-    }
+            await this.updateTeamStats(score1, score2);
+            if (typeof eloModule !== 'undefined') await eloModule.onMatchFinished(this.currentMatch.id);
 
-        try {
-            const updates = { 
-                status: newStatus,
-                updated_at: new Date().toISOString()
-            };
-            
-            // Если завершаем матч
-            if (newStatus === 'finished') {
-                const score1 = parseInt(document.getElementById('edit-match-score1').value) || 0;
-                const score2 = parseInt(document.getElementById('edit-match-score2').value) || 0;
-                
-                updates.score = `${score1}:${score2}`;
-                
-                // Обновляем статистику команд
-                await this.updateTeamStats();
-            }
-            
-            // Если отменяем матч
-            if (newStatus === 'cancelled') {
-                // Не нужно обновлять cancelled_at, если колонки нет
-                // updates.cancelled_at = new Date().toISOString();
-            }
-
-            const { error } = await app.supabase
-                .from('matches')
-                .update(updates)
-                .eq('id', match.id);
-
-            if (error) {
-                // Попробуем без optional полей
-                delete updates.finished_at;
-                delete updates.cancelled_at;
-                
-                const { error: retryError } = await app.supabase
-                    .from('matches')
-                    .update(updates)
-                    .eq('id', match.id);
-                    
-                if (retryError) throw retryError;
-            }
-
-            match.status = newStatus;
-            if (newStatus === 'finished') {
-                match.score = updates.score || match.score;
-            }
-            
-            alert(`Статус матча изменен на "${app.getStatusText(newStatus)}"`);
-            
-            // Блокируем интерфейс для завершенного матча
-            if (newStatus === 'finished') {
-                this.isEditing = false;
-                document.getElementById('edit-match-score1').readOnly = true;
-                document.getElementById('edit-match-score2').readOnly = true;
-                document.getElementById('edit-match-score1').style.opacity = '0.7';
-                document.getElementById('edit-match-score2').style.opacity = '0.7';
-            }
-            
-            this.render();
-
-            // Обновляем в других местах
-            if (matchesModule) {
-                await matchesModule.renderMatches();
-                if (app.selectedMatch?.id === match.id) {
-                    matchesModule.showMatchDetail(match.id);
-                }
-            }
-
-        } catch (error) {
-            console.error('❌ Ошибка изменения статуса:', error);
-            alert('Ошибка изменения статуса матча');
-        }
-    },
-
-    async updateTeamStats() {
-        try {
-            const match = this.currentMatch;
-            const [score1, score2] = match.score.split(':').map(Number);
-            
-            if (!match.team1 || !match.team2) return;
-
-            // Определяем победителя
-            let winnerId = null;
-            let loserId = null;
-            
-            if (score1 > score2) {
-                winnerId = match.team1.id;
-                loserId = match.team2.id;
-            } else if (score2 > score1) {
-                winnerId = match.team2.id;
-                loserId = match.team1.id;
-            }
-            // Ничья - winnerId остается null
-
-            // Обновляем статистику в базе данных
-            // Сначала получаем текущую статистику
-            const { data: team1Data } = await app.supabase
-                .from('teams')
-                .select('wins, losses, draws')
-                .eq('id', match.team1.id)
-                .single();
-
-            const { data: team2Data } = await app.supabase
-                .from('teams')
-                .select('wins, losses, draws')
-                .eq('id', match.team2.id)
-                .single();
-
-            // Подготавливаем обновления
-            const team1Updates = { 
-                wins: team1Data?.wins || 0,
-                losses: team1Data?.losses || 0,
-                draws: team1Data?.draws || 0
-            };
-            
-            const team2Updates = { 
-                wins: team2Data?.wins || 0,
-                losses: team2Data?.losses || 0,
-                draws: team2Data?.draws || 0
-            };
-
-            if (winnerId === match.team1.id) {
-                team1Updates.wins++;
-                team2Updates.losses++;
-            } else if (winnerId === match.team2.id) {
-                team2Updates.wins++;
-                team1Updates.losses++;
-            } else {
-                // Ничья
-                team1Updates.draws++;
-                team2Updates.draws++;
-            }
-
-            // Сохраняем обновления
-            await app.supabase
-                .from('teams')
-                .update(team1Updates)
-                .eq('id', match.team1.id);
-
-            await app.supabase
-                .from('teams')
-                .update(team2Updates)
-                .eq('id', match.team2.id);
-
-        } catch (error) {
-            console.error('❌ Ошибка обновления статистики команд:', error);
-            // Не блокируем основную операцию из-за ошибки статистики
-        }
-    },
-
-    async saveMatchChanges() {
-    const match = this.currentMatch;
-    
-    // Проверяем, не пытаются ли изменить завершенный матч
-    if (match.status === 'finished' && this.originalMatch.status !== 'finished') {
-        alert('Нельзя сохранить изменения для завершенного матча');
-        this.cancelEditing();
-        return;
-    }
-    
-    const datetime = document.getElementById('edit-match-datetime').value;
-    const location = document.getElementById('edit-match-location').value;
-    const lat = document.getElementById('edit-match-lat').value;
-    const lng = document.getElementById('edit-match-lng').value;
-    const status = document.getElementById('edit-match-status').value;
-    const format = document.getElementById('edit-match-format').value;
-    const score1 = parseInt(document.getElementById('edit-match-score1').value) || 0;
-    const score2 = parseInt(document.getElementById('edit-match-score2').value) || 0;
-
-    if (!datetime || !location || !format) {
-        alert('Заполните все обязательные поля');
-        return;
-    }
-
-    try {
-        const updates = {
-            date: datetime,
-            location,
-            status,
-            format: format,
-            score: `${score1}:${score2}`,
-            lat: lat || null,
-            lng: lng || null,
-            updated_at: new Date().toISOString()
-        };
-
-            // Если статус меняется на finished
-            if (status === 'finished' && match.status !== 'finished') {
-                // Показываем предупреждение
-                const warningMessage = `ВНИМАНИЕ! После завершения матча:
-• Счет нельзя будет изменить
-• Матч нельзя будет возобновить
-• Статус матча нельзя будет изменить
-
-Вы уверены, что хотите завершить матч?`;
-                
-                if (!confirm(warningMessage)) {
-                    return;
-                }
-                
-                // Обновляем статистику команд
-                await this.updateTeamStats();
-            }
-
-            const { error } = await app.supabase
-                .from('matches')
-                .update(updates)
-                .eq('id', match.id);
-
-            if (error) {
-                // Попробуем без optional полей
-                delete updates.finished_at;
-                delete updates.cancelled_at;
-                
-                const { error: retryError } = await app.supabase
-                    .from('matches')
-                    .update(updates)
-                    .eq('id', match.id);
-                    
-                if (retryError) throw retryError;
-            }
-
-            // Обновляем текущий матч
-        Object.assign(match, updates);
-        this.originalMatch = JSON.parse(JSON.stringify(match));
-        this.isEditing = false; // Выходим из режима редактирования
-        
-        // Блокируем интерфейс для завершенного матча
-        if (status === 'finished') {
-            document.getElementById('edit-match-score1').readOnly = true;
-            document.getElementById('edit-match-score2').readOnly = true;
-            document.getElementById('edit-match-score1').style.opacity = '0.7';
-            document.getElementById('edit-match-score2').style.opacity = '0.7';
-        }
-        
-        alert('Изменения сохранены!');
-        this.render(); // Обновляем UI
-
-            // Обновляем в других модулях
-            if (matchesModule) {
-                await matchesModule.renderMatches();
-                if (app.selectedMatch?.id === match.id) {
-                    matchesModule.showMatchDetail(match.id);
-                }
-            }
-
-        } catch (error) {
-            console.error('❌ Ошибка сохранения матча:', error);
-            alert('Ошибка сохранения изменений матча');
-        }
+            this.currentMatch.status = 'finished';
+            this.currentMatch.finished_at = new Date().toISOString();
+            this.currentMatch.score = `${score1}:${score2}`;
+            this.clearTimer();
+            const duration = this.formatDuration(new Date(this.currentMatch.finished_at) - new Date(this.currentMatch.started_at));
+            alert(`Матч завершен! Длительность: ${duration}`);
+            this.render(); this.updateMatchTimer();
+            if (matchesModule) await matchesModule.renderMatches();
+        } catch (error) { alert('Ошибка: ' + error.message); }
     },
 
     async cancelMatch() {
-        const match = this.currentMatch;
-        
-        if (match.status === 'finished') {
-            alert('Нельзя отменить завершенный матч');
-            return;
-        }
-        
-        if (!confirm('Отменить матч? Это действие нельзя отменить.')) {
-            return;
-        }
-
         try {
-            const { error } = await app.supabase
-                .from('matches')
-                .update({ 
-                    status: 'cancelled',
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', match.id);
-
+            const { error } = await app.supabase.from('matches').update({ 
+                status: 'cancelled', cancelled_at: new Date().toISOString(), updated_at: new Date().toISOString()
+            }).eq('id', this.currentMatch.id);
             if (error) throw error;
-
-            match.status = 'cancelled';
-            alert('Матч отменен');
-            this.render();
-
-            // Обновляем в других местах
-            if (matchesModule) {
-                await matchesModule.renderMatches();
-            }
-
-        } catch (error) {
-            console.error('❌ Ошибка отмены матча:', error);
-            alert('Ошибка отмены матча');
-        }
+            this.currentMatch.status = 'cancelled';
+            this.currentMatch.cancelled_at = new Date().toISOString();
+            this.clearTimer(); alert('Матч отменен');
+            this.render(); this.updateMatchTimer();
+            if (matchesModule) await matchesModule.renderMatches();
+        } catch (error) { alert('Ошибка: ' + error.message); }
     },
 
     async resumeMatch() {
-        const match = this.currentMatch;
-        
-        if (match.status === 'finished') {
-            alert('Нельзя возобновить завершенный матч');
-            return;
-        }
-        
-        if (!confirm('Возобновить матч?')) {
-            return;
-        }
-
         try {
-            const { error } = await app.supabase
-                .from('matches')
-                .update({ 
-                    status: 'upcoming',
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', match.id);
-
+            const { error } = await app.supabase.from('matches').update({ 
+                status: 'upcoming', started_at: null, finished_at: null, cancelled_at: null, score: '0:0', updated_at: new Date().toISOString()
+            }).eq('id', this.currentMatch.id);
             if (error) throw error;
+            this.currentMatch.status = 'upcoming';
+            this.currentMatch.score = '0:0';
+            this.currentMatch.started_at = null;
+            this.currentMatch.finished_at = null;
+            this.currentMatch.cancelled_at = null;
+            this.clearTimer(); alert('Матч возобновлен');
+            this.render(); this.updateMatchTimer();
+            if (matchesModule) await matchesModule.renderMatches();
+        } catch (error) { alert('Ошибка: ' + error.message); }
+    },
 
-            match.status = 'upcoming';
-            alert('Матч возобновлен');
-            this.render();
+    async updateTeamStats(score1, score2) {
+        try {
+            const match = this.currentMatch;
+            if (!match.team1 || !match.team2) return;
+            let team1Update = {}, team2Update = {};
+            if (score1 > score2) { team1Update = { wins: (match.team1.wins || 0) + 1 }; team2Update = { losses: (match.team2.losses || 0) + 1 }; }
+            else if (score2 > score1) { team1Update = { losses: (match.team1.losses || 0) + 1 }; team2Update = { wins: (match.team2.wins || 0) + 1 }; }
+            else { team1Update = { draws: (match.team1.draws || 0) + 1 }; team2Update = { draws: (match.team2.draws || 0) + 1 }; }
+            await app.supabase.from('teams').update(team1Update).eq('id', match.team1.id);
+            await app.supabase.from('teams').update(team2Update).eq('id', match.team2.id);
+        } catch (error) { console.error('❌ Ошибка обновления статистики:', error); }
+    },
 
-            // Обновляем в других местах
-            if (matchesModule) {
-                await matchesModule.renderMatches();
-            }
-
-        } catch (error) {
-            console.error('❌ Ошибка возобновления матча:', error);
-            alert('Ошибка возобновления матча');
-        }
+    async saveMatchChanges() {
+        if (this.currentMatch.status !== 'upcoming') { alert('Редактирование доступно только для предстоящих матчей'); return; }
+        const updates = {
+            date: document.getElementById('edit-match-datetime').value,
+            location: document.getElementById('edit-match-location').value,
+            format: document.getElementById('edit-match-format').value,
+            lat: document.getElementById('edit-match-lat').value || null,
+            lng: document.getElementById('edit-match-lng').value || null,
+            updated_at: new Date().toISOString()
+        };
+        try {
+            const { error } = await app.supabase.from('matches').update(updates).eq('id', this.currentMatch.id);
+            if (error) throw error;
+            Object.assign(this.currentMatch, updates);
+            this.isEditing = false; alert('Сохранено!');
+            this.render(); this.updateMatchTimer();
+            if (matchesModule) await matchesModule.renderMatches();
+        } catch (error) { alert('Ошибка сохранения'); }
     },
 
     startEditing() {
-    const match = this.currentMatch;
-    
-    if (match.status === 'finished') {
-        alert('Нельзя редактировать завершенный матч');
-        return;
-    }
-    
-    this.isEditing = true;
-    this.updateEditModeUI();
-},
+        if (this.currentMatch.status !== 'upcoming') return;
+        this.isEditing = true; this.render();
+        document.getElementById('edit-match-format').disabled = false;
+        document.getElementById('edit-match-datetime').disabled = false;
+        document.getElementById('edit-match-location').disabled = false;
+        document.getElementById('edit-match-location-btn').style.display = 'inline-flex';
+    },
 
-cancelEditing() {
-    this.isEditing = false;
-    // Восстанавливаем исходные значения
-    this.currentMatch = JSON.parse(JSON.stringify(this.originalMatch));
-    this.render();
-},
+    cancelEditing() { this.isEditing = false; this.currentMatch = JSON.parse(JSON.stringify(this.originalMatch)); this.render(); },
+
+    adjustScore(change, teamNumber) {
+        if (this.currentMatch.status !== 'live') return;
+        const input = document.getElementById(teamNumber === 1 ? 'edit-match-score1' : 'edit-match-score2');
+        let value = parseInt(input.value) || 0;
+        value = Math.max(0, value + change);
+        input.value = value;
+    },
 
     openMapForLocation() {
-        // Используем существующий функционал карты
         mapModule.openMapForLocation();
-        
-        // Устанавливаем обработчики для этого конкретного матча
-        const originalConfirmLocation = mapModule.confirmLocation;
+        const originalConfirm = mapModule.confirmLocation;
         mapModule.confirmLocation = () => {
-            const name = document.getElementById('location-name').value;
-            const address = document.getElementById('location-address').value;
-            const [lat, lng] = mapModule.selectedCoords || [null, null];
-            
-            document.getElementById('edit-match-location').value = 
-                name + (address ? ` (${address})` : '');
-            document.getElementById('edit-match-lat').value = lat;
-            document.getElementById('edit-match-lng').value = lng;
-            
+            document.getElementById('edit-match-location').value = document.getElementById('location-name').value;
+            document.getElementById('edit-match-lat').value = mapModule.selectedCoords[0];
+            document.getElementById('edit-match-lng').value = mapModule.selectedCoords[1];
             mapModule.closeLocationPicker();
-            mapModule.confirmLocation = originalConfirmLocation;
+            mapModule.confirmLocation = originalConfirm;
         };
     },
 
     back() {
-        if (this.isEditing) {
-            if (confirm('Есть несохраненные изменения. Выйти?')) {
-                this.cancelEditing();
-            } else {
-                return;
-            }
-        }
-        screenManager.show('screen-match');
-    },
-    
-    quickScore(team1Score, team2Score) {
-        const match = this.currentMatch;
-        if (match.status === 'finished') {
-            alert('Нельзя изменить счет завершенного матча');
-            return;
-        }
-        
-        document.getElementById('edit-match-score1').value = team1Score;
-        document.getElementById('edit-match-score2').value = team2Score;
-        this.updateScore();
+        this.clearTimer();
+        if (this.isEditing) { if (confirm('Есть несохраненные изменения. Выйти?')) { this.cancelEditing(); screenManager.back(); } }
+        else screenManager.back();
     }
 };

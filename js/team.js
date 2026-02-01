@@ -25,7 +25,17 @@ const teamModule = {
 
     async render(team) {
     // Основная информация
-    document.getElementById('team-profile-avatar').textContent = team.avatar;
+    // Аватар команды (логотип или эмодзи)
+    const avatarContainer = document.getElementById('team-profile-avatar');
+    if (team.logo_url) {
+        avatarContainer.innerHTML = `
+            <img src="${team.logo_url}" 
+                 alt="${team.name}" 
+                 style="width: 100%; height: 100%; object-fit: cover; display: block;">
+        `;
+    } else {
+        avatarContainer.textContent = team.avatar || '⚽';
+    }
     document.getElementById('team-profile-name').textContent = team.name;
     document.getElementById('team-profile-city').textContent = 
         `${app.cities[team.city]?.name || team.city} • ${this.getSportName(team.sport)}`;
@@ -179,7 +189,7 @@ async renderEloRating(teamId) {
                 }
 
                 return `
-                    <div class="history-match ${resultClass}" onclick="app.showMatchDetail(${match.id})">
+                    <div class="history-match ${resultClass}" onclick="app.showMatchDetail('${match.id}')">
                         <div class="history-opponent">
                             <div class="team-avatar" style="width: 32px; height: 32px; font-size: 1rem;">
                                 ${opponentTeam.avatar || '?'}
