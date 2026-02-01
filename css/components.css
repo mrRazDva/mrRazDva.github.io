@@ -3106,3 +3106,1014 @@ select:focus {
     display: flex;
 }
 
+/* Новые стили для редактирования команды */
+
+/* Шапка редактирования */
+.edit-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0 20px;
+    margin-bottom: 10px;
+}
+
+.edit-title {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.save-top-btn {
+    background: rgba(0, 255, 136, 0.15);
+    border: 1px solid var(--accent-green);
+    color: var(--accent-green);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.save-top-btn:hover {
+    background: var(--accent-green);
+    color: #000;
+    transform: translateY(-1px);
+}
+
+/* Карточка превью команды */
+.team-preview-card {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.05), rgba(0, 204, 255, 0.05));
+    border: 1px solid rgba(0, 255, 136, 0.2);
+    border-radius: 24px;
+    padding: 24px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.team-preview-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-green), var(--accent-blue));
+    opacity: 0.5;
+}
+
+.team-avatar-large {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    position: relative;
+    border: 3px solid rgba(0, 255, 136, 0.3);
+    flex-shrink: 0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.team-avatar-large:hover {
+    border-color: var(--accent-green);
+    transform: scale(1.05);
+}
+
+.team-avatar-large img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-edit-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    background: var(--accent-green);
+    border: 3px solid var(--bg-card);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.avatar-edit-btn:hover {
+    transform: scale(1.1);
+}
+
+.team-info-edit {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Floating labels */
+.input-group.floating {
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.input-group.floating input,
+.input-group.floating textarea {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 12px 6px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.input-group.floating textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.input-group.floating label {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    pointer-events: none;
+    transition: all 0.2s;
+    background: transparent;
+    padding: 0 4px;
+}
+
+.input-group.floating textarea ~ label {
+    top: 20px;
+    transform: none;
+}
+
+.input-group.floating input:focus,
+.input-group.floating textarea:focus,
+.input-group.floating input:not(:placeholder-shown),
+.input-group.floating textarea:not(:placeholder-shown) {
+    border-color: var(--accent-green);
+    outline: none;
+}
+
+.input-group.floating input:focus ~ label,
+.input-group.floating input:not(:placeholder-shown) ~ label,
+.input-group.floating textarea:focus ~ label,
+.input-group.floating textarea:not(:placeholder-shown) ~ label {
+    top: 0;
+    transform: translateY(-50%) scale(0.85);
+    color: var(--accent-green);
+    background: var(--bg-card);
+}
+
+.input-focus-border {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: var(--accent-green);
+    transition: all 0.3s;
+}
+
+.input-group.floating input:focus ~ .input-focus-border,
+.input-group.floating textarea:focus ~ .input-focus-border {
+    left: 0;
+    width: 100%;
+}
+
+/* Meta chips */
+.team-meta-chips {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.meta-chip i {
+    color: var(--accent-green);
+    font-size: 0.75rem;
+}
+
+/* Alert о смене названия */
+.name-change-alert {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 183, 77, 0.05));
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.name-change-alert i {
+    color: #ffc107;
+    font-size: 1.5rem;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-weight: 700;
+    color: #ffc107;
+    margin-bottom: 2px;
+}
+
+.alert-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.alert-action {
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid #ffc107;
+    color: #ffc107;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s;
+}
+
+.alert-action:hover {
+    background: #ffc107;
+    color: #000;
+}
+
+/* Табы */
+.edit-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--bg-secondary);
+    padding-bottom: 2px;
+}
+
+.edit-tab {
+    flex: 1;
+    padding: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 12px 12px 0 0;
+}
+
+.edit-tab:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.edit-tab.active {
+    color: var(--accent-green);
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.edit-tab .badge {
+    background: var(--accent-pink);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* Контент табов */
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Состав команды */
+.roster-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.section-label {
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+}
+
+.roster-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.icon-action-btn:hover {
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+}
+
+/* Список игроков */
+.roster-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 200px;
+}
+
+.player-card-modern {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: grab;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.player-card-modern:active {
+    cursor: grabbing;
+}
+
+.player-card-modern:hover {
+    border-color: rgba(0, 255, 136, 0.3);
+    transform: translateX(4px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.player-card-modern.dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+    border-color: var(--accent-green);
+}
+
+.player-card-modern.captain {
+    border-color: var(--accent-gold);
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.05), transparent);
+}
+
+.player-number-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-pink), #cc0052);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.player-card-modern.captain .player-number-circle::after {
+    content: 'C';
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 18px;
+    height: 18px;
+    background: var(--accent-gold);
+    color: #000;
+    font-size: 0.65rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg-card);
+    font-weight: 800;
+}
+
+.player-photo-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border);
+}
+
+.player-info-modern {
+    flex: 1;
+    min-width: 0;
+}
+
+.player-name-modern {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-role-modern {
+    color: var(--accent-green);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.player-meta-modern {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    margin-top: 2px;
+}
+
+.player-quick-actions {
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.player-card-modern:hover .player-quick-actions {
+    opacity: 1;
+}
+
+.quick-action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.quick-action-btn:hover {
+    background: var(--accent-green);
+    color: #000;
+}
+
+.quick-action-btn.delete:hover {
+    background: var(--accent-pink);
+    color: white;
+}
+
+.drag-handle {
+    color: var(--text-secondary);
+    cursor: grab;
+    padding: 8px;
+    opacity: 0.3;
+    transition: opacity 0.3s;
+}
+
+.drag-handle:hover {
+    opacity: 1;
+}
+
+/* Пустое состояние */
+.empty-roster {
+    text-align: center;
+    padding: 50px 20px;
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 2rem;
+    color: var(--accent-green);
+    border: 2px solid var(--border);
+}
+
+.empty-title {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+}
+
+.empty-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Настройки modern */
+.settings-section {
+    margin-bottom: 30px;
+}
+
+.form-group.modern {
+    margin-bottom: 20px;
+}
+
+.form-group.modern label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group.modern input,
+.form-group.modern textarea {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.form-group.modern input:focus,
+.form-group.modern textarea:focus {
+    border-color: var(--accent-green);
+    outline: none;
+}
+
+.char-counter {
+    text-align: right;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 6px;
+}
+
+/* Danger zone */
+.danger-zone {
+    border-top: 2px solid rgba(255, 0, 102, 0.2);
+    padding-top: 20px;
+}
+
+.section-label.danger {
+    color: var(--accent-pink);
+}
+
+.danger-btn {
+    width: 100%;
+    background: rgba(255, 0, 102, 0.05);
+    border: 1px solid rgba(255, 0, 102, 0.3);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    color: var(--text-primary);
+    text-align: left;
+}
+
+.danger-btn:hover {
+    background: rgba(255, 0, 102, 0.1);
+    border-color: var(--accent-pink);
+    transform: translateX(4px);
+}
+
+.danger-btn > i:first-child {
+    font-size: 1.5rem;
+    color: var(--accent-pink);
+}
+
+.danger-title {
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.danger-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.danger-btn > i:last-child {
+    margin-left: auto;
+    color: var(--text-secondary);
+}
+
+/* ==================== ЭКРАН РЕДАКТИРОВАНИЯ ИГРОКА ==================== */
+
+#screen-edit-player .container {
+    padding-bottom: 0;
+}
+
+/* Шапка */
+.edit-player-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0 20px;
+    margin-bottom: 10px;
+    position: sticky;
+    top: 0;
+    background: var(--bg-primary);
+    z-index: 100;
+}
+
+.edit-player-header .back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 8px 0;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.edit-player-header .back-btn:hover {
+    color: var(--accent-green);
+}
+
+.edit-player-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex: 1;
+    text-align: center;
+    margin: 0 10px;
+}
+
+.save-text-btn {
+    background: none;
+    border: none;
+    color: var(--accent-green);
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 8px;
+    transition: opacity 0.2s;
+}
+
+.save-text-btn:hover {
+    opacity: 0.8;
+}
+
+/* Секция фото */
+.player-photo-edit-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 32px;
+    padding: 10px 0;
+}
+
+.player-photo-edit-container {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--bg-secondary), rgba(0, 255, 136, 0.05));
+    border: 3px dashed var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.player-photo-edit-container:hover {
+    border-color: var(--accent-green);
+    border-style: solid;
+    transform: scale(1.05);
+    box-shadow: 0 8px 30px rgba(0, 255, 136, 0.2);
+}
+
+.player-photo-edit-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.player-photo-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 20px;
+}
+
+.player-photo-placeholder i {
+    font-size: 3rem;
+    color: var(--accent-green);
+    opacity: 0.4;
+}
+
+.photo-edit-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    color: white;
+    font-size: 0.8rem;
+    border-radius: 50%;
+}
+
+.photo-edit-overlay i {
+    font-size: 1.8rem;
+    color: var(--accent-green);
+}
+
+.player-photo-edit-container:hover .photo-edit-overlay {
+    opacity: 1;
+}
+
+/* Форма */
+.player-edit-form {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+#screen-edit-player .form-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+#screen-edit-player .form-group.modern {
+    margin-bottom: 20px;
+}
+
+#screen-edit-player .form-group.modern:last-child {
+    margin-bottom: 0;
+}
+
+#screen-edit-player .form-group.modern label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent-green);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#screen-edit-player .form-group.modern input,
+#screen-edit-player .form-group.modern textarea {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-family: var(--font-body);
+    transition: all 0.3s;
+    box-sizing: border-box;
+}
+
+#screen-edit-player .form-group.modern input:focus,
+#screen-edit-player .form-group.modern textarea:focus {
+    border-color: var(--accent-green);
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.1);
+}
+
+#screen-edit-player .form-group.modern textarea {
+    min-height: 100px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+#screen-edit-player .form-row.two-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* Чекбокс капитана */
+.form-group.checkbox-modern {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+}
+
+.checkbox-label-large {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    cursor: pointer;
+}
+
+.checkbox-label-large input[type="checkbox"] {
+    display: none;
+}
+
+.checkbox-custom {
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.checkbox-custom i {
+    color: #000;
+    font-size: 0.9rem;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.2s;
+}
+
+.checkbox-label-large input:checked + .checkbox-custom {
+    background: var(--accent-green);
+    border-color: var(--accent-green);
+}
+
+.checkbox-label-large input:checked + .checkbox-custom i {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.checkbox-text-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.checkbox-title {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.checkbox-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Кнопка удаления */
+.delete-player-screen-btn {
+    width: 100%;
+    background: rgba(255, 0, 102, 0.05);
+    border: 1px solid rgba(255, 0, 102, 0.3);
+    border-radius: 16px;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--accent-pink);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 10px;
+}
+
+.delete-player-screen-btn:hover {
+    background: var(--accent-pink);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3);
+}
+
+.delete-player-screen-btn i {
+    font-size: 1.1rem;
+}
+
+/* Фиксированная кнопка снизу */
+.fixed-save-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--bg-primary) 80%, transparent);
+    z-index: 1000;
+}
+
+.fixed-save-bar .btn-full {
+    width: 100%;
+    padding: 16px;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+    .player-photo-edit-container {
+        width: 130px;
+        height: 130px;
+    }
+    
+    #screen-edit-player .form-section {
+        padding: 20px;
+    }
+    
+    #screen-edit-player .form-row.two-cols {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+
+@media (max-width: 380px) {
+    .edit-player-title {
+        font-size: 0.95rem;
+    }
+    
+    .save-text-btn {
+        font-size: 0.85rem;
+    }
+}

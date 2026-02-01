@@ -319,12 +319,6 @@
                 <small class="char-counter" id="desc-counter">0 / 500</small>
             </div>
 
-            <!-- Fallback эмодзи (если нет логотипа) -->
-            <div class="form-group avatar-group hidden" id="emoji-fallback">
-                <label>Иконка (если нет логотипа)</label>
-                <input type="text" id="team-avatar" placeholder="🐲" maxlength="2">
-            </div>
-
             <button type="submit" class="btn btn-primary" id="create-team-submit">
                 <i class="fas fa-plus"></i> Создать команду
             </button>
@@ -351,7 +345,6 @@
                 </select>
             </div>
             
-            <!-- ДОБАВЛЕННЫЙ БЛОК: Формат игры -->
             <div class="form-group">
                 <label>Формат игры</label>
                 <select id="match-format" required>
@@ -382,15 +375,12 @@
                 </div>
             </div>
 
-            <!-- Скрытые поля для координат -->
             <input type="hidden" id="match-lat">
             <input type="hidden" id="match-lng">
 
             <button type="submit" class="btn btn-primary">Создать матч</button>
         </form>
     </div>
-    
-    
 </section>
 
         <!-- Screen: Match Detail -->
@@ -402,9 +392,7 @@
 
                 <div id="match-detail-content"></div>
                 <div id="map" class="map-container"></div>
-                <div id="challenges-section" class="challenges-section hidden">
-    <!-- Вызовы будут отображаться здесь -->
-</div>
+                <div id="challenges-section" class="challenges-section hidden"></div>
                 <div id="match-reactions" class="match-reactions"></div>
                 
                 <div id="challenge-section" class="challenge-section hidden">
@@ -500,8 +488,8 @@
             </div>
         </div>
         
-        <!-- Screen: Team Profile -->
-        <section id="screen-team" class="screen">
+         <!-- Screen: Team Profile -->
+         <section id="screen-team" class="screen">
             <div class="container">
                 <button class="back-btn" onclick="teamModule.back()">
                     <i class="fas fa-arrow-left"></i> Назад
@@ -519,12 +507,10 @@
                     </div>
                 </div>
 
-                 <!-- НОВЫЙ КОНТЕЙНЕР: ELO рейтинг (на всю ширину) -->
-        <div class="elo-rating-full" id="team-elo-rating">
-            <!-- Содержимое будет заполнено JS -->
-        </div>
+                 <!-- ELO рейтинг (на всю ширину) -->
+        <div class="elo-rating-full" id="team-elo-rating"></div>
 
-        <!-- ОБНОВЛЕННЫЙ КОНТЕЙНЕР: Статистика команды -->
+        <!-- Статистика команды -->
         <div class="team-stats-grid">
             <div class="stat-box">
                 <div class="stat-number" id="team-stat-wins">0</div>
@@ -554,93 +540,211 @@
             </div>
         </section>
         
-         <!-- Screen: Team Edit -->
+         <!-- Screen: Team Edit (НОВЫЙ ПЕРЕРАБОТАННЫЙ) -->
         <section id="screen-team-edit" class="screen">
-            <div class="container">
-                <button class="back-btn" onclick="screenManager.show('screen-teams')">
-                    <i class="fas fa-arrow-left"></i> Назад к командам
+    <div class="container">
+        <!-- Шапка -->
+        <header class="edit-header">
+            <button class="back-btn" onclick="teamEditModule.back()">
+                <i class="fas fa-arrow-left"></i> Назад
+            </button>
+            <h1 class="edit-title">Редактирование</h1>
+            <button class="save-top-btn" onclick="teamEditModule.saveAllChanges()">
+                <i class="fas fa-check"></i> Готово
+            </button>
+        </header>
+
+        <!-- Карточка команды -->
+        <div class="team-preview-card">
+            <div class="team-avatar-large" id="edit-team-avatar-preview">
+                <img src="" alt="" class="hidden" id="preview-logo-img">
+                <span id="preview-logo-emoji">🐲</span>
+                <button class="avatar-edit-btn" onclick="document.getElementById('team-logo-input-edit').click()">
+                    <i class="fas fa-camera"></i>
                 </button>
-
-                <h2 class="section-title">Редактирование команды</h2>
-
-                <div class="form-section">
-                    <h3 class="form-title">Основная информация</h3>
-                    
-                    <div class="form-group">
-                        <label>Название команды</label>
-                        <input type="text" id="edit-team-name" maxlength="30">
-                        <div id="name-change-info" style="margin-top: 8px; font-size: 0.85rem;"></div>
-                        <button class="btn btn-secondary" id="change-name-btn" style="margin-top: 10px; font-size: 0.9rem;">
-                            Проверить возможность смены
-                        </button>
-                    </div>
-
-                    <div class="form-group avatar-group" style="margin-top: 20px;">
-                        <label>Эмодзи/Иконка</label>
-                        <input type="text" id="edit-team-avatar" maxlength="2" style="font-size: 2rem; text-align: center;">
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 class="form-title" style="margin: 0;">Состав команды</h3>
-                        <button class="btn btn-primary" style="width: auto; padding: 10px 20px; font-size: 0.9rem;" onclick="teamEditModule.showAddPlayerForm()">
-                            <i class="fas fa-plus"></i> Игрок
-                        </button>
-                    </div>
-
-                    <div id="edit-roster-list" class="edit-roster-list">
-                    </div>
-                </div>
-
-                <button class="btn btn-primary" onclick="teamEditModule.saveTeamChanges()" style="margin-bottom: 20px;">
-                    Сохранить изменения
-                </button>
+                <input type="file" id="team-logo-input-edit" accept="image/*" hidden onchange="teamEditModule.handleLogoChange(event)">
             </div>
-
-           <div id="player-form-modal" class="modal-overlay hidden" onclick="if(event.target === this) teamEditModule.hidePlayerForm()">
-                <div class="modal-content">
-                    <h3 id="player-form-title" style="margin-bottom: 20px; font-family: var(--font-display);">Новый игрок</h3>
-                    
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <div class="photo-upload" onclick="document.getElementById('player-photo-input').click()">
-                            <div id="player-photo-preview">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <div class="photo-upload-hint">
-                                <i class="fas fa-camera"></i>
-                                <span>Добавить фото</span>
-                            </div>
-                        </div>
-                        <input type="file" id="player-photo-input" accept="image/*" style="display: none;" onchange="teamEditModule.handlePhotoUpload(event)">
-                    </div>
-
-                    <div class="form-group">
-                        <label>ФИО</label>
-                        <input type="text" id="player-name-input" placeholder="Иванов Иван" required>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Номер</label>
-                            <input type="number" id="player-number-input" placeholder="10" min="1" max="99" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Позиция</label>
-                            <input type="text" id="player-role-input" placeholder="Нападающий">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Описание/Достижения</label>
-                        <textarea id="player-info-input" rows="3" placeholder="Информация об игроке..."></textarea>
-                    </div>
-
-                    <button class="btn btn-primary" onclick="teamEditModule.savePlayer()">Сохранить</button>
-                    <button class="btn btn-secondary" onclick="teamEditModule.hidePlayerForm()" style="margin-top: 10px;">Отмена</button>
+            
+            <div class="team-info-edit">
+                <div class="form-group modern" style="margin-bottom: 8px;">
+                    <label style="font-size: 0.75rem; color: var(--accent-green); margin-bottom: 6px; display: block; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Название команды</label>
+                    <input type="text" id="edit-team-name" placeholder="Введите название" maxlength="30" style="width: 100%; background: rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 14px; color: var(--text-primary); font-size: 1.1rem; font-weight: 600;">
+                </div>
+                
+                <div class="team-meta-chips">
+                    <span class="meta-chip" id="edit-team-sport-chip">
+                        <i class="fas fa-futbol"></i> <span>Футбол</span>
+                    </span>
+                    <span class="meta-chip" id="edit-team-city-chip">
+                        <i class="fas fa-map-marker-alt"></i> <span>Москва</span>
+                    </span>
                 </div>
             </div>
-        </section>
+        </div>
+
+        <!-- Предупреждение о смене названия -->
+        <div class="name-change-alert" id="name-change-alert" style="display: none;">
+            <i class="fas fa-info-circle"></i>
+            <div class="alert-content">
+                <div class="alert-title">Смена названия</div>
+                <div class="alert-text" id="name-change-text">Бесплатная смена доступна раз в год</div>
+            </div>
+            <button class="alert-action" id="name-change-action" onclick="teamEditModule.handleNameChange()">
+                Изменить
+            </button>
+        </div>
+
+        <!-- Табы навигации -->
+        <div class="edit-tabs">
+            <button class="edit-tab active" data-tab="roster" onclick="teamEditModule.switchTab('roster')">
+                <i class="fas fa-users"></i> Состав <span class="badge" id="players-count">0</span>
+            </button>
+            <button class="edit-tab" data-tab="settings" onclick="teamEditModule.switchTab('settings')">
+                <i class="fas fa-cog"></i> Настройки
+            </button>
+        </div>
+
+        <!-- Контент табов -->
+        <div class="tab-content active" id="tab-roster">
+            <!-- Управление составом -->
+            <div class="roster-header">
+                <h3 class="section-label">Игроки</h3>
+                <div class="roster-actions">
+                    <button class="icon-action-btn" onclick="teamEditModule.toggleSortMode()" title="Сортировать">
+                        <i class="fas fa-sort"></i>
+                    </button>
+                    <button class="btn btn-primary btn-small" onclick="teamEditModule.showAddPlayerForm()">
+                        <i class="fas fa-plus"></i> Добавить
+                    </button>
+                </div>
+            </div>
+
+            <div class="roster-list" id="edit-roster-list"></div>
+
+            <div class="empty-roster hidden" id="empty-roster-state">
+                <div class="empty-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <div class="empty-title">Состав пуст</div>
+                <div class="empty-text">Добавьте первого игрока, чтобы начать</div>
+                <button class="btn btn-primary" onclick="teamEditModule.showAddPlayerForm()" style="margin-top: 15px;">
+                    Добавить игрока
+                </button>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-settings">
+            <!-- Настройки команды -->
+            <div class="settings-section">
+                <h3 class="section-label">Информация о команде</h3>
+                
+                <div class="form-group modern">
+                    <label>Описание команды</label>
+                    <textarea id="edit-team-description" rows="4" placeholder="Расскажите о команде, достижениях, стиле игры..."></textarea>
+                    <div class="char-counter" id="desc-counter-edit">0/500</div>
+                </div>
+
+                <div class="form-group modern">
+                    <label>Контакты</label>
+                    <input type="text" id="edit-team-contacts" placeholder="Телефон или Telegram для связи">
+                </div>
+            </div>
+
+            <div class="settings-section danger-zone">
+                <h3 class="section-label danger">Опасная зона</h3>
+                
+                <button class="danger-btn" onclick="teamEditModule.deleteTeam()">
+                    <i class="fas fa-trash-alt"></i>
+                    <div>
+                        <div class="danger-title">Удалить команду</div>
+                        <div class="danger-subtitle">Это действие необратимо</div>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Отступ снизу убран, так как нет фиксированной кнопки -->
+    </div>
+</section>
+
+        <!-- Screen: Edit Player (НОВЫЙ - отдельный экран вместо модалки) -->
+        <section id="screen-edit-player" class="screen">
+    <div class="container">
+        <!-- Шапка -->
+        <header class="edit-player-header">
+            <button class="back-btn" onclick="teamEditModule.hidePlayerScreen()">
+                <i class="fas fa-arrow-left"></i> Назад
+            </button>
+            <h1 class="edit-player-title" id="player-screen-title">Новый игрок</h1>
+            <button class="save-text-btn" onclick="teamEditModule.savePlayerFromScreen()">
+                Сохранить
+            </button>
+        </header>
+
+        <!-- Фото игрока -->
+        <div class="player-photo-edit-section">
+            <div class="player-photo-edit-container" onclick="document.getElementById('player-photo-input-screen').click()">
+                <img src="" alt="" class="hidden" id="player-screen-photo-img">
+                <div class="player-photo-placeholder" id="player-screen-photo-placeholder">
+                    <i class="fas fa-user"></i>
+                    <span>Нажмите для загрузки фото</span>
+                </div>
+                <div class="photo-edit-overlay">
+                    <i class="fas fa-camera"></i>
+                    <span>Изменить фото</span>
+                </div>
+            </div>
+            <input type="file" id="player-photo-input-screen" accept="image/*" hidden onchange="teamEditModule.handlePhotoUploadScreen(event)">
+        </div>
+
+        <!-- Форма -->
+        <div class="player-edit-form">
+            <div class="form-section">
+                <div class="form-group modern">
+                    <label>ФИО игрока *</label>
+                    <input type="text" id="player-screen-name" placeholder="Иванов Иван" required>
+                </div>
+
+                <div class="form-row two-cols">
+                    <div class="form-group modern">
+                        <label>Номер *</label>
+                        <input type="number" id="player-screen-number" placeholder="10" min="1" max="99" required>
+                    </div>
+                    
+                    <div class="form-group modern">
+                        <label>Позиция</label>
+                        <input type="text" id="player-screen-role" placeholder="Нападающий">
+                    </div>
+                </div>
+
+                <div class="form-group modern">
+                    <label>Описание / Достижения</label>
+                    <textarea id="player-screen-info" rows="3" placeholder="Рост, возраст, достижения..."></textarea>
+                </div>
+
+                <div class="form-group checkbox-modern">
+                    <label class="checkbox-label-large">
+                        <input type="checkbox" id="player-screen-captain">
+                        <span class="checkbox-custom">
+                            <i class="fas fa-check"></i>
+                        </span>
+                        <div class="checkbox-text-block">
+                            <span class="checkbox-title">Капитан команды</span>
+                            <span class="checkbox-subtitle">Пометить игрока как капитана</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Кнопка удаления (только при редактировании) -->
+        <button class="delete-player-screen-btn hidden" id="delete-player-screen-btn" onclick="teamEditModule.deletePlayerFromScreen()">
+            <i class="fas fa-trash-alt"></i>
+            <span>Удалить игрока</span>
+        </button>
+    </div>
+</section>
         
 		<!-- Screen: Match Edit -->
 <section id="screen-match-edit" class="screen">
@@ -700,12 +804,12 @@
             
             <div id="score-status-message" style="text-align: center; color: var(--text-secondary); font-size: 0.85rem; font-style: italic;"></div>
         </div>
-   <!-- Таймер матча -->
+        
+        <!-- Таймер матча -->
         <div class="form-section" id="match-timer-section">
-            <div id="match-timer" style="text-align: center;">
-                <!-- Таймер будет вставлен JS -->
-            </div>
+            <div id="match-timer" style="text-align: center;"></div>
         </div>
+        
         <!-- Предупреждения -->
         <div id="edit-match-warnings" class="warnings-container hidden" style="margin-bottom: 15px; background: rgba(255,193,7,0.1); border: 1px solid rgba(255,193,7,0.3); border-radius: 10px; padding: 12px; color: #ffc107; font-size: 0.9rem;"></div>
 
@@ -776,7 +880,7 @@
             <div id="location-map" class="map-container" 
                  style="height: 250px; margin: 0; border: none; border-bottom: 1px solid var(--border-color); border-radius: 0;"></div>
             
-            <!-- Форма под картой (обновленная) -->
+            <!-- Форма под картой -->
 <div style="padding: 24px;">
     
     
@@ -798,7 +902,6 @@
                   class="modal-textarea"></textarea>
     </div>
     
-    <!-- Кнопки остаются -->
     <div style="display: flex; gap: 12px; margin-top: 28px;">
         <button class="btn btn-primary" onclick="app.confirmLocation()" 
                 style="flex: 1; padding: 14px; font-size: 1rem; border-radius: 12px; background: linear-gradient(135deg, var(--accent-green), #00cc6a); color: #000; border: none; font-weight: 700; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);">
