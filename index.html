@@ -540,18 +540,16 @@
             </div>
         </section>
         
-         <!-- Screen: Team Edit (НОВЫЙ ПЕРЕРАБОТАННЫЙ) -->
-        <section id="screen-team-edit" class="screen">
+         <!-- Screen: Team Edit -->
+<section id="screen-team-edit" class="screen">
     <div class="container">
-        <!-- Шапка -->
+        <!-- Шапка БЕЗ кнопки сохранения -->
         <header class="edit-header">
             <button class="back-btn" onclick="teamEditModule.back()">
                 <i class="fas fa-arrow-left"></i> Назад
             </button>
             <h1 class="edit-title">Редактирование</h1>
-            <button class="save-top-btn" onclick="teamEditModule.saveAllChanges()">
-                <i class="fas fa-check"></i> Готово
-            </button>
+            <!-- УБРАНО: Кнопка сохранения в шапке -->
         </header>
 
         <!-- Карточка команды -->
@@ -663,25 +661,27 @@
                 </button>
             </div>
         </div>
-
-        <!-- Отступ снизу убран, так как нет фиксированной кнопки -->
+ <!-- ДОБАВЛЕНА: Кнопка сохранения ВНИЗУ (после табов) -->
+        <div class="edit-footer">
+            <button class="btn btn-primary btn-save-bottom" onclick="teamEditModule.saveAllChanges()">
+                <i class="fas fa-check"></i> Сохранить изменения
+            </button>
+        </div>
     </div>
+	
 </section>
 
-        <!-- Screen: Edit Player (НОВЫЙ - отдельный экран вместо модалки) -->
-        <section id="screen-edit-player" class="screen">
+        <!-- Screen: Edit Player -->
+<section id="screen-edit-player" class="screen">
     <div class="container">
-        <!-- Шапка -->
+        <!-- Шапка БЕЗ кнопки сохранения -->
         <header class="edit-player-header">
             <button class="back-btn" onclick="teamEditModule.hidePlayerScreen()">
                 <i class="fas fa-arrow-left"></i> Назад
             </button>
             <h1 class="edit-player-title" id="player-screen-title">Новый игрок</h1>
-            <button class="save-text-btn" onclick="teamEditModule.savePlayerFromScreen()">
-                Сохранить
-            </button>
+            <!-- УБРАНО: Кнопка сохранения в шапке -->
         </header>
-
         <!-- Фото игрока -->
         <div class="player-photo-edit-section">
             <div class="player-photo-edit-container" onclick="document.getElementById('player-photo-input-screen').click()">
@@ -737,7 +737,11 @@
                 </div>
             </div>
         </div>
-
+<!-- ДОБАВЛЕНА: Кнопка сохранения ВНИЗУ -->
+        <div class="player-footer">
+            <button class="btn btn-primary btn-save-player" onclick="teamEditModule.savePlayerFromScreen()">
+                <i class="fas fa-check"></i> Сохранить
+            </button>
         <!-- Кнопка удаления (только при редактировании) -->
         <button class="delete-player-screen-btn hidden" id="delete-player-screen-btn" onclick="teamEditModule.deletePlayerFromScreen()">
             <i class="fas fa-trash-alt"></i>

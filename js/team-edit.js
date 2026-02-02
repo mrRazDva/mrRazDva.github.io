@@ -3,9 +3,10 @@ const teamEditModule = {
     currentTeam: null,
     editingPlayer: null,
     isSortMode: false,
+    hasUnsavedChanges: false,
+    originalTeamData: null,
+    isSaving: false,
     pendingChanges: {
-        players: [],
-        deletedPlayers: [],
         logo: null
     },
 
@@ -25,16 +26,27 @@ const teamEditModule = {
             }
 
             this.currentTeam = team;
-            this.pendingChanges = { players: [], deletedPlayers: [], logo: null };
+            this.pendingChanges = { logo: null };
             this.isSortMode = false;
+            this.hasUnsavedChanges = false;
+            this.isSaving = false;
             
-            // Сортируем игроков по order_index
+            // Сохраняем исходные данные для сравнения
+            this.originalTeamData = {
+                name: team.name,
+                description: team.description || '',
+                sport: team.sport,
+                city: team.city
+            };
+            
+            // Сортируем игроков
             if (team.players) {
                 team.players.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
             }
             
             this.render();
             screenManager.show('screen-team-edit');
+            this.updateSaveButtons();
             
         } catch (error) {
             console.error('Ошибка загрузки команды:', error);
@@ -82,10 +94,23 @@ const teamEditModule = {
 
         // Описание и контакты
         const descField = document.getElementById('edit-team-description');
-        if (descField) descField.value = this.currentTeam.description || '';
+        if (descField) {
+            descField.value = this.currentTeam.description || '';
+            descField.addEventListener('input', () => this.checkForChanges());
+        }
         
+        // Название команды
+        const nameInput = document.getElementById('edit-team-name');
+        if (nameInput) {
+            nameInput.addEventListener('input', () => this.checkForChanges());
+        }
+
+        // Контакты
         const contactsField = document.getElementById('edit-team-contacts');
-        if (contactsField) contactsField.value = this.currentTeam.contacts || '';
+        if (contactsField) {
+            contactsField.value = this.currentTeam.contacts || '';
+            contactsField.addEventListener('input', () => this.checkForChanges());
+        }
         
         // Счетчик символов
         this.updateCharCounter();
@@ -98,6 +123,9 @@ const teamEditModule = {
 
         // Сброс таба
         this.switchTab('roster');
+        
+        // Скрываем кнопки сохранения
+        this.updateSaveButtons();
     },
 
     updateCharCounter() {
@@ -107,6 +135,59 @@ const teamEditModule = {
         
         counter.textContent = `${textarea.value.length}/500`;
         counter.style.color = textarea.value.length > 450 ? 'var(--accent-pink)' : 'var(--text-secondary)';
+    },
+
+    checkForChanges() {
+        if (!this.currentTeam || !this.originalTeamData) return false;
+        
+        let hasChanges = false;
+        
+        // Проверяем изменения в основных полях
+        const name = document.getElementById('edit-team-name')?.value || '';
+        const description = document.getElementById('edit-team-description')?.value || '';
+        const contacts = document.getElementById('edit-team-contacts')?.value || '';
+        
+        if (name !== this.originalTeamData.name) {
+            hasChanges = true;
+        }
+        
+        if (description !== this.originalTeamData.description) {
+            hasChanges = true;
+        }
+        
+        if (contacts !== (this.currentTeam.contacts || '')) {
+            hasChanges = true;
+        }
+        
+        // Проверяем изменения в логотипе
+        if (this.pendingChanges.logo) {
+            hasChanges = true;
+        }
+        
+        this.hasUnsavedChanges = hasChanges;
+        this.updateSaveButtons();
+        
+        return hasChanges;
+    },
+
+    updateSaveButtons() {
+        const saveTopBtn = document.querySelector('.save-top-btn');
+        const saveBottomBtn = document.querySelector('.btn-save-bottom');
+        
+        if (this.hasUnsavedChanges && !this.isSaving) {
+            saveTopBtn?.classList.add('visible');
+            saveBottomBtn?.classList.remove('hidden');
+            saveBottomBtn?.classList.add('visible');
+            
+            if (saveBottomBtn) {
+                saveBottomBtn.innerHTML = '<i class="fas fa-check"></i> Сохранить изменения';
+                saveBottomBtn.disabled = false;
+            }
+        } else {
+            saveTopBtn?.classList.remove('visible');
+            saveBottomBtn?.classList.add('hidden');
+            saveBottomBtn?.classList.remove('visible');
+        }
     },
 
     async checkNameChangeAvailability() {
@@ -171,6 +252,7 @@ const teamEditModule = {
             this.currentTeam.name = newName;
             alert('Название изменено!');
             this.checkNameChangeAvailability();
+            this.checkForChanges();
             
         } catch (error) {
             alert('Ошибка: ' + error.message);
@@ -192,6 +274,7 @@ const teamEditModule = {
             document.getElementById('preview-logo-img').src = e.target.result;
             document.getElementById('preview-logo-img').classList.remove('hidden');
             document.getElementById('preview-logo-emoji').style.display = 'none';
+            this.checkForChanges();
         };
         reader.readAsDataURL(file);
     },
@@ -259,7 +342,6 @@ const teamEditModule = {
         `).join('');
     },
 
-    // Drag and Drop
     handleDragStart(e, playerId) {
         e.dataTransfer.setData('text/plain', playerId);
         e.target.classList.add('dragging');
@@ -290,6 +372,8 @@ const teamEditModule = {
         // Обновляем order_index
         players.forEach((p, i) => p.order_index = i);
         
+        // Сохраняем порядок в базе
+        this.savePlayerOrder();
         this.renderRoster();
     },
 
@@ -298,6 +382,29 @@ const teamEditModule = {
         document.querySelectorAll('.player-card-modern').forEach(card => {
             card.style.transform = '';
         });
+    },
+
+    async savePlayerOrder() {
+        try {
+            const updates = this.currentTeam.players.map((player, index) => ({
+                id: player.id,
+                order_index: index
+            }));
+            
+            // Обновляем каждого игрока
+            for (const update of updates) {
+                const { error } = await app.supabase
+                    .from('team_players')
+                    .update({ order_index: update.order_index })
+                    .eq('id', update.id);
+                
+                if (error) throw error;
+            }
+            
+            console.log('✅ Порядок игроков сохранен');
+        } catch (error) {
+            console.error('❌ Ошибка сохранения порядка игроков:', error);
+        }
     },
 
     toggleSortMode() {
@@ -348,11 +455,18 @@ const teamEditModule = {
         const deleteBtn = document.getElementById('delete-player-screen-btn');
         if (deleteBtn) deleteBtn.classList.add('hidden');
         
+        // Показываем кнопку сохранения
+        const saveBtn = document.querySelector('.btn-save-player');
+        if (saveBtn) {
+            saveBtn.classList.add('visible');
+            saveBtn.disabled = false;
+        }
+        
         // Показываем экран
         screenManager.show('screen-edit-player');
     },
 
-    editPlayer(playerId) {
+    async editPlayer(playerId) {
         const player = this.currentTeam.players.find(p => p.id === playerId);
         if (!player) return;
         
@@ -396,6 +510,13 @@ const teamEditModule = {
         const deleteBtn = document.getElementById('delete-player-screen-btn');
         if (deleteBtn) deleteBtn.classList.remove('hidden');
         
+        // Показываем кнопку сохранения
+        const saveBtn = document.querySelector('.btn-save-player');
+        if (saveBtn) {
+            saveBtn.classList.add('visible');
+            saveBtn.disabled = false;
+        }
+        
         // Показываем экран
         screenManager.show('screen-edit-player');
     },
@@ -427,7 +548,7 @@ const teamEditModule = {
         reader.readAsDataURL(file);
     },
 
-    savePlayerFromScreen() {
+    async savePlayerFromScreen() {
         const nameEl = document.getElementById('player-screen-name');
         const numberEl = document.getElementById('player-screen-number');
         const roleEl = document.getElementById('player-screen-role');
@@ -454,188 +575,301 @@ const teamEditModule = {
             return;
         }
         
-        // Если назначаем капитаном, снимаем с других
-        if (isCaptain) {
-            this.currentTeam.players.forEach(p => p.is_captain = false);
+        // Показываем индикатор загрузки
+        const saveBtn = document.querySelector('.btn-save-player');
+        const originalText = saveBtn ? saveBtn.innerHTML : '';
+        if (saveBtn) {
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
+            saveBtn.disabled = true;
         }
         
-        const img = document.getElementById('player-screen-photo-img');
-        const photoUrl = img ? img.src : '';
-        const hasPhoto = img && !img.classList.contains('hidden');
-        
-        if (this.editingPlayer) {
-            // Обновляем существующего
-              const idx = this.currentTeam.players.findIndex(p => p.id === this.editingPlayer);
-            if (idx !== -1) {
-                this.currentTeam.players[idx] = {
-                    ...this.currentTeam.players[idx],
-                    name,
-                    number,
-                    role: role || 'Игрок',
-                    info,
-                    is_captain: isCaptain,
-                    photo_url: hasPhoto && photoUrl !== window.location.href ? photoUrl : null
-                    // УБРАНО: order_index
-                };
-            }
-        } else {
-            // Добавляем нового
-            const newPlayer = {
-                id: 'temp_' + Date.now(),
+        try {
+            // Получаем фото
+            const img = document.getElementById('player-screen-photo-img');
+            const hasPhoto = img && !img.classList.contains('hidden');
+            const photoUrl = hasPhoto ? img.src : null;
+            
+            // Подготавливаем данные игрока
+            const playerData = {
                 team_id: this.currentTeam.id,
                 name,
                 number,
                 role: role || 'Игрок',
-                info,
+                info: info || null,
                 is_captain: isCaptain,
-                photo_url: hasPhoto && photoUrl !== window.location.href ? photoUrl : null
-                // УБРАНО: order_index - нет в таблице БД
+                order_index: this.currentTeam.players.length
             };
-            this.currentTeam.players.push(newPlayer);
-            this.pendingChanges.players.push(newPlayer);
+            
+            // Если есть новое фото
+            if (hasPhoto && photoUrl && photoUrl.startsWith('data:image/')) {
+                // TODO: Загрузка фото в Supabase Storage
+                // Пока сохраняем как data URL (временное решение)
+                playerData.photo_url = photoUrl;
+            }
+            
+            let playerId;
+            
+            if (this.editingPlayer) {
+                // Обновляем существующего игрока
+                if (isCaptain) {
+                    // Снимаем флаг капитана с других игроков
+                    await this.updateOtherCaptains(this.editingPlayer);
+                }
+                
+                const { error } = await app.supabase
+                    .from('team_players')
+                    .update(playerData)
+                    .eq('id', this.editingPlayer);
+                
+                if (error) throw error;
+                
+                playerId = this.editingPlayer;
+                console.log('✅ Игрок обновлен в базе');
+            } else {
+                // Добавляем нового игрока
+                if (isCaptain) {
+                    // Снимаем флаг капитана с других игроков
+                    await this.updateOtherCaptains();
+                }
+                
+                const { data, error } = await app.supabase
+                    .from('team_players')
+                    .insert([playerData])
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                playerId = data.id;
+                console.log('✅ Игрок добавлен в базу');
+            }
+            
+            // Обновляем локальные данные
+            await this.updateLocalPlayerData(playerId, playerData, photoUrl);
+            
+            // Успешное сообщение
+            if (saveBtn) {
+                saveBtn.innerHTML = '<i class="fas fa-check"></i> Сохранено!';
+                setTimeout(() => {
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.disabled = false;
+                }, 1000);
+            }
+            
+            // Возвращаемся к редактированию команды
+            setTimeout(() => {
+                this.renderRoster();
+                this.hidePlayerScreen();
+            }, 500);
+            
+        } catch (error) {
+            console.error('❌ Ошибка сохранения игрока:', error);
+            alert('Ошибка сохранения: ' + error.message);
+            if (saveBtn) {
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            }
         }
-        
-        // Возвращаемся к редактированию команды и обновляем список
-        this.renderRoster();
-        this.hidePlayerScreen();
     },
 
-    deletePlayerFromScreen() {
+    async updateOtherCaptains(excludePlayerId = null) {
+        try {
+            let query = app.supabase
+                .from('team_players')
+                .update({ is_captain: false })
+                .eq('team_id', this.currentTeam.id)
+                .eq('is_captain', true);
+            
+            if (excludePlayerId) {
+                query = query.neq('id', excludePlayerId);
+            }
+            
+            const { error } = await query;
+            
+            if (error) throw error;
+            
+            // Обновляем локальные данные
+            this.currentTeam.players.forEach(player => {
+                if (player.id !== excludePlayerId) {
+                    player.is_captain = false;
+                }
+            });
+            
+        } catch (error) {
+            console.error('❌ Ошибка обновления капитанов:', error);
+        }
+    },
+
+    async updateLocalPlayerData(playerId, playerData, photoUrl) {
+        const idx = this.currentTeam.players.findIndex(p => p.id === playerId);
+        
+        if (idx !== -1) {
+            // Обновляем существующего игрока
+            this.currentTeam.players[idx] = {
+                ...this.currentTeam.players[idx],
+                ...playerData,
+                photo_url: photoUrl || this.currentTeam.players[idx].photo_url
+            };
+        } else {
+            // Добавляем нового игрока
+            this.currentTeam.players.push({
+                id: playerId,
+                ...playerData,
+                photo_url: photoUrl
+            });
+        }
+    },
+
+    async deletePlayerFromScreen() {
         if (!this.editingPlayer) return;
         
-        if (!confirm('Удалить игрока из команды?')) return;
+        const player = this.currentTeam.players.find(p => p.id === this.editingPlayer);
+        if (!player) return;
         
-        this.deletePlayer(this.editingPlayer);
+        if (!confirm(`Удалить игрока "${player.name}" из команды?`)) {
+            return;
+        }
+        
+        await this.deletePlayer(this.editingPlayer);
         this.hidePlayerScreen();
     },
 
-    deletePlayer(playerId) {
-        // Помечаем на удаление
+    async deletePlayer(playerId) {
         const player = this.currentTeam.players.find(p => p.id === playerId);
-        if (player && !playerId.toString().startsWith('temp_')) {
-            this.pendingChanges.deletedPlayers.push(playerId);
+        if (!player) return;
+        
+        if (!confirm(`Удалить игрока "${player.name}" из команды?`)) {
+            return;
         }
         
-        // Удаляем локально
-        this.currentTeam.players = this.currentTeam.players.filter(p => p.id !== playerId);
-        this.renderRoster();
+        try {
+            // Удаляем из базы
+            const { error } = await app.supabase
+                .from('team_players')
+                .delete()
+                .eq('id', playerId);
+            
+            if (error) throw error;
+            
+            // Удаляем локально
+            this.currentTeam.players = this.currentTeam.players.filter(p => p.id !== playerId);
+            this.renderRoster();
+            
+            console.log('✅ Игрок удален');
+            
+        } catch (error) {
+            console.error('❌ Ошибка удаления игрока:', error);
+            alert('Ошибка удаления: ' + error.message);
+        }
     },
 
-    // ==================== СОХРАНЕНИЕ ====================
+    // ==================== СОХРАНЕНИЕ КОМАНДЫ ====================
 
     async saveAllChanges() {
-        const btn = document.querySelector('.save-top-btn');
-        const originalText = btn ? btn.innerHTML : 'Готово';
+        if (!this.hasUnsavedChanges) {
+            alert('Нет изменений для сохранения');
+            return;
+        }
         
+        if (this.isSaving) {
+            alert('Сохранение уже выполняется...');
+            return;
+        }
+        
+        const btn = document.querySelector('.btn-save-bottom');
+        const originalText = btn ? btn.innerHTML : 'Сохранить изменения';
+        
+        this.isSaving = true;
         if (btn) {
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
             btn.disabled = true;
         }
-
+        
         try {
-            // 1. Обновляем основную инфу
-            const nameEl = document.getElementById('edit-team-name');
-            const descEl = document.getElementById('edit-team-description');
-            
+            // 1. Собираем обновленные данные команды
             const updates = {
-                name: nameEl ? nameEl.value : this.currentTeam.name,
-                description: descEl ? descEl.value : null
-                // УБРАНО: contacts - этого поля нет в таблице teams
+                name: document.getElementById('edit-team-name')?.value || this.currentTeam.name,
+                description: document.getElementById('edit-team-description')?.value || null,
+                contacts: document.getElementById('edit-team-contacts')?.value || null
             };
-
-            // Если есть новый логотип, загружаем его
+            
+            // 2. Если есть новый логотип, загружаем его
             if (this.pendingChanges.logo) {
-                // TODO: Загрузка файла на сервер и получение URL
+                // TODO: Реализовать загрузку логотипа в Supabase Storage
+                console.log('Логотип для загрузки:', this.pendingChanges.logo);
                 // updates.logo_url = uploadedUrl;
             }
-
-            const { error: updateError } = await app.supabase
+            
+            // 3. Сохраняем в базу
+            const { error } = await app.supabase
                 .from('teams')
                 .update(updates)
                 .eq('id', this.currentTeam.id);
-
-            if (updateError) throw updateError;
-
-            // 2. Сохраняем состав игроков
-            for (const player of this.currentTeam.players) {
-                if (player.id.toString().startsWith('temp_')) {
-                    // Новый игрок - добавляем
-                    const { id, ...data } = player;
-                    const { error } = await app.supabase.from('team_players').insert([data]);
-                    if (error) throw error;
-                } else {
-                    // Существующий игрок - обновляем
-                    const { error } = await app.supabase.from('team_players')
-                        .update({
-                            name: player.name,
-                            number: player.number,
-                            role: player.role,
-                            info: player.info,
-                            is_captain: player.is_captain,
-                            photo_url: player.photo_url
-                            // УБРАНО: order_index - нет в таблице
-                        })
-                        .eq('id', player.id);
-                    if (error) throw error;
-                }
-            }
-
-            // 3. Удаляем помеченных игроков
-            if (this.pendingChanges.deletedPlayers.length > 0) {
-                const { error } = await app.supabase.from('team_players')
-                    .delete()
-                    .in('id', this.pendingChanges.deletedPlayers);
-                if (error) throw error;
-            }
-
+            
+            if (error) throw error;
+            
+            // 4. Обновляем локальные данные
+            Object.assign(this.currentTeam, updates);
+            
             alert('Изменения сохранены!');
             
-            // Очищаем pending changes
-            this.pendingChanges = { players: [], deletedPlayers: [], logo: null };
-            
-            // Обновляем данные команды
-            await this.show(this.currentTeam.id);
-            
         } catch (error) {
-            console.error('Ошибка сохранения:', error);
+            console.error('❌ Ошибка сохранения команды:', error);
             alert('Ошибка сохранения: ' + error.message);
-        } finally {
+            
             if (btn) {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
+            
+            this.isSaving = false;
+            return;
+        } finally {
+            this.isSaving = false;
         }
+        
+        // 5. Сбрасываем состояние
+        this.hasUnsavedChanges = false;
+        this.pendingChanges.logo = null;
+        
+        // 6. Обновляем исходные данные для сравнения
+        this.originalTeamData = {
+            name: this.currentTeam.name,
+            description: this.currentTeam.description || '',
+            sport: this.currentTeam.sport,
+            city: this.currentTeam.city
+        };
+        
+        // 7. Скрываем кнопки сохранения
+        this.updateSaveButtons();
+        
+        // 8. Перезагружаем данные команды
+        await this.show(this.currentTeam.id);
     },
 
-    deleteTeam() {
-        this.showConfirm(
-            'Удалить команду?',
-            'Все данные будут безвозвратно удалены. Это действие нельзя отменить.',
-            async () => {
-                try {
-                    // Сначала удаляем игроков
-                    await app.supabase.from('team_players').delete().eq('team_id', this.currentTeam.id);
-                    
-                    // Потом команду
-                    await app.supabase.from('teams').delete().eq('id', this.currentTeam.id);
-                    
-                    alert('Команда удалена');
-                    if (navigationModule && navigationModule.showTeams) {
-                        navigationModule.showTeams();
-                    } else {
-                        screenManager.show('screen-teams');
-                    }
-                } catch (error) {
-                    alert('Ошибка удаления: ' + error.message);
-                }
+    async deleteTeam() {
+        if (!confirm('Удалить команду?\n\nВсе данные будут безвозвратно удалены. Это действие нельзя отменить.')) {
+            return;
+        }
+        
+        try {
+            // Удаляем игроков
+            await app.supabase.from('team_players').delete().eq('team_id', this.currentTeam.id);
+            
+            // Удаляем команду
+            await app.supabase.from('teams').delete().eq('id', this.currentTeam.id);
+            
+            alert('Команда удалена');
+            
+            if (navigationModule && navigationModule.showTeams) {
+                navigationModule.showTeams();
+            } else {
+                screenManager.show('screen-teams');
             }
-        );
-    },
-
-    showConfirm(title, text, action) {
-        // Простой confirm вместо модалки, можно заменить на кастомную модалку позже
-        if (confirm(title + '\n\n' + text)) {
-            action();
+            
+        } catch (error) {
+            console.error('❌ Ошибка удаления команды:', error);
+            alert('Ошибка удаления: ' + error.message);
         }
     },
 
