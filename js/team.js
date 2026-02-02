@@ -1,7 +1,13 @@
 const teamModule = {
     currentTeam: null,
+	 isLoading: false,
 
     async show(teamId) {
+        // ⏳ СРАЗУ показываем экран команды с индикатором загрузки
+        screenManager.show('screen-team');
+        this.showLoading();
+        this.isLoading = true;
+        
         try {
             const { data: team, error } = await app.supabase
                 .from('teams')
@@ -16,13 +22,44 @@ const teamModule = {
 
             this.currentTeam = team;
             this.render(team);
-            screenManager.show('screen-team');
         } catch (error) {
             console.error('❌ Ошибка загрузки команды:', error);
             alert('Ошибка загрузки команды');
+            this.back(); // Возвращаемся назад при ошибке
+        } finally {
+            this.hideLoading();
+            this.isLoading = false;
         }
     },
+// Показывает индикатор загрузки
+showLoading() {
+    const rosterContainer = document.getElementById('team-roster');
+    if (rosterContainer) {
+        rosterContainer.innerHTML = `
+            <div class="roster-loading">
+                <div class="roster-spinner"></div>
+                <span class="roster-loading-text">Загрузка состава...</span>
+            </div>
+        `;
+    }
+    
+    // Блокируем кнопки на время загрузки
+    const actionsContainer = document.getElementById('team-actions');
+    if (actionsContainer) {
+        actionsContainer.style.opacity = '0.5';
+        actionsContainer.style.pointerEvents = 'none';
+    }
+},
 
+// Скрывает индикатор загрузки
+hideLoading() {
+    // Разблокируем кнопки
+    const actionsContainer = document.getElementById('team-actions');
+    if (actionsContainer) {
+        actionsContainer.style.opacity = '1';
+        actionsContainer.style.pointerEvents = 'auto';
+    }
+},
     async render(team) {
         // Основная информация
         // Аватар команды (логотип или эмодзи)
