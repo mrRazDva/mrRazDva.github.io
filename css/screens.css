@@ -318,3 +318,283 @@
     display: none !important;
 }
 
+/* ==================== FIFA UT STYLE PLAYER CARDS ==================== */
+
+/* Контейнер для футбольного поля с составом */
+.football-field-roster {
+    position: relative;  /* Добавляем для позиционирования оверлея */
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 20px;
+}
+
+/* Фоновое изображение поля */
+.football-field-bg {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+}
+
+/* Оверлей с игроками поверх поля */
+.football-field-overlay {
+    position: absolute;  /* Позиционируем поверх фона */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: space-between;
+    padding: 2% 4%;
+}
+
+.fut-card {
+    width: 70px;
+    height: 100px;
+    background: linear-gradient(135deg, #d4af37 0%, #f4e4ba 50%, #d4af37 100%);
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    font-family: 'Roboto Condensed', sans-serif;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.fut-card:hover {
+    transform: scale(1.15) translateY(-5px);
+    box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    z-index: 10;
+}
+
+/* Карточка капитана - синий градиент */
+.fut-card.captain {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%);
+    box-shadow: 
+        0 4px 15px rgba(30, 60, 114, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.fut-card.captain .fut-rating,
+.fut-card.captain .fut-position {
+    color: #fff;
+}
+
+.fut-card.captain .fut-name {
+    background: linear-gradient(180deg, rgba(30, 60, 114, 0.9) 0%, rgba(42, 82, 152, 0.95) 100%);
+    color: #fff;
+}
+
+/* Верхняя часть карточки - рейтинг и позиция */
+.fut-card-header {
+    height: 35%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 4px;
+    position: relative;
+}
+
+.fut-rating {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: #2c2416;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.fut-position {
+    font-size: 0.5rem;
+    font-weight: 700;
+    color: #5c4a2a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 1px;
+}
+
+/* Центр карточки - фото */
+.fut-card-image {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 2px 0;  /* Отступы сверху и снизу */
+}
+
+.fut-card-image img {
+    width: 95%;       /* Уменьшено с 85% чтобы рамка помещалась */
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid rgba(212, 175, 55, 0.5);
+    box-sizing: border-box;  /* Рамка входит в размеры */
+}
+
+.fut-card.captain .fut-card-image img {
+    border-color: rgba(255, 215, 0, 0.8);
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+}
+
+.fut-card-image .fut-initial {
+    font-size: 2rem;
+    font-weight: 900;
+    color: rgba(0, 0, 0, 0.3);
+    text-transform: uppercase;
+}
+
+/* Имя игрока */
+.fut-name {
+    height: 20px;
+    background: linear-gradient(180deg, rgba(244, 228, 186, 0.95) 0%, rgba(212, 175, 55, 0.95) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #2c2416;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-top: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Значок капитана на карточке */
+.fut-captain-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 900;
+    color: #1a1a1a;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    z-index: 5;
+}
+
+/* Ряды игроков на поле */
+.field-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 4px 0;
+}
+
+.field-row.goalkeeper {
+    margin-top: 0;
+}
+
+.field-row.defenders {
+    margin-top: 0;
+}
+
+.field-row.midfielders {
+    margin-top: 0;
+}
+
+.field-row.attackers {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Адаптивность для маленьких экранов */
+@media (max-width: 480px) {
+    .fut-card {
+        width: 65px;
+        height: 95px;
+    }
+    
+    .fut-rating {
+        font-size: 0.9rem;
+    }
+    
+    .fut-position {
+        font-size: 0.6rem;
+    }
+    
+    .fut-name {
+        font-size: 0.5rem;
+        height: 16px;
+    }
+    
+    .field-row {
+        gap: 8px;
+    }
+}
+
+/* Стили для списка игроков под полем */
+.roster-list-below {
+    margin-top: 20px;
+}
+
+.players-list-simple {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.player-simple-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-hover);
+    border-radius: var(--radius-md);
+    animation: slideIn 0.3s ease forwards;
+}
+
+.player-simple-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--gradient-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    color: #000;
+    flex-shrink: 0;
+}
+
+.player-simple-name {
+    flex: 1;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.captain-badge-small {
+    background: var(--accent-gold);
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}

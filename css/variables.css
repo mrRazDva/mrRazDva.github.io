@@ -3,6 +3,7 @@
     --bg-primary: #0a0a0a;
     --bg-secondary: #1a1a1a;
     --bg-card: rgba(255, 255, 255, 0.05);
+	 --bg-hover: #252525;
     --accent-green: #00ff88;
     --accent-pink: #ff0066;
     --accent-blue: #00ccff;
@@ -25,4 +26,22 @@
     --transition: all 0.3s ease;
     --border-radius: 16px;
     --border-radius-sm: 12px;
+	
+	
+	
+	 /* Радиусы */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    
+    /* Тени */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+    
+    /* Градиенты */
+    --gradient-green: linear-gradient(135deg, var(--accent-green), #00cc6a);
+    --gradient-blue: linear-gradient(135deg, var(--accent-blue), #0099cc);
+    --gradient-gold: linear-gradient(135deg, var(--accent-gold), #ffaa00);
 }
