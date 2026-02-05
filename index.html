@@ -862,6 +862,19 @@
     </div>
 </section>
 
+<section id="screen-match-roster" class="screen">
+    <div class="container">
+        <button class="back-btn" onclick="matchRosterModule.back()">
+            <i class="fas fa-arrow-left"></i> Назад
+        </button>
+        
+        <div id="match-roster-content">
+            <!-- Контент будет заполняться JavaScript -->
+        </div>
+    </div>
+</section>
+
+
 <!-- Модальное окно для выбора на карте -->
 	<div id="location-picker-modal" class="modal-overlay hidden">
     <div class="modal-content" style="width: 95%; max-width: 600px; padding: 0; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
@@ -976,6 +989,7 @@
 	<script src="./js/app-modules/comments.js"></script>
 	<script src="./js/app-modules/map.js"></script>
 	<script src="./js/app-modules/elo.js"></script>
+	<script src="./js/match-roster.js"></script>
 
 	<!-- Компоненты -->
 	<script src="./js/team.js"></script>

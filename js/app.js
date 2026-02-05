@@ -63,6 +63,11 @@ const app = {
         // Сначала инициализируем authModule, но без вызова showMain
         await authModule.init(this);
         
+		// Инициализируем модуль управления составом
+    if (typeof matchRosterModule !== 'undefined') {
+        // Модуль не требует инициализации, оставляем как есть
+    }
+		
         // Инициализируем модуль инициализации
         await initModule.init(this);
         
@@ -75,6 +80,8 @@ const app = {
         mapModule.init(this);
 		eloModule.init(this);
         
+		
+		
         // Теперь, если пользователь уже авторизован, показываем главный экран
         if (authModule.isAuthenticated()) {
             console.log('👤 Пользователь уже авторизован, показываем главный экран');
@@ -93,6 +100,10 @@ const app = {
         return navigationModule.showRoleSelection();
     },
     
+	showTeamWithMatchRoster(teamId, matchId) {
+    teamModule.show(teamId, matchId);
+},
+	
     selectRole(role) {
         return navigationModule.selectRole(role);
     },
@@ -157,6 +168,8 @@ const app = {
         console.error('❌ Ошибка в методе handleLogin:', error);
         alert('Произошла ошибка при входе в систему');
     }
+	
+	
 },
     
     // Исправлено: теперь вызываем authModule.resetPassword вместо navigationModule.showForgotPassword

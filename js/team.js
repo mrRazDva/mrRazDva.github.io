@@ -2,35 +2,48 @@ const teamModule = {
     currentTeam: null,
 	 isLoading: false,
 
-    async show(teamId) {
-        // ⏳ СРАЗУ показываем экран команды с индикатором загрузки
-        screenManager.show('screen-team');
-        this.showLoading();
-        this.isLoading = true;
+async show(teamId, matchId = null) {
+    // ⏳ СРАЗУ показываем экран команды с индикатором загрузки
+    screenManager.show('screen-team');
+    this.showLoading();
+    this.isLoading = true;
+    
+    try {
+        const { data: team, error } = await app.supabase
+            .from('teams')
+            .select(`
+                *,
+                players:team_players(*)
+            `)
+            .eq('id', teamId)
+            .single();
+
+        if (error) throw error;
+
+        this.currentTeam = team;
         
-        try {
-            const { data: team, error } = await app.supabase
-                .from('teams')
-                .select(`
-                    *,
-                    players:team_players(*)
-                `)
-                .eq('id', teamId)
-                .single();
-
-            if (error) throw error;
-
-            this.currentTeam = team;
-            this.render(team);
-        } catch (error) {
-            console.error('❌ Ошибка загрузки команды:', error);
-            alert('Ошибка загрузки команды');
-            this.back(); // Возвращаемся назад при ошибке
-        } finally {
-            this.hideLoading();
-            this.isLoading = false;
+        // Если передан matchId, загружаем состав на матч
+        if (matchId && typeof matchRosterModule !== 'undefined') {
+            const matchRoster = await matchRosterModule.getMatchRoster(matchId, teamId);
+            if (matchRoster && matchRoster.length > 0) {
+                // Заменяем общий состав составом на матч
+                team.players = matchRoster;
+                // Добавляем флаг, что это состав на матч
+                team.isMatchRoster = true;
+                team.matchId = matchId;
+            }
         }
-    },
+        
+        this.render(team);
+    } catch (error) {
+        console.error('❌ Ошибка загрузки команды:', error);
+        alert('Ошибка загрузки команды');
+        this.back();
+    } finally {
+        this.hideLoading();
+        this.isLoading = false;
+    }
+},
 // Показывает индикатор загрузки
 showLoading() {
     const rosterContainer = document.getElementById('team-roster');
@@ -92,6 +105,21 @@ hideLoading() {
                     <i class="fas fa-fire"></i> Бросить вызов
                 </button>`;
         }
+
+
+// Добавляем индикатор, если это состав на матч
+//    if (team.isMatchRoster) {
+//        const rosterContainer = document.getElementById('team-roster');
+//        if (rosterContainer) {
+//            const title = document.createElement('div');
+//            title.className = 'match-roster-badge';
+//            title.innerHTML = `
+//                <i class="fas fa-trophy"></i>
+//                <span>Состав на матч</span>
+//            `;
+//            rosterContainer.parentNode.insertBefore(title, rosterContainer);
+//        }
+ //   }
 
         // Состав команды - отображаем на спортивном поле
 if (team.sport === 'football') {

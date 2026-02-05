@@ -1,4 +1,4 @@
-// js/match-edit.js - Редактирование матчей с таймером
+// js/match-edit.js - Редактирование матчей с таймером и управлением составом
 const matchEditModule = {
     currentMatch: null,
     originalMatch: null,
@@ -140,41 +140,41 @@ const matchEditModule = {
     },
 
     renderTeamsInfo(match) {
-    const sportElement = document.getElementById('edit-match-sport');
-    if (sportElement) sportElement.innerHTML = `<i class="fas fa-${app.getSportIcon(match.sport)}"></i> ${app.getSportName(match.sport).toUpperCase()}`;
-    
-    // Команда 1
-    const team1AvatarEl = document.getElementById('edit-match-team1-avatar');
-    if (team1AvatarEl) {
-        if (match.team1?.logo_url) {
-            team1AvatarEl.innerHTML = `
-                <img src="${match.team1.logo_url}" 
-                     alt="${match.team1.name}" 
-                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"
-                     onerror="this.style.display='none'; this.parentElement.textContent='${match.team1?.avatar || '⚽'}'">
-            `;
-        } else {
-            team1AvatarEl.textContent = match.team1?.avatar || '⚽';
+        const sportElement = document.getElementById('edit-match-sport');
+        if (sportElement) sportElement.innerHTML = `<i class="fas fa-${app.getSportIcon(match.sport)}"></i> ${app.getSportName(match.sport).toUpperCase()}`;
+        
+        // Команда 1
+        const team1AvatarEl = document.getElementById('edit-match-team1-avatar');
+        if (team1AvatarEl) {
+            if (match.team1?.logo_url) {
+                team1AvatarEl.innerHTML = `
+                    <img src="${match.team1.logo_url}" 
+                         alt="${match.team1.name}" 
+                         style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"
+                         onerror="this.style.display='none'; this.parentElement.textContent='${match.team1?.avatar || '⚽'}'">
+                `;
+            } else {
+                team1AvatarEl.textContent = match.team1?.avatar || '⚽';
+            }
         }
-    }
-    document.getElementById('edit-match-team1-name').textContent = match.team1?.name || 'Неизвестно';
-    
-    // Команда 2
-    const team2AvatarEl = document.getElementById('edit-match-team2-avatar');
-    if (team2AvatarEl) {
-        if (match.team2?.logo_url) {
-            team2AvatarEl.innerHTML = `
-                <img src="${match.team2.logo_url}" 
-                     alt="${match.team2.name}" 
-                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"
-                     onerror="this.style.display='none'; this.parentElement.textContent='${match.team2?.avatar || '⚽'}'">
-            `;
-        } else {
-            team2AvatarEl.textContent = match.team2?.avatar || '⚽';
+        document.getElementById('edit-match-team1-name').textContent = match.team1?.name || 'Неизвестно';
+        
+        // Команда 2
+        const team2AvatarEl = document.getElementById('edit-match-team2-avatar');
+        if (team2AvatarEl) {
+            if (match.team2?.logo_url) {
+                team2AvatarEl.innerHTML = `
+                    <img src="${match.team2.logo_url}" 
+                         alt="${match.team2.name}" 
+                         style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"
+                         onerror="this.style.display='none'; this.parentElement.textContent='${match.team2?.avatar || '⚽'}'">
+                `;
+            } else {
+                team2AvatarEl.textContent = match.team2?.avatar || '⚽';
+            }
         }
-    }
-    document.getElementById('edit-match-team2-name').textContent = match.team2?.name || 'Неизвестно';
-},
+        document.getElementById('edit-match-team2-name').textContent = match.team2?.name || 'Неизвестно';
+    },
 
     renderScoreSection(match) {
         const [score1, score2] = match.score ? match.score.split(':').map(Number) : [0, 0];
@@ -244,27 +244,113 @@ const matchEditModule = {
         container.innerHTML = '';
         
         const userId = authModule.getUserId();
-        const isOwner = match.team1?.owner_id === userId || match.team2?.owner_id === userId;
+        const isTeam1Owner = match.team1?.owner_id === userId;
+        const isTeam2Owner = match.team2?.owner_id === userId;
+        const isOwner = isTeam1Owner || isTeam2Owner;
+        
         if (!isOwner) return;
         
         const buttons = [];
+        
         switch (match.status) {
             case 'upcoming':
-                if (match.team2) buttons.push({ text: 'Начать матч', icon: 'fa-play', class: 'btn-success', confirm: 'Начать матч? Таймер начнет отсчет.', handler: () => this.startMatch() });
-                else buttons.push({ text: 'Ожидание соперника', icon: 'fa-clock', class: 'btn-secondary', disabled: true, handler: () => {} });
-                buttons.push({ text: 'Редактировать', icon: 'fa-pen', class: 'btn-primary', handler: () => this.isEditing ? this.saveMatchChanges() : this.startEditing() });
-                buttons.push({ text: 'Отменить матч', icon: 'fa-ban', class: 'btn-danger', confirm: 'Отменить матч? Его можно будет возобновить позже.', handler: () => this.cancelMatch() });
+                if (match.team2) {
+                    // Проверяем, выбран ли состав для обеих команд
+                    buttons.push({ 
+                        text: 'Проверить составы', 
+                        icon: 'fa-users-check', 
+                        class: 'btn-info', 
+                        handler: () => this.checkRostersBeforeStart() 
+                    });
+                    buttons.push({ 
+                        text: 'Начать матч', 
+                        icon: 'fa-play', 
+                        class: 'btn-success', 
+                        confirm: 'Начать матч? Таймер начнет отсчет.', 
+                        handler: () => this.startMatch() 
+                    });
+                } else {
+                    buttons.push({ 
+                        text: 'Ожидание соперника', 
+                        icon: 'fa-clock', 
+                        class: 'btn-secondary', 
+                        disabled: true, 
+                        handler: () => {} 
+                    });
+                }
+                buttons.push({ 
+                    text: 'Выбрать состав', 
+                    icon: 'fa-users', 
+                    class: 'btn-primary', 
+                    handler: () => this.showRosterManagement() 
+                });
+                buttons.push({ 
+                    text: 'Редактировать матч', 
+                    icon: 'fa-pen', 
+                    class: 'btn-primary', 
+                    handler: () => this.isEditing ? this.saveMatchChanges() : this.startEditing() 
+                });
+                buttons.push({ 
+                    text: 'Отменить матч', 
+                    icon: 'fa-ban', 
+                    class: 'btn-danger', 
+                    confirm: 'Отменить матч? Его можно будет возобновить позже.', 
+                    handler: () => this.cancelMatch() 
+                });
                 break;
+                
             case 'live':
-                buttons.push({ text: 'Завершить матч', icon: 'fa-flag-checkered', class: 'btn-success', confirm: 'Завершить матч? После завершения данные нельзя изменить!', handler: () => this.finishMatch() });
-                buttons.push({ text: 'Отменить матч', icon: 'fa-ban', class: 'btn-danger', confirm: 'Прервать и отменить текущий матч?', handler: () => this.cancelMatch() });
+                buttons.push({ 
+                    text: 'Завершить матч', 
+                    icon: 'fa-flag-checkered', 
+                    class: 'btn-success', 
+                    confirm: 'Завершить матч? После завершения данные нельзя изменить!', 
+                    handler: () => this.finishMatch() 
+                });
+                buttons.push({ 
+                    text: 'Изменить состав', 
+                    icon: 'fa-users', 
+                    class: 'btn-primary', 
+                    handler: () => this.showRosterManagement() 
+                });
+                buttons.push({ 
+                    text: 'Отменить матч', 
+                    icon: 'fa-ban', 
+                    class: 'btn-danger', 
+                    confirm: 'Прервать и отменить текущий матч?', 
+                    handler: () => this.cancelMatch() 
+                });
                 break;
+                
             case 'finished':
-                buttons.push({ text: 'Назад', icon: 'fa-arrow-left', class: 'btn-secondary', handler: () => this.back() });
+                buttons.push({ 
+                    text: 'Просмотр состава', 
+                    icon: 'fa-users', 
+                    class: 'btn-primary', 
+                    handler: () => this.showRosterManagement() 
+                });
+                buttons.push({ 
+                    text: 'Назад', 
+                    icon: 'fa-arrow-left', 
+                    class: 'btn-secondary', 
+                    handler: () => this.back() 
+                });
                 break;
+                
             case 'cancelled':
-                buttons.push({ text: 'Возобновить матч', icon: 'fa-redo', class: 'btn-warning', confirm: 'Возобновить матч?', handler: () => this.resumeMatch() });
-                buttons.push({ text: 'Назад', icon: 'fa-arrow-left', class: 'btn-secondary', handler: () => this.back() });
+                buttons.push({ 
+                    text: 'Возобновить матч', 
+                    icon: 'fa-redo', 
+                    class: 'btn-warning', 
+                    confirm: 'Возобновить матч?', 
+                    handler: () => this.resumeMatch() 
+                });
+                buttons.push({ 
+                    text: 'Назад', 
+                    icon: 'fa-arrow-left', 
+                    class: 'btn-secondary', 
+                    handler: () => this.back() 
+                });
                 break;
         }
         
@@ -272,9 +358,21 @@ const matchEditModule = {
             const button = document.createElement('button');
             button.className = `btn ${btn.class}`;
             button.innerHTML = `<i class="fas ${btn.icon}"></i> ${btn.text}`;
-            if (btn.disabled) button.disabled = true;
-            if (btn.confirm && !btn.disabled) button.onclick = () => { if (confirm(btn.confirm)) btn.handler(); };
-            else button.onclick = btn.handler;
+            
+            if (btn.disabled) {
+                button.disabled = true;
+                button.style.opacity = '0.6';
+                button.style.cursor = 'not-allowed';
+            }
+            
+            if (btn.confirm && !btn.disabled) {
+                button.onclick = () => {
+                    if (confirm(btn.confirm)) btn.handler();
+                };
+            } else {
+                button.onclick = btn.handler;
+            }
+            
             container.appendChild(button);
         });
     },
@@ -282,102 +380,309 @@ const matchEditModule = {
     renderWarnings(match) {
         const warningsEl = document.getElementById('edit-match-warnings');
         if (!warningsEl) return;
+        
         let warnings = [];
-        if (!match.team2) warnings.push('⚠️ Добавьте соперника для начала матча');
-        if (match.status === 'upcoming' && new Date(match.date) < new Date()) warnings.push('⏰ Время матча уже прошло');
+        
+        if (!match.team2) {
+            warnings.push('⚠️ Добавьте соперника для начала матча');
+        }
+        
+        if (match.status === 'upcoming' && new Date(match.date) < new Date()) {
+            warnings.push('⏰ Время матча уже прошло');
+        }
+        
+        // Проверка состава для предстоящих матчей
+        if (match.status === 'upcoming') {
+            if (!match.team2) {
+                warnings.push('👥 Выберите состав своей команды');
+            } else {
+                warnings.push('👥 Выберите состав своей команды (соперник выберет свой)');
+            }
+        }
+        
         if (warnings.length > 0) {
             warningsEl.innerHTML = warnings.map(w => `<div class="warning-item">${w}</div>`).join('');
             warningsEl.classList.remove('hidden');
-        } else warningsEl.classList.add('hidden');
+        } else {
+            warningsEl.classList.add('hidden');
+        }
+    },
+
+    async checkRostersBeforeStart() {
+        if (!this.currentMatch) return;
+        
+        try {
+            const match = this.currentMatch;
+            let allRostersComplete = true;
+            let messages = [];
+            
+            // Проверяем состав нашей команды
+            const ourTeamId = match.team1?.id;
+            if (ourTeamId) {
+                const ourRoster = await this.getMatchRoster(match.id, ourTeamId);
+                const requiredPlayers = this.getRequiredPlayersCount(match.format);
+                
+                if (!ourRoster || ourRoster.length < requiredPlayers) {
+                    allRostersComplete = false;
+                    messages.push(`Наша команда: не выбран состав (нужно ${requiredPlayers} игроков)`);
+                }
+            }
+            
+            // Проверяем состав соперника (если он есть)
+            const opponentTeamId = match.team2?.id;
+            if (opponentTeamId) {
+                const opponentRoster = await this.getMatchRoster(match.id, opponentTeamId);
+                const requiredPlayers = this.getRequiredPlayersCount(match.format);
+                
+                if (!opponentRoster || opponentRoster.length < requiredPlayers) {
+                    allRostersComplete = false;
+                    messages.push(`Соперник: не выбран состав (нужно ${requiredPlayers} игроков)`);
+                }
+            }
+            
+            if (allRostersComplete) {
+                alert('✅ Обе команды выбрали состав! Можно начинать матч.');
+            } else {
+                let message = '⚠️ Не все команды выбрали состав:\n\n';
+                message += messages.join('\n');
+                message += '\n\nВладелец каждой команды должен выбрать состав самостоятельно.';
+                alert(message);
+            }
+            
+        } catch (error) {
+            console.error('❌ Ошибка проверки состава:', error);
+            alert('Ошибка при проверке состава команд');
+        }
+    },
+
+    getRequiredPlayersCount(format) {
+        const formatMap = {
+            '2x2': 2,
+            '3x3': 3,
+            '4x4': 4,
+            '5x5': 5,
+            '7x7': 7,
+            '11x11': 11
+        };
+        return formatMap[format] || 5;
+    },
+
+    async getMatchRoster(matchId, teamId) {
+        try {
+            const { data: roster, error } = await app.supabase
+                .from('match_rosters')
+                .select(`
+                    player:team_players(*)
+                `)
+                .eq('match_id', matchId)
+                .eq('team_id', teamId);
+            
+            if (error) throw error;
+            
+            return roster?.map(r => r.player) || [];
+        } catch (error) {
+            console.error('❌ Ошибка загрузки состава:', error);
+            return null;
+        }
     },
 
     async startMatch() {
         try {
-            if (!this.currentMatch?.team2) { alert('Нельзя начать матч без соперника'); return; }
-            const { error } = await app.supabase.from('matches').update({ 
-                status: 'live', started_at: new Date().toISOString(), updated_at: new Date().toISOString()
-            }).eq('id', this.currentMatch.id);
+            if (!this.currentMatch?.team2) { 
+                alert('Нельзя начать матч без соперника'); 
+                return; 
+            }
+            
+            // Проверяем составы обеих команд
+            const match = this.currentMatch;
+            const requiredPlayers = this.getRequiredPlayersCount(match.format);
+            
+            // Проверяем состав нашей команды
+            const ourRoster = await this.getMatchRoster(match.id, match.team1.id);
+            if (!ourRoster || ourRoster.length < requiredPlayers) {
+                alert(`Наша команда не выбрала состав! Нужно минимум ${requiredPlayers} игроков.`);
+                return;
+            }
+            
+            // Проверяем состав соперника
+            const opponentRoster = await this.getMatchRoster(match.id, match.team2.id);
+            if (!opponentRoster || opponentRoster.length < requiredPlayers) {
+                alert(`Соперник не выбрал состав! Нужно минимум ${requiredPlayers} игроков.`);
+                return;
+            }
+            
+            const { error } = await app.supabase
+                .from('matches')
+                .update({ 
+                    status: 'live', 
+                    started_at: new Date().toISOString(), 
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', this.currentMatch.id);
+            
             if (error) throw error;
+            
             this.currentMatch.status = 'live';
             this.currentMatch.started_at = new Date().toISOString();
-            alert('Матч начался! Таймер запущен.');
-            this.render(); this.updateMatchTimer();
+            alert('✅ Матч начался! Таймер запущен.');
+            this.render(); 
+            this.updateMatchTimer();
+            
             if (matchesModule) await matchesModule.renderMatches();
-        } catch (error) { alert('Ошибка: ' + error.message); }
+            
+        } catch (error) { 
+            alert('❌ Ошибка: ' + error.message); 
+        }
     },
 
     async finishMatch() {
         try {
             if (!this.currentMatch) return;
+            
             const score1 = parseInt(document.getElementById('edit-match-score1').value) || 0;
             const score2 = parseInt(document.getElementById('edit-match-score2').value) || 0;
+            
             if (!confirm(`Завершить матч со счетом ${score1}:${score2}?`)) return;
             
-            const { error } = await app.supabase.from('matches').update({ 
-                status: 'finished', score: `${score1}:${score2}`, finished_at: new Date().toISOString(), updated_at: new Date().toISOString()
-            }).eq('id', this.currentMatch.id);
+            const { error } = await app.supabase
+                .from('matches')
+                .update({ 
+                    status: 'finished', 
+                    score: `${score1}:${score2}`, 
+                    finished_at: new Date().toISOString(), 
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', this.currentMatch.id);
+            
             if (error) throw error;
 
+            // Обновляем статистику команд
             await this.updateTeamStats(score1, score2);
-            if (typeof eloModule !== 'undefined') await eloModule.onMatchFinished(this.currentMatch.id);
+            
+            // Обновляем ELO рейтинги
+            if (typeof eloModule !== 'undefined') {
+                await eloModule.onMatchFinished(this.currentMatch.id);
+            }
 
             this.currentMatch.status = 'finished';
             this.currentMatch.finished_at = new Date().toISOString();
             this.currentMatch.score = `${score1}:${score2}`;
+            
             this.clearTimer();
-            const duration = this.formatDuration(new Date(this.currentMatch.finished_at) - new Date(this.currentMatch.started_at));
-            alert(`Матч завершен! Длительность: ${duration}`);
-            this.render(); this.updateMatchTimer();
+            
+            const duration = this.formatDuration(
+                new Date(this.currentMatch.finished_at) - new Date(this.currentMatch.started_at)
+            );
+            
+            alert(`✅ Матч завершен! Длительность: ${duration}`);
+            this.render(); 
+            this.updateMatchTimer();
+            
             if (matchesModule) await matchesModule.renderMatches();
-        } catch (error) { alert('Ошибка: ' + error.message); }
+            
+        } catch (error) { 
+            alert('❌ Ошибка: ' + error.message); 
+        }
     },
 
     async cancelMatch() {
         try {
-            const { error } = await app.supabase.from('matches').update({ 
-                status: 'cancelled', cancelled_at: new Date().toISOString(), updated_at: new Date().toISOString()
-            }).eq('id', this.currentMatch.id);
+            if (!confirm('Вы уверены, что хотите отменить матч?')) return;
+            
+            const { error } = await app.supabase
+                .from('matches')
+                .update({ 
+                    status: 'cancelled', 
+                    cancelled_at: new Date().toISOString(), 
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', this.currentMatch.id);
+            
             if (error) throw error;
+            
             this.currentMatch.status = 'cancelled';
             this.currentMatch.cancelled_at = new Date().toISOString();
-            this.clearTimer(); alert('Матч отменен');
-            this.render(); this.updateMatchTimer();
+            this.clearTimer(); 
+            
+            alert('✅ Матч отменен');
+            this.render(); 
+            this.updateMatchTimer();
+            
             if (matchesModule) await matchesModule.renderMatches();
-        } catch (error) { alert('Ошибка: ' + error.message); }
+            
+        } catch (error) { 
+            alert('❌ Ошибка: ' + error.message); 
+        }
     },
 
     async resumeMatch() {
         try {
-            const { error } = await app.supabase.from('matches').update({ 
-                status: 'upcoming', started_at: null, finished_at: null, cancelled_at: null, score: '0:0', updated_at: new Date().toISOString()
-            }).eq('id', this.currentMatch.id);
+            if (!confirm('Возобновить матч?')) return;
+            
+            const { error } = await app.supabase
+                .from('matches')
+                .update({ 
+                    status: 'upcoming', 
+                    started_at: null, 
+                    finished_at: null, 
+                    cancelled_at: null, 
+                    score: '0:0', 
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', this.currentMatch.id);
+            
             if (error) throw error;
+            
             this.currentMatch.status = 'upcoming';
             this.currentMatch.score = '0:0';
             this.currentMatch.started_at = null;
             this.currentMatch.finished_at = null;
             this.currentMatch.cancelled_at = null;
-            this.clearTimer(); alert('Матч возобновлен');
-            this.render(); this.updateMatchTimer();
+            
+            this.clearTimer(); 
+            alert('✅ Матч возобновлен');
+            this.render(); 
+            this.updateMatchTimer();
+            
             if (matchesModule) await matchesModule.renderMatches();
-        } catch (error) { alert('Ошибка: ' + error.message); }
+            
+        } catch (error) { 
+            alert('❌ Ошибка: ' + error.message); 
+        }
     },
 
     async updateTeamStats(score1, score2) {
         try {
             const match = this.currentMatch;
             if (!match.team1 || !match.team2) return;
+            
             let team1Update = {}, team2Update = {};
-            if (score1 > score2) { team1Update = { wins: (match.team1.wins || 0) + 1 }; team2Update = { losses: (match.team2.losses || 0) + 1 }; }
-            else if (score2 > score1) { team1Update = { losses: (match.team1.losses || 0) + 1 }; team2Update = { wins: (match.team2.wins || 0) + 1 }; }
-            else { team1Update = { draws: (match.team1.draws || 0) + 1 }; team2Update = { draws: (match.team2.draws || 0) + 1 }; }
+            
+            if (score1 > score2) {
+                team1Update = { wins: (match.team1.wins || 0) + 1 };
+                team2Update = { losses: (match.team2.losses || 0) + 1 };
+            } else if (score2 > score1) {
+                team1Update = { losses: (match.team1.losses || 0) + 1 };
+                team2Update = { wins: (match.team2.wins || 0) + 1 };
+            } else {
+                team1Update = { draws: (match.team1.draws || 0) + 1 };
+                team2Update = { draws: (match.team2.draws || 0) + 1 };
+            }
+            
             await app.supabase.from('teams').update(team1Update).eq('id', match.team1.id);
             await app.supabase.from('teams').update(team2Update).eq('id', match.team2.id);
-        } catch (error) { console.error('❌ Ошибка обновления статистики:', error); }
+            
+        } catch (error) { 
+            console.error('❌ Ошибка обновления статистики:', error); 
+        }
     },
 
     async saveMatchChanges() {
-        if (this.currentMatch.status !== 'upcoming') { alert('Редактирование доступно только для предстоящих матчей'); return; }
+        if (this.currentMatch.status !== 'upcoming') { 
+            alert('Редактирование доступно только для предстоящих матчей'); 
+            return; 
+        }
+        
         const updates = {
             date: document.getElementById('edit-match-datetime').value,
             location: document.getElementById('edit-match-location').value,
@@ -386,30 +691,52 @@ const matchEditModule = {
             lng: document.getElementById('edit-match-lng').value || null,
             updated_at: new Date().toISOString()
         };
+        
         try {
-            const { error } = await app.supabase.from('matches').update(updates).eq('id', this.currentMatch.id);
+            const { error } = await app.supabase
+                .from('matches')
+                .update(updates)
+                .eq('id', this.currentMatch.id);
+            
             if (error) throw error;
+            
             Object.assign(this.currentMatch, updates);
-            this.isEditing = false; alert('Сохранено!');
-            this.render(); this.updateMatchTimer();
+            this.isEditing = false; 
+            
+            alert('✅ Изменения сохранены!');
+            this.render(); 
+            this.updateMatchTimer();
+            
             if (matchesModule) await matchesModule.renderMatches();
-        } catch (error) { alert('Ошибка сохранения'); }
+            
+        } catch (error) { 
+            alert('❌ Ошибка сохранения: ' + error.message); 
+        }
     },
 
     startEditing() {
         if (this.currentMatch.status !== 'upcoming') return;
-        this.isEditing = true; this.render();
+        this.isEditing = true; 
+        this.render();
         document.getElementById('edit-match-format').disabled = false;
         document.getElementById('edit-match-datetime').disabled = false;
         document.getElementById('edit-match-location').disabled = false;
         document.getElementById('edit-match-location-btn').style.display = 'inline-flex';
     },
 
-    cancelEditing() { this.isEditing = false; this.currentMatch = JSON.parse(JSON.stringify(this.originalMatch)); this.render(); },
+    cancelEditing() { 
+        this.isEditing = false; 
+        this.currentMatch = JSON.parse(JSON.stringify(this.originalMatch)); 
+        this.render(); 
+    },
 
     adjustScore(change, teamNumber) {
         if (this.currentMatch.status !== 'live') return;
-        const input = document.getElementById(teamNumber === 1 ? 'edit-match-score1' : 'edit-match-score2');
+        
+        const input = document.getElementById(
+            teamNumber === 1 ? 'edit-match-score1' : 'edit-match-score2'
+        );
+        
         let value = parseInt(input.value) || 0;
         value = Math.max(0, value + change);
         input.value = value;
@@ -418,18 +745,62 @@ const matchEditModule = {
     openMapForLocation() {
         mapModule.openMapForLocation();
         const originalConfirm = mapModule.confirmLocation;
+        
         mapModule.confirmLocation = () => {
-            document.getElementById('edit-match-location').value = document.getElementById('location-name').value;
+            document.getElementById('edit-match-location').value = 
+                document.getElementById('location-name').value;
+            
             document.getElementById('edit-match-lat').value = mapModule.selectedCoords[0];
             document.getElementById('edit-match-lng').value = mapModule.selectedCoords[1];
+            
             mapModule.closeLocationPicker();
             mapModule.confirmLocation = originalConfirm;
         };
     },
 
+    showRosterManagement() {
+        const userId = authModule.getUserId();
+        const match = this.currentMatch;
+        
+        if (!match) return;
+        
+        const isTeam1Owner = match.team1?.owner_id === userId;
+        const isTeam2Owner = match.team2?.owner_id === userId;
+        
+        // Определяем, какую команду редактировать
+        let teamId, isOurTeam;
+        
+        if (isTeam1Owner) {
+            // Пользователь владелец команды 1 - это наша команда
+            teamId = match.team1.id;
+            isOurTeam = true;
+        } else if (isTeam2Owner) {
+            // Пользователь владелец команды 2 - это команда соперника
+            teamId = match.team2.id;
+            isOurTeam = false;
+        } else {
+            alert('Вы не являетесь владельцем ни одной из команд');
+            return;
+        }
+        
+        // Открываем экран управления составом
+        if (typeof matchRosterModule !== 'undefined' && matchRosterModule.show) {
+            // Передаем matchId, teamId и isOurTeam (чтобы понимать, какая это команда)
+            matchRosterModule.show(match.id, teamId, isOurTeam);
+        } else {
+            alert('Модуль управления составом не доступен');
+        }
+    },
+
     back() {
         this.clearTimer();
-        if (this.isEditing) { if (confirm('Есть несохраненные изменения. Выйти?')) { this.cancelEditing(); screenManager.back(); } }
-        else screenManager.back();
+        if (this.isEditing) {
+            if (confirm('Есть несохраненные изменения. Выйти без сохранения?')) {
+                this.cancelEditing();
+                screenManager.back();
+            }
+        } else {
+            screenManager.back();
+        }
     }
 };

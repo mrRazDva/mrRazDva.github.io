@@ -447,7 +447,7 @@ updateLiveTimers() {
         // Команда 1
         if (t1) {
             teamsHTML += `
-                <div class="detail-team" onclick="teamModule.show('${t1.id}')" style="cursor: pointer;">
+                <div class="detail-team" onclick="app.showTeamWithMatchRoster('${t1.id}', '${match.id}')" style="cursor: pointer;">
                     <div class="team-avatar" style="width: 80px; height: 80px; font-size: 2.5rem; margin: 0 auto 10px; border-color: var(--accent-green); border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
     ${this.getTeamAvatarHTML(t1)}
 </div>
