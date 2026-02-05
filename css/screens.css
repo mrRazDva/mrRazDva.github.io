@@ -1267,3 +1267,230 @@
     top: 50%;
     transform: translateY(-50%);
 }
+
+/* ==================== VOLLEYBALL COURT STYLE PLAYER CARDS ==================== */
+
+.volleyball-field-roster {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 20px;
+    aspect-ratio: 2/3; /* Волейбольное поле вытянутое по вертикали */
+}
+
+.volleyball-field-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 12px;
+}
+
+.volleyball-field-overlay {
+    position: absolute;
+    top: 50%; /* Начинаем с середины поля (нижняя половина) */
+    left: 0;
+    width: 100%;
+    height: 50%; /* Занимаем только нижнюю половину */
+    display: flex;
+    flex-direction: column-reverse; /* Передний ряд снизу, задний сверху (ближе к сетке) */
+    justify-content: space-around;
+    align-items: center;
+    padding: 5% 8%;
+}
+
+.volleyball-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    gap: 16px;
+}
+
+/* Расстояние от сетки */
+.volleyball-row.back-row {
+    margin-top: 0;
+}
+
+/* Расстояние от края поля */
+.volleyball-row.front-row {
+    margin-bottom: 0;
+}
+
+/* Адаптация карточек для волейбола */
+.volleyball-card {
+    width: 70px;
+    height: 105px;
+}
+
+@media (max-width: 480px) {
+    .volleyball-card {
+        width: 55px;
+        height: 85px;
+    }
+    
+    .volleyball-row {
+        gap: 10px;
+    }
+    
+    .volleyball-field-overlay {
+        padding: 4% 6%;
+    }
+}
+
+/* ==================== HOCKEY RINK STYLE PLAYER CARDS ==================== */
+
+.hockey-field-roster {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 20px;
+    aspect-ratio: 2/3; /* Хоккейное поле вытянутое по вертикали */
+}
+
+.hockey-field-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 12px;
+}
+
+.hockey-field-overlay {
+    position: absolute;
+    top: 50%; /* Нижняя половина поля (наша зона) */
+    left: 0;
+    width: 100%;
+    height: 50%;
+    display: flex;
+    flex-direction: column-reverse; /* Вратарь снизу, нападающие сверху (ближе к центру) */
+    justify-content: space-around;
+    align-items: center;
+    padding: 5% 10%;
+}
+
+.hockey-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    gap: 20px;
+}
+
+/* Вратарь один в центре */
+.hockey-row.goalkeeper-row {
+    justify-content: center;
+}
+
+/* Защитники — пара */
+.hockey-row.defense-row {
+    justify-content: space-around;
+    padding: 0 15%;
+}
+
+/* Нападающие — тройка */
+.hockey-row.forward-row {
+    justify-content: space-around;
+    gap: 12px;
+}
+
+/* Адаптация карточек для хоккея */
+.hockey-card {
+    width: 70px;
+    height: 105px;
+}
+
+@media (max-width: 480px) {
+    .hockey-card {
+        width: 55px;
+        height: 85px;
+    }
+    
+    .hockey-row {
+        gap: 12px;
+    }
+    
+    .hockey-row.defense-row {
+        padding: 0 10%;
+    }
+    
+    .hockey-field-overlay {
+        padding: 4% 8%;
+    }
+}
+
+/* ==================== BASKETBALL COURT STYLE PLAYER CARDS ==================== */
+
+.basketball-court-roster {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 20px;
+    aspect-ratio: 1/2; /* Баскетбольная площадка вытянутая по вертикали */
+}
+
+.basketball-court-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 12px;
+}
+
+.basketball-court-overlay {
+    position: absolute;
+    top: 50%; /* Нижняя половина площадки (наша зона) */
+    left: 0;
+    width: 100%;
+    height: 50%;
+    display: flex;
+    flex-direction: column-reverse; /* Передний ряд снизу (ближе к кольцу), задний сверху */
+    justify-content: space-around;
+    align-items: center;
+    padding: 8% 10%;
+}
+
+.basketball-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    gap: 16px;
+}
+
+/* Задний ряд - 2 игрока (разыгрывающие) */
+.basketball-row.back-row {
+    justify-content: center;
+    gap: 30px;
+}
+
+/* Передний ряд - 3 игрока (форварды и центровой) */
+.basketball-row.front-row {
+    justify-content: space-around;
+    padding: 0 5%;
+}
+
+/* Адаптация карточек для баскетбола */
+.basketball-card {
+    width: 70px;
+    height: 105px;
+}
+
+@media (max-width: 480px) {
+    .basketball-card {
+        width: 55px;
+        height: 85px;
+    }
+    
+    .basketball-row {
+        gap: 10px;
+    }
+    
+    .basketball-row.back-row {
+        gap: 20px;
+    }
+    
+    .basketball-court-overlay {
+        padding: 6% 8%;
+    }
+}

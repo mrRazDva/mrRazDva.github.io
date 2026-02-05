@@ -766,86 +766,176 @@ const teamEditModule = {
     // ==================== СОХРАНЕНИЕ КОМАНДЫ ====================
 
     async saveAllChanges() {
-        if (!this.hasUnsavedChanges) {
-            alert('Нет изменений для сохранения');
-            return;
-        }
-        
-        if (this.isSaving) {
-            alert('Сохранение уже выполняется...');
-            return;
-        }
-        
-        const btn = document.querySelector('.btn-save-bottom');
-        const originalText = btn ? btn.innerHTML : 'Сохранить изменения';
-        
-        this.isSaving = true;
-        if (btn) {
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
-            btn.disabled = true;
-        }
-        
-        try {
-            // 1. Собираем обновленные данные команды
-            const updates = {
-                name: document.getElementById('edit-team-name')?.value || this.currentTeam.name,
-                description: document.getElementById('edit-team-description')?.value || null,
-                contacts: document.getElementById('edit-team-contacts')?.value || null
-            };
-            
-            // 2. Если есть новый логотип, загружаем его
-            if (this.pendingChanges.logo) {
-                // TODO: Реализовать загрузку логотипа в Supabase Storage
-                console.log('Логотип для загрузки:', this.pendingChanges.logo);
-                // updates.logo_url = uploadedUrl;
-            }
-            
-            // 3. Сохраняем в базу
-            const { error } = await app.supabase
-                .from('teams')
-                .update(updates)
-                .eq('id', this.currentTeam.id);
-            
-            if (error) throw error;
-            
-            // 4. Обновляем локальные данные
-            Object.assign(this.currentTeam, updates);
-            
-            alert('Изменения сохранены!');
-            
-        } catch (error) {
-            console.error('❌ Ошибка сохранения команды:', error);
-            alert('Ошибка сохранения: ' + error.message);
-            
-            if (btn) {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-            
-            this.isSaving = false;
-            return;
-        } finally {
-            this.isSaving = false;
-        }
-        
-        // 5. Сбрасываем состояние
-        this.hasUnsavedChanges = false;
-        this.pendingChanges.logo = null;
-        
-        // 6. Обновляем исходные данные для сравнения
-        this.originalTeamData = {
-            name: this.currentTeam.name,
-            description: this.currentTeam.description || '',
-            sport: this.currentTeam.sport,
-            city: this.currentTeam.city
+    if (!this.hasUnsavedChanges) {
+        alert('Нет изменений для сохранения');
+        return;
+    }
+    
+    if (this.isSaving) {
+        alert('Сохранение уже выполняется...');
+        return;
+    }
+    
+    const btn = document.querySelector('.btn-save-bottom');
+    const originalText = btn ? btn.innerHTML : 'Сохранить изменения';
+    
+    this.isSaving = true;
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
+        btn.disabled = true;
+    }
+    
+    try {
+        // 1. Собираем обновленные данные команды
+        const updates = {
+            name: document.getElementById('edit-team-name')?.value || this.currentTeam.name,
+            description: document.getElementById('edit-team-description')?.value || null,
+            contacts: document.getElementById('edit-team-contacts')?.value || null
         };
         
-        // 7. Скрываем кнопки сохранения
-        this.updateSaveButtons();
+        // 2. Если есть новый логотип, загружаем его
+        if (this.pendingChanges.logo && this.pendingChanges.logo.startsWith('data:image/')) {
+            try {
+                // Генерируем уникальное имя файла
+                const fileName = `team_logo_${this.currentTeam.id}_${Date.now()}.png`;
+                
+                // Извлекаем Base64 данные и MIME тип
+                const matches = this.pendingChanges.logo.match(/^data:(.+);base64,(.+)$/);
+                if (!matches) {
+                    throw new Error('Неверный формат Data URL');
+                }
+                
+                const mimeType = matches[1];
+                const base64Data = matches[2];
+                
+                console.log('Загрузка логотипа:', fileName, 'MIME тип:', mimeType);
+                
+                // Декодируем Base64 в бинарные данные
+                const binaryString = atob(base64Data);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                
+                // Используем прямой API-вызов через fetch
+                const supabaseUrl = 'https://anqvyvtwqljqvldcljat.supabase.co'; // Ваш Supabase URL
+                const storageUrl = `${supabaseUrl}/storage/v1/object/team-logos/${fileName}`;
+                
+                // Получаем токен доступа
+                const { data: { session } } = await app.supabase.auth.getSession();
+                const accessToken = session?.access_token;
+                
+                if (!accessToken) {
+                    throw new Error('Пользователь не авторизован');
+                }
+                
+                // Отправляем запрос на загрузку
+                const response = await fetch(storageUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': mimeType,
+                    },
+                    body: bytes
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Ошибка загрузки:', errorData);
+                    
+                    // Если файл уже существует, пробуем через PUT (обновление)
+                    if (response.status === 409) { // Conflict - файл уже существует
+                        const putResponse = await fetch(storageUrl, {
+                            method: 'PUT',
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`,
+                                'Content-Type': mimeType,
+                            },
+                            body: bytes
+                        });
+                        
+                        if (!putResponse.ok) {
+                            const putErrorData = await putResponse.json();
+                            throw new Error(`Не удалось обновить логотип: ${putErrorData.message || putErrorData.error}`);
+                        }
+                    } else {
+                        throw new Error(`Ошибка загрузки: ${errorData.message || errorData.error}`);
+                    }
+                }
+                
+                // Получаем публичный URL
+                const publicUrl = `${supabaseUrl}/storage/v1/object/public/team-logos/${fileName}`;
+                
+                updates.logo_url = publicUrl;
+                console.log('Логотип загружен, URL:', publicUrl);
+                
+                // Удаляем старый логотип, если он существует
+                if (this.currentTeam.logo_url) {
+                    try {
+                        const oldFileName = this.currentTeam.logo_url.split('/').pop();
+                        if (oldFileName !== fileName) {
+                            await app.supabase.storage
+                                .from('team-logos')
+                                .remove([oldFileName]);
+                            console.log('Старый логотип удален:', oldFileName);
+                        }
+                    } catch (deleteError) {
+                        console.warn('Не удалось удалить старый логотип:', deleteError);
+                    }
+                }
+                
+            } catch (uploadError) {
+                console.error('Ошибка загрузки логотипа:', uploadError);
+                alert('Не удалось загрузить логотип. Изменения сохранены, но логотип не обновлен.');
+            }
+        }
         
-        // 8. Перезагружаем данные команды
-        await this.show(this.currentTeam.id);
-    },
+        // 3. Сохраняем в базу
+        const { error } = await app.supabase
+            .from('teams')
+            .update(updates)
+            .eq('id', this.currentTeam.id);
+        
+        if (error) throw error;
+        
+        // 4. Обновляем локальные данные
+        Object.assign(this.currentTeam, updates);
+        
+        alert('Изменения сохранены!');
+        
+    } catch (error) {
+        console.error('❌ Ошибка сохранения команды:', error);
+        alert('Ошибка сохранения: ' + error.message);
+        
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+        
+        this.isSaving = false;
+        return;
+    } finally {
+        this.isSaving = false;
+    }
+    
+    // 5. Сбрасываем состояние
+    this.hasUnsavedChanges = false;
+    this.pendingChanges.logo = null;
+    
+    // 6. Обновляем исходные данные для сравнения
+    this.originalTeamData = {
+        name: this.currentTeam.name,
+        description: this.currentTeam.description || '',
+        sport: this.currentTeam.sport,
+        city: this.currentTeam.city
+    };
+    
+    // 7. Скрываем кнопки сохранения
+    this.updateSaveButtons();
+    
+    // 8. Перезагружаем данные команды
+    await this.show(this.currentTeam.id);
+},
 
     async deleteTeam() {
         if (!confirm('Удалить команду?\n\nВсе данные будут безвозвратно удалены. Это действие нельзя отменить.')) {
