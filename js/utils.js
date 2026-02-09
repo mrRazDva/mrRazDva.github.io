@@ -30,6 +30,9 @@ const utils = {
             element.classList.add('active');
         }
     },
+	
+	
+	
 
     // Format date for datetime-local input
     formatDateTimeLocal: (date) => {
@@ -55,5 +58,8 @@ const utils = {
         }
     }
 };
+
+
+
 
 window.utils = utils;

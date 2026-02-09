@@ -2110,3 +2110,61 @@
         grid-template-columns: repeat(4, 1fr);
     }
 }
+
+/* Стили для личной информации */
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    min-width: 120px;
+}
+
+.info-value {
+    text-align: right;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    flex: 1;
+    padding-left: 20px;
+    word-break: break-word;
+}
+
+.info-value.link {
+    color: var(--accent-blue);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.info-value.link:hover {
+    color: var(--accent-green);
+    text-decoration: underline;
+}
+
+.hint {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 400;
+}
+
+/* Стили для страницы редактирования профиля */
+.char-counter {
+    display: block;
+    text-align: right;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+
+

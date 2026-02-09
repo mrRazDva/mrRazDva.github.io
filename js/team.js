@@ -1062,6 +1062,14 @@ getPositionAbbreviation(role) {
             return;
         }
 
+
+if (player.invitation_status === 'pending') {
+    // Добавляем бейдж "ожидает"
+    playerHtml += '<span class="status-badge pending">ожидает</span>';
+} else if (player.is_linked) {
+    // Добавляем бейдж "привязан"
+    playerHtml += '<span class="status-badge linked">✓</span>';
+}
         rosterContainer.innerHTML = players.map((player, index) => `
             <div class="player-card" style="animation-delay: ${index * 0.05}s">
                 <div class="player-number">${player.number}</div>

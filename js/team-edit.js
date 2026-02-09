@@ -9,6 +9,10 @@ const teamEditModule = {
     pendingChanges: {
         logo: null
     },
+    
+    // ДОБАВЛЕНО: Новые свойства для приглашений
+    currentNickname: '',
+    nicknameExists: false,
 
     async show(teamId) {
         try {
@@ -48,9 +52,424 @@ const teamEditModule = {
             screenManager.show('screen-team-edit');
             this.updateSaveButtons();
             
+            // ДОБАВЛЕНО: Инициализируем форму приглашений
+            setTimeout(() => {
+                this.initInvitationForm();
+            }, 100);
+            
         } catch (error) {
             console.error('Ошибка загрузки команды:', error);
             alert('Ошибка загрузки команды');
+        }
+    },
+    
+    // ДОБАВЛЕНО: Метод для инициализации формы приглашения
+    initInvitationForm() {
+        const rosterTab = document.getElementById('tab-roster');
+        if (rosterTab && !rosterTab.querySelector('#add-player-nickname')) {
+            rosterTab.insertAdjacentHTML('afterbegin', this.renderInvitationForm());
+        }
+    },
+    
+    // ДОБАВЛЕНО: HTML формы приглашения
+    renderInvitationForm() {
+        return `
+        <div class="add-player-section" style="margin-bottom: 25px;">
+            <h4 style="margin-bottom: 15px; font-size: 1rem; color: var(--accent-green);">
+                <i class="fas fa-user-plus"></i> Добавить игрока
+            </h4>
+            
+            <div class="nickname-input-container" style="margin-bottom: 10px;">
+                <input type="text" 
+                       id="add-player-nickname" 
+                       placeholder="@никнейм"
+                       class="nickname-input"
+                       oninput="teamEditModule.checkNickname(this.value)"
+                       style="width: 100%; padding: 12px 15px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg-card); color: var(--text-primary); font-size: 1rem;">
+                <div id="nickname-status" class="status-message" style="margin-top: 8px; font-size: 0.85rem;"></div>
+            </div>
+            
+            <div class="player-type-buttons" style="display: flex; gap: 10px; margin-top: 15px;">
+                <button id="btn-add-unlinked" 
+                        class="btn-secondary" 
+                        onclick="teamEditModule.addUnlinkedPlayer()"
+                        disabled
+                        style="flex: 1; padding: 12px; border-radius: 10px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-secondary); font-weight: 600; opacity: 0.5;">
+                    <i class="fas fa-user-plus"></i> Без привязки
+                </button>
+                <button id="btn-invite" 
+                        class="btn-primary" 
+                        onclick="teamEditModule.invitePlayer()"
+                        disabled
+                        style="flex: 1; padding: 12px; border-radius: 10px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-secondary); font-weight: 600; opacity: 0.5;">
+                    <i class="fas fa-paper-plane"></i> Пригласить
+                </button>
+            </div>
+        </div>
+        `;
+    },
+    
+    // ДОБАВЛЕНО: Метод проверки никнейма
+    async checkNickname(nickname) {
+        if (!nickname || nickname.length < 2) {
+            this.resetNicknameUI();
+            return;
+        }
+        
+        this.currentNickname = nickname.trim();
+        this.showCheckingStatus();
+        
+        try {
+            // Проверяем существование через RPC функцию
+            const { data, error } = await app.supabase
+                .rpc('check_nickname_exists', { nickname_text: nickname });
+            
+            if (error) {
+                console.error('Ошибка RPC:', error);
+                this.showErrorStatus();
+                return;
+            }
+            
+            // Обработка ответа
+            let exists = false;
+            if (typeof data === 'boolean') {
+                exists = data;
+            } else if (Array.isArray(data) && data.length > 0) {
+                exists = data[0].exists || false;
+            }
+            
+            this.nicknameExists = exists;
+            console.log('Проверка никнейма:', nickname, 'Результат:', exists);
+            
+            // Обновляем UI
+            if (exists) {
+                this.showValidNickname();
+            } else {
+                this.showInvalidNickname();
+            }
+            
+        } catch (error) {
+            console.error('Ошибка:', error);
+            this.showErrorStatus();
+        }
+    },
+    
+    // ДОБАВЛЕНО: Вспомогательные методы UI
+    showCheckingStatus() {
+        const statusEl = document.getElementById('nickname-status');
+        const inputEl = document.getElementById('add-player-nickname');
+        
+        if (statusEl && inputEl) {
+            statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Проверка...';
+            statusEl.style.color = 'var(--accent-yellow)';
+            inputEl.style.borderColor = 'var(--accent-yellow)';
+        }
+    },
+
+    showValidNickname() {
+        const statusEl = document.getElementById('nickname-status');
+        const inputEl = document.getElementById('add-player-nickname');
+        const inviteBtn = document.getElementById('btn-invite');
+        const unlinkedBtn = document.getElementById('btn-add-unlinked');
+        
+        if (statusEl && inputEl) {
+            statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Пользователь найден';
+            statusEl.style.color = 'var(--accent-green)';
+            inputEl.style.borderColor = 'var(--accent-green)';
+            
+            if (inviteBtn) {
+                inviteBtn.disabled = false;
+                inviteBtn.style.opacity = '1';
+                inviteBtn.style.background = 'var(--accent-green)';
+                inviteBtn.style.color = '#000';
+                inviteBtn.style.border = 'none';
+            }
+            if (unlinkedBtn) {
+                unlinkedBtn.disabled = false;
+                unlinkedBtn.style.opacity = '1';
+                unlinkedBtn.style.background = 'var(--bg-card)';
+                unlinkedBtn.style.color = 'var(--text-primary)';
+            }
+        }
+    },
+
+    showInvalidNickname() {
+        const statusEl = document.getElementById('nickname-status');
+        const inputEl = document.getElementById('add-player-nickname');
+        const inviteBtn = document.getElementById('btn-invite');
+        const unlinkedBtn = document.getElementById('btn-add-unlinked');
+        
+        if (statusEl && inputEl) {
+            statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Пользователь не найден';
+            statusEl.style.color = 'var(--accent-pink)';
+            inputEl.style.borderColor = 'var(--accent-pink)';
+            
+            if (inviteBtn) {
+                inviteBtn.disabled = true;
+                inviteBtn.style.opacity = '0.5';
+                inviteBtn.style.background = 'var(--bg-secondary)';
+                inviteBtn.style.color = 'var(--text-secondary)';
+            }
+            if (unlinkedBtn) {
+                unlinkedBtn.disabled = false;
+                unlinkedBtn.style.opacity = '1';
+                unlinkedBtn.style.background = 'var(--bg-card)';
+                unlinkedBtn.style.color = 'var(--text-primary)';
+            }
+        }
+    },
+
+    showErrorStatus() {
+        const statusEl = document.getElementById('nickname-status');
+        const inputEl = document.getElementById('add-player-nickname');
+        const inviteBtn = document.getElementById('btn-invite');
+        const unlinkedBtn = document.getElementById('btn-add-unlinked');
+        
+        if (statusEl && inputEl) {
+            statusEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Ошибка проверки';
+            statusEl.style.color = 'var(--accent-pink)';
+            inputEl.style.borderColor = 'var(--accent-pink)';
+            
+            if (inviteBtn) inviteBtn.disabled = true;
+            if (unlinkedBtn) unlinkedBtn.disabled = true;
+        }
+    },
+
+    resetNicknameUI() {
+        const statusEl = document.getElementById('nickname-status');
+        const inputEl = document.getElementById('add-player-nickname');
+        const inviteBtn = document.getElementById('btn-invite');
+        const unlinkedBtn = document.getElementById('btn-add-unlinked');
+        
+        if (statusEl) {
+            statusEl.innerHTML = '';
+            statusEl.style.color = '';
+        }
+        
+        if (inputEl) {
+            inputEl.style.borderColor = 'var(--border)';
+        }
+        
+        if (inviteBtn) {
+            inviteBtn.disabled = true;
+            inviteBtn.style.opacity = '0.5';
+            inviteBtn.style.background = 'var(--bg-secondary)';
+            inviteBtn.style.color = 'var(--text-secondary)';
+        }
+        
+        if (unlinkedBtn) {
+            unlinkedBtn.disabled = true;
+            unlinkedBtn.style.opacity = '0.5';
+            unlinkedBtn.style.background = 'var(--bg-secondary)';
+            unlinkedBtn.style.color = 'var(--text-secondary)';
+        }
+        
+        this.currentNickname = '';
+        this.nicknameExists = false;
+    },
+
+    async addUnlinkedPlayer() {
+    if (!this.currentNickname) {
+        alert('Введите никнейм');
+        return;
+    }
+    
+    // Проверяем, нет ли уже игрока с таким именем в команде
+    const existingPlayer = this.currentTeam.players?.find(
+        p => p.name && p.name.toLowerCase() === this.currentNickname.toLowerCase()
+    );
+    
+    if (existingPlayer) {
+        alert('Игрок с таким именем уже есть в команде');
+        return;
+    }
+
+    // Находим свободный номер для нового игрока
+    const usedNumbers = new Set(this.currentTeam.players.map(p => p.number).filter(n => n));
+    let newNumber = 1;
+    while (usedNumbers.has(newNumber) && newNumber <= 99) {
+        newNumber++;
+    }
+    
+    if (newNumber > 99) {
+        alert('В команде уже все номера заняты (1-99)');
+        return;
+    }
+    
+    try {
+        // Добавляем игрока без привязки
+        const { data: player, error } = await app.supabase
+            .from('team_players')
+            .insert([{
+                team_id: this.currentTeam.id,
+                name: this.currentNickname,
+                number: newNumber, // Обязательное поле!
+                role: 'Игрок',
+                is_linked: false,
+                invitation_status: 'none',
+                order_index: this.currentTeam.players?.length || 0,
+                created_at: new Date().toISOString()
+            }])
+            .select()
+            .single();
+        
+        if (error) throw error;
+        
+        // Обновляем локальные данные
+        this.currentTeam.players = this.currentTeam.players || [];
+        this.currentTeam.players.push({
+            ...player,
+            is_captain: false,
+            role: 'Игрок',
+            number: newNumber
+        });
+        
+        // Обновляем UI
+        this.resetNicknameUI();
+        document.getElementById('add-player-nickname').value = '';
+        this.renderRoster();
+        
+        alert(`Игрок "${this.currentNickname}" добавлен без привязки`);
+        
+    } catch (error) {
+        console.error('Ошибка добавления игрока:', error);
+        alert('Ошибка: ' + error.message);
+    }
+},
+
+    async invitePlayer() {
+    if (!this.currentNickname || !this.nicknameExists) {
+        alert('Пользователь не найден');
+        return;
+    }
+    
+    try {
+        // Находим пользователя по никнейму через таблицу profiles
+        const { data: profile, error: profileError } = await app.supabase
+            .from('profiles')
+            .select('id')
+            .eq('nickname', this.currentNickname)
+            .single();
+        
+        if (profileError || !profile) {
+            alert('Не удалось найти пользователя');
+            return;
+        }
+        
+        const userId = profile.id;
+        
+        // Проверяем, не приглашен ли уже
+        const existingInvitation = this.currentTeam.players?.find(
+            p => p.user_id === userId && p.invitation_status === 'pending'
+        );
+        
+        if (existingInvitation) {
+            alert('Приглашение этому пользователю уже отправлено');
+            return;
+        }
+        
+        // Проверяем, не является ли уже членом команды
+        const existingMember = this.currentTeam.players?.find(
+            p => p.user_id === userId && p.invitation_status === 'accepted'
+        );
+        
+        if (existingMember) {
+            alert('Этот пользователь уже в вашей команде');
+            return;
+        }
+
+        // Находим свободный номер для нового игрока
+        const usedNumbers = new Set(this.currentTeam.players.map(p => p.number).filter(n => n));
+        let newNumber = 1;
+        while (usedNumbers.has(newNumber) && newNumber <= 99) {
+            newNumber++;
+        }
+        
+        if (newNumber > 99) {
+            alert('В команде уже все номера заняты (1-99)');
+            return;
+        }
+        
+        // Добавляем игрока с приглашением
+        const { data: player, error } = await app.supabase
+            .from('team_players')
+            .insert([{
+                team_id: this.currentTeam.id,
+                name: this.currentNickname,
+                user_id: userId,
+                number: newNumber, // Обязательное поле!
+                role: 'Игрок',
+                is_linked: false,
+                invitation_status: 'pending',
+                order_index: this.currentTeam.players?.length || 0,
+                created_at: new Date().toISOString()
+            }])
+            .select()
+            .single();
+        
+        if (error) throw error;
+        
+        // Отправляем уведомление
+        await this.sendInvitationNotification(userId, player.id);
+        
+        // Обновляем локальные данные
+        this.currentTeam.players = this.currentTeam.players || [];
+        this.currentTeam.players.push({
+            ...player,
+            is_captain: false,
+            role: 'Игрок',
+            number: newNumber
+        });
+        
+        // Обновляем UI
+        this.resetNicknameUI();
+        document.getElementById('add-player-nickname').value = '';
+        this.renderRoster();
+        
+        alert(`Приглашение отправлено игроку @${this.currentNickname}`);
+        
+    } catch (error) {
+        console.error('Ошибка отправки приглашения:', error);
+        alert('Ошибка: ' + error.message);
+    }
+if (error) {
+        console.error('❌ Ошибка отправки приглашения:', error);
+        this.showNotification('Ошибка отправки приглашения', 'error');
+        return;
+    }
+    
+    console.log('✅ Приглашение отправлено:', playerName);
+    this.showNotification(`Приглашение отправлено игроку ${playerName}`, 'success');
+    
+    // Очищаем поле
+    document.getElementById('add-player-nickname').value = '';
+    document.getElementById('nickname-status').innerHTML = '';
+    document.getElementById('btn-invite').disabled = true;
+    document.getElementById('btn-invite').style.opacity = '0.5';
+    
+    // ЗДЕСЬ ВАЖНОЕ ДОБАВЛЕНИЕ: уведомляем навигацию о новом приглашении
+    if (typeof navigationModule !== 'undefined' && navigationModule.updateInvitationBadge) {
+        // Небольшая задержка для гарантии сохранения данных в БД
+        setTimeout(() => {
+            navigationModule.updateInvitationBadge();
+        }, 500);
+    }
+},
+
+    async sendInvitationNotification(userId, playerId) {
+        try {
+            // Просто логируем, так как таблицы notifications может не быть
+            console.log('Отправка приглашения:', { 
+                userId, 
+                playerId, 
+                team: this.currentTeam.name 
+            });
+            
+            // Если есть таблица notifications, можно использовать:
+            // await app.supabase.from('notifications').insert([...]);
+            
+        } catch (error) {
+            console.error('Ошибка отправки уведомления:', error);
         }
     },
 
@@ -325,7 +744,13 @@ const teamEditModule = {
                 }
                 
                 <div class="player-info-modern">
-                    <div class="player-name-modern">${player.name}</div>
+                    <div class="player-name-modern">
+                        ${player.name}
+                        ${player.invitation_status === 'pending' ? 
+                            '<span class="invitation-badge">ожидает</span>' : 
+                            player.is_linked ? '<span class="linked-badge">✓</span>' : ''
+                        }
+                    </div>
                     <div class="player-role-modern">${player.role || 'Игрок'}</div>
                     ${player.info ? `<div class="player-meta-modern">${player.info.substring(0, 50)}${player.info.length > 50 ? '...' : ''}</div>` : ''}
                 </div>
@@ -766,176 +1191,176 @@ const teamEditModule = {
     // ==================== СОХРАНЕНИЕ КОМАНДЫ ====================
 
     async saveAllChanges() {
-    if (!this.hasUnsavedChanges) {
-        alert('Нет изменений для сохранения');
-        return;
-    }
-    
-    if (this.isSaving) {
-        alert('Сохранение уже выполняется...');
-        return;
-    }
-    
-    const btn = document.querySelector('.btn-save-bottom');
-    const originalText = btn ? btn.innerHTML : 'Сохранить изменения';
-    
-    this.isSaving = true;
-    if (btn) {
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
-        btn.disabled = true;
-    }
-    
-    try {
-        // 1. Собираем обновленные данные команды
-        const updates = {
-            name: document.getElementById('edit-team-name')?.value || this.currentTeam.name,
-            description: document.getElementById('edit-team-description')?.value || null,
-            contacts: document.getElementById('edit-team-contacts')?.value || null
+        if (!this.hasUnsavedChanges) {
+            alert('Нет изменений для сохранения');
+            return;
+        }
+        
+        if (this.isSaving) {
+            alert('Сохранение уже выполняется...');
+            return;
+        }
+        
+        const btn = document.querySelector('.btn-save-bottom');
+        const originalText = btn ? btn.innerHTML : 'Сохранить изменения';
+        
+        this.isSaving = true;
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
+            btn.disabled = true;
+        }
+        
+        try {
+            // 1. Собираем обновленные данные команды
+            const updates = {
+                name: document.getElementById('edit-team-name')?.value || this.currentTeam.name,
+                description: document.getElementById('edit-team-description')?.value || null,
+                contacts: document.getElementById('edit-team-contacts')?.value || null
+            };
+            
+            // 2. Если есть новый логотип, загружаем его
+            if (this.pendingChanges.logo && this.pendingChanges.logo.startsWith('data:image/')) {
+                try {
+                    // Генерируем уникальное имя файла
+                    const fileName = `team_logo_${this.currentTeam.id}_${Date.now()}.png`;
+                    
+                    // Извлекаем Base64 данные и MIME тип
+                    const matches = this.pendingChanges.logo.match(/^data:(.+);base64,(.+)$/);
+                    if (!matches) {
+                        throw new Error('Неверный формат Data URL');
+                    }
+                    
+                    const mimeType = matches[1];
+                    const base64Data = matches[2];
+                    
+                    console.log('Загрузка логотипа:', fileName, 'MIME тип:', mimeType);
+                    
+                    // Декодируем Base64 в бинарные данные
+                    const binaryString = atob(base64Data);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    
+                    // Используем прямой API-вызов через fetch
+                    const supabaseUrl = 'https://anqvyvtwqljqvldcljat.supabase.co'; // Ваш Supabase URL
+                    const storageUrl = `${supabaseUrl}/storage/v1/object/team-logos/${fileName}`;
+                    
+                    // Получаем токен доступа
+                    const { data: { session } } = await app.supabase.auth.getSession();
+                    const accessToken = session?.access_token;
+                    
+                    if (!accessToken) {
+                        throw new Error('Пользователь не авторизован');
+                    }
+                    
+                    // Отправляем запрос на загрузку
+                    const response = await fetch(storageUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': mimeType,
+                        },
+                        body: bytes
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error('Ошибка загрузки:', errorData);
+                        
+                        // Если файл уже существует, пробуем через PUT (обновление)
+                        if (response.status === 409) { // Conflict - файл уже существует
+                            const putResponse = await fetch(storageUrl, {
+                                method: 'PUT',
+                                headers: {
+                                    'Authorization': `Bearer ${accessToken}`,
+                                    'Content-Type': mimeType,
+                                },
+                                body: bytes
+                            });
+                            
+                            if (!putResponse.ok) {
+                                const putErrorData = await putResponse.json();
+                                throw new Error(`Не удалось обновить логотип: ${putErrorData.message || putErrorData.error}`);
+                            }
+                        } else {
+                            throw new Error(`Ошибка загрузки: ${errorData.message || errorData.error}`);
+                        }
+                    }
+                    
+                    // Получаем публичный URL
+                    const publicUrl = `${supabaseUrl}/storage/v1/object/public/team-logos/${fileName}`;
+                    
+                    updates.logo_url = publicUrl;
+                    console.log('Логотип загружен, URL:', publicUrl);
+                    
+                    // Удаляем старый логотип, если он существует
+                    if (this.currentTeam.logo_url) {
+                        try {
+                            const oldFileName = this.currentTeam.logo_url.split('/').pop();
+                            if (oldFileName !== fileName) {
+                                await app.supabase.storage
+                                    .from('team-logos')
+                                    .remove([oldFileName]);
+                                console.log('Старый логотип удален:', oldFileName);
+                            }
+                        } catch (deleteError) {
+                            console.warn('Не удалось удалить старый логотип:', deleteError);
+                        }
+                    }
+                    
+                } catch (uploadError) {
+                    console.error('Ошибка загрузки логотипа:', uploadError);
+                    alert('Не удалось загрузить логотип. Изменения сохранены, но логотип не обновлен.');
+                }
+            }
+            
+            // 3. Сохраняем в базу
+            const { error } = await app.supabase
+                .from('teams')
+                .update(updates)
+                .eq('id', this.currentTeam.id);
+            
+            if (error) throw error;
+            
+            // 4. Обновляем локальные данные
+            Object.assign(this.currentTeam, updates);
+            
+            alert('Изменения сохранены!');
+            
+        } catch (error) {
+            console.error('❌ Ошибка сохранения команды:', error);
+            alert('Ошибка сохранения: ' + error.message);
+            
+            if (btn) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+            
+            this.isSaving = false;
+            return;
+        } finally {
+            this.isSaving = false;
+        }
+        
+        // 5. Сбрасываем состояние
+        this.hasUnsavedChanges = false;
+        this.pendingChanges.logo = null;
+        
+        // 6. Обновляем исходные данные для сравнения
+        this.originalTeamData = {
+            name: this.currentTeam.name,
+            description: this.currentTeam.description || '',
+            sport: this.currentTeam.sport,
+            city: this.currentTeam.city
         };
         
-        // 2. Если есть новый логотип, загружаем его
-        if (this.pendingChanges.logo && this.pendingChanges.logo.startsWith('data:image/')) {
-            try {
-                // Генерируем уникальное имя файла
-                const fileName = `team_logo_${this.currentTeam.id}_${Date.now()}.png`;
-                
-                // Извлекаем Base64 данные и MIME тип
-                const matches = this.pendingChanges.logo.match(/^data:(.+);base64,(.+)$/);
-                if (!matches) {
-                    throw new Error('Неверный формат Data URL');
-                }
-                
-                const mimeType = matches[1];
-                const base64Data = matches[2];
-                
-                console.log('Загрузка логотипа:', fileName, 'MIME тип:', mimeType);
-                
-                // Декодируем Base64 в бинарные данные
-                const binaryString = atob(base64Data);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-                
-                // Используем прямой API-вызов через fetch
-                const supabaseUrl = 'https://anqvyvtwqljqvldcljat.supabase.co'; // Ваш Supabase URL
-                const storageUrl = `${supabaseUrl}/storage/v1/object/team-logos/${fileName}`;
-                
-                // Получаем токен доступа
-                const { data: { session } } = await app.supabase.auth.getSession();
-                const accessToken = session?.access_token;
-                
-                if (!accessToken) {
-                    throw new Error('Пользователь не авторизован');
-                }
-                
-                // Отправляем запрос на загрузку
-                const response = await fetch(storageUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': mimeType,
-                    },
-                    body: bytes
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Ошибка загрузки:', errorData);
-                    
-                    // Если файл уже существует, пробуем через PUT (обновление)
-                    if (response.status === 409) { // Conflict - файл уже существует
-                        const putResponse = await fetch(storageUrl, {
-                            method: 'PUT',
-                            headers: {
-                                'Authorization': `Bearer ${accessToken}`,
-                                'Content-Type': mimeType,
-                            },
-                            body: bytes
-                        });
-                        
-                        if (!putResponse.ok) {
-                            const putErrorData = await putResponse.json();
-                            throw new Error(`Не удалось обновить логотип: ${putErrorData.message || putErrorData.error}`);
-                        }
-                    } else {
-                        throw new Error(`Ошибка загрузки: ${errorData.message || errorData.error}`);
-                    }
-                }
-                
-                // Получаем публичный URL
-                const publicUrl = `${supabaseUrl}/storage/v1/object/public/team-logos/${fileName}`;
-                
-                updates.logo_url = publicUrl;
-                console.log('Логотип загружен, URL:', publicUrl);
-                
-                // Удаляем старый логотип, если он существует
-                if (this.currentTeam.logo_url) {
-                    try {
-                        const oldFileName = this.currentTeam.logo_url.split('/').pop();
-                        if (oldFileName !== fileName) {
-                            await app.supabase.storage
-                                .from('team-logos')
-                                .remove([oldFileName]);
-                            console.log('Старый логотип удален:', oldFileName);
-                        }
-                    } catch (deleteError) {
-                        console.warn('Не удалось удалить старый логотип:', deleteError);
-                    }
-                }
-                
-            } catch (uploadError) {
-                console.error('Ошибка загрузки логотипа:', uploadError);
-                alert('Не удалось загрузить логотип. Изменения сохранены, но логотип не обновлен.');
-            }
-        }
+        // 7. Скрываем кнопки сохранения
+        this.updateSaveButtons();
         
-        // 3. Сохраняем в базу
-        const { error } = await app.supabase
-            .from('teams')
-            .update(updates)
-            .eq('id', this.currentTeam.id);
-        
-        if (error) throw error;
-        
-        // 4. Обновляем локальные данные
-        Object.assign(this.currentTeam, updates);
-        
-        alert('Изменения сохранены!');
-        
-    } catch (error) {
-        console.error('❌ Ошибка сохранения команды:', error);
-        alert('Ошибка сохранения: ' + error.message);
-        
-        if (btn) {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-        
-        this.isSaving = false;
-        return;
-    } finally {
-        this.isSaving = false;
-    }
-    
-    // 5. Сбрасываем состояние
-    this.hasUnsavedChanges = false;
-    this.pendingChanges.logo = null;
-    
-    // 6. Обновляем исходные данные для сравнения
-    this.originalTeamData = {
-        name: this.currentTeam.name,
-        description: this.currentTeam.description || '',
-        sport: this.currentTeam.sport,
-        city: this.currentTeam.city
-    };
-    
-    // 7. Скрываем кнопки сохранения
-    this.updateSaveButtons();
-    
-    // 8. Перезагружаем данные команды
-    await this.show(this.currentTeam.id);
-},
+        // 8. Перезагружаем данные команды
+        await this.show(this.currentTeam.id);
+    },
 
     async deleteTeam() {
         if (!confirm('Удалить команду?\n\nВсе данные будут безвозвратно удалены. Это действие нельзя отменить.')) {

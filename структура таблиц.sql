@@ -605,3 +605,180 @@ SELECT
 FROM information_schema.tables t
 WHERE table_schema = 'public'
 ORDER BY table_name;
+
+
+
+
+
+
+
+==================================================================================================================
+
+База от 05.02.2026 с составом команд
+
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.challenges (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  match_id uuid,
+  from_team_id uuid,
+  status text NOT NULL DEFAULT 'pending'::text,
+  message text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT challenges_pkey PRIMARY KEY (id),
+  CONSTRAINT challenges_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id),
+  CONSTRAINT challenges_from_team_id_fkey FOREIGN KEY (from_team_id) REFERENCES public.teams(id)
+);
+CREATE TABLE public.cities (
+  id character varying NOT NULL,
+  name character varying NOT NULL,
+  lat numeric,
+  lng numeric,
+  stats character varying,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT cities_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.comment_likes (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  comment_id uuid,
+  user_id uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT comment_likes_pkey PRIMARY KEY (id),
+  CONSTRAINT comment_likes_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id),
+  CONSTRAINT comment_likes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.comments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  match_id uuid,
+  user_id uuid,
+  text character varying NOT NULL,
+  likes integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT comments_pkey PRIMARY KEY (id),
+  CONSTRAINT comments_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id),
+  CONSTRAINT comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.events (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  type character varying NOT NULL CHECK (type::text = ANY (ARRAY['masterclass'::character varying::text, 'training'::character varying::text, 'tournament'::character varying::text, 'workshop'::character varying::text, 'competition'::character varying::text])),
+  title character varying NOT NULL,
+  description text,
+  date timestamp with time zone NOT NULL,
+  location character varying NOT NULL,
+  category character varying,
+  price character varying DEFAULT 'Бесплатно'::character varying,
+  icon character varying DEFAULT '??'::character varying,
+  color character varying DEFAULT '#00ff88'::character varying,
+  city character varying NOT NULL,
+  organizer uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT events_pkey PRIMARY KEY (id),
+  CONSTRAINT events_organizer_fkey FOREIGN KEY (organizer) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.match_rosters (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  match_id uuid,
+  team_id uuid,
+  player_id uuid,
+  is_starting boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT match_rosters_pkey PRIMARY KEY (id),
+  CONSTRAINT match_rosters_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id),
+  CONSTRAINT match_rosters_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
+  CONSTRAINT match_rosters_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.team_players(id)
+);
+CREATE TABLE public.matches (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  sport character varying NOT NULL CHECK (sport::text = ANY (ARRAY['football'::character varying::text, 'volleyball'::character varying::text, 'basketball'::character varying::text, 'hockey'::character varying::text, 'tabletennis'::character varying::text])),
+  team1 uuid,
+  team2 uuid,
+  date timestamp with time zone NOT NULL,
+  location character varying NOT NULL,
+  city character varying NOT NULL,
+  lat numeric,
+  lng numeric,
+  status character varying DEFAULT 'upcoming'::character varying CHECK (status::text = ANY (ARRAY['upcoming'::character varying::text, 'live'::character varying::text, 'finished'::character varying::text, 'cancelled'::character varying::text])),
+  score character varying DEFAULT '0:0'::character varying,
+  created_by uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  finished_at timestamp with time zone,
+  cancelled_at timestamp with time zone,
+  format text NOT NULL DEFAULT '5x5'::text,
+  started_at timestamp with time zone,
+  CONSTRAINT matches_pkey PRIMARY KEY (id),
+  CONSTRAINT matches_team1_fkey FOREIGN KEY (team1) REFERENCES public.teams(id),
+  CONSTRAINT matches_team2_fkey FOREIGN KEY (team2) REFERENCES public.teams(id),
+  CONSTRAINT matches_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.profiles (
+  id uuid NOT NULL,
+  nickname text NOT NULL,
+  role text DEFAULT 'fan'::text,
+  subscription_active boolean DEFAULT false,
+  subscription_expiry timestamp with time zone,
+  phone text,
+  city text,
+  avatar_url text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT profiles_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.reactions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  match_id uuid,
+  user_id uuid,
+  emoji character varying NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT reactions_pkey PRIMARY KEY (id),
+  CONSTRAINT reactions_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id),
+  CONSTRAINT reactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.team_name_changes (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  team_id uuid,
+  old_name character varying NOT NULL,
+  new_name character varying NOT NULL,
+  is_paid boolean DEFAULT false,
+  changed_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT team_name_changes_pkey PRIMARY KEY (id),
+  CONSTRAINT team_name_changes_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id)
+);
+CREATE TABLE public.team_players (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  team_id uuid,
+  name character varying NOT NULL,
+  number integer NOT NULL CHECK (number >= 1 AND number <= 99),
+  role character varying,
+  info text,
+  photo_url text,
+  is_captain boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  order_index integer DEFAULT 0,
+  CONSTRAINT team_players_pkey PRIMARY KEY (id),
+  CONSTRAINT team_players_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id)
+);
+CREATE TABLE public.teams (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name character varying NOT NULL,
+  city character varying NOT NULL,
+  sport character varying NOT NULL CHECK (sport::text = ANY (ARRAY['football'::character varying::text, 'volleyball'::character varying::text, 'basketball'::character varying::text, 'hockey'::character varying::text, 'tabletennis'::character varying::text])),
+  avatar character varying DEFAULT '?'::character varying,
+  wins integer DEFAULT 0,
+  losses integer DEFAULT 0,
+  draws integer DEFAULT 0,
+  owner_id uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  elo_rating integer DEFAULT 1000,
+  description text,
+  logo_url text,
+  contacts text,
+  CONSTRAINT teams_pkey PRIMARY KEY (id),
+  CONSTRAINT teams_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.profiles(id)
+);

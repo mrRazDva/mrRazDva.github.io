@@ -60,38 +60,36 @@ const app = {
     },
     
     async initModules() {
-        // Сначала инициализируем authModule, но без вызова showMain
-        await authModule.init(this);
-        
-		// Инициализируем модуль управления составом
-    if (typeof matchRosterModule !== 'undefined') {
-        // Модуль не требует инициализации, оставляем как есть
+    // Сначала инициализируем authModule, но без вызова showMain
+    await authModule.init(this);
+    
+    // Инициализируем модуль инициализации
+    await initModule.init(this);
+    
+    // Инициализируем остальные модули
+    navigationModule.init(this);
+    matchesModule.init(this);
+    teamsModule.init(this);
+    eventsModule.init(this);
+    commentsModule.init(this);
+    mapModule.init(this);
+    eloModule.init(this);
+    
+    // ДОБАВЛЕНО: Инициализируем модуль профиля
+    if (typeof profileModule !== 'undefined') {
+        profileModule.init(this);
     }
-		
-        // Инициализируем модуль инициализации
-        await initModule.init(this);
-        
-        // Инициализируем остальные модули
-        navigationModule.init(this);
-        matchesModule.init(this);
-        teamsModule.init(this);
-        eventsModule.init(this);
-        commentsModule.init(this);
-        mapModule.init(this);
-		eloModule.init(this);
-        
-		
-		
-        // Теперь, если пользователь уже авторизован, показываем главный экран
-        if (authModule.isAuthenticated()) {
-            console.log('👤 Пользователь уже авторизован, показываем главный экран');
-            setTimeout(() => {
-                if (typeof navigationModule.showMain === 'function') {
-                    navigationModule.showMain();
-                }
-            }, 500);
-        }
-    },
+    
+    // Теперь, если пользователь уже авторизован, показываем главный экран
+    if (authModule.isAuthenticated()) {
+        console.log('👤 Пользователь уже авторизован, показываем главный экран');
+        setTimeout(() => {
+            if (typeof navigationModule.showMain === 'function') {
+                navigationModule.showMain();
+            }
+        }, 500);
+    }
+},
     
     // ========== ПРОКСИ-МЕТОДЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ ==========
     
@@ -437,6 +435,10 @@ const app = {
         };
         return names[type] || type;
     }
+	
+	
+	
+	
 };
 
 // Инициализация при загрузке

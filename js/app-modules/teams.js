@@ -282,8 +282,9 @@ async getAccessToken() {
         }
         
         const userId = authModule.getUserId();
-        if (!userId) {
-            alert('Ошибка получения ID пользователя');
+        const userNickname = authModule.currentUser?.nickname;
+        if (!userId || !userNickname) {
+            alert('Ошибка получения данных пользователя');
             return;
         }
         
@@ -329,22 +330,26 @@ async getAccessToken() {
                 }
             }
             
-            // Создаём запись капитана в составе
+            // ВАЖНОЕ ИЗМЕНЕНИЕ: Создаём запись владельца как привязанного игрока
             await this.app.supabase
                 .from('team_players')
                 .insert([{
                     team_id: team.id,
-                    name: authModule.currentUser?.nickname || 'Капитан',
+                    user_id: userId, // Привязываем к пользователю
+                    name: userNickname,
                     number: 10,
                     role: 'Капитан',
                     is_captain: true,
-                    created_at: new Date().toISOString()
+                    is_linked: true, // Галочка привязанности
+                    invitation_status: 'accepted', // Статус принят
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
                 }]);
             
             // Сброс формы
             this.resetForm();
             
-            alert('Команда создана успешно!');
+            alert('Команда создана успешно! Вы автоматически добавлены в состав как капитан.');
             navigationModule.showTeams();
             
         } catch (error) {

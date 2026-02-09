@@ -23,7 +23,11 @@ const authModule = {
             console.error('❌ Ошибка инициализации AuthModule:', error);
             return false;
         }
+		
+		
     },
+  
+  
   
     // ========== РЕГИСТРАЦИЯ ==========
     async register(userData) {
@@ -505,6 +509,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }, 1000);
 });
+
+
 
 // Экспортируем глобально
 window.authModule = authModule;
