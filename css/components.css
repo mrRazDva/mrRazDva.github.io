@@ -4439,3 +4439,132 @@ select:focus {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     border-color: var(--accent-blue);
 }
+
+/* Стили для аватара в шапке */
+.user-avatar {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 2px solid var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.user-avatar span:first-child:not(.pro-badge) {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent-blue);
+}
+
+/* Стили для нового заголовка на одной линии с городом */
+.header-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1px 2px;
+    width: 100%;
+}
+
+.city-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.city-selector:hover {
+    background: var(--bg-secondary);
+    border-color: var(--accent-green);
+    transform: translateY(-1px);
+}
+
+.city-selector i {
+    font-size: 0.85rem;
+    color: var(--accent-green);
+}
+
+.city-selector .fa-chevron-down {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    text-align: center;
+    flex-grow: 1;
+    font-family: 'Russo One', sans-serif;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: linear-gradient(45deg, var(--accent-green), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Простой и эффективный вариант */
+.header-top-row {
+    display: flex;
+    align-items: center;
+    padding: 1px 1px;
+    width: 100%;
+}
+
+.city-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    margin-right: auto; /* Прижимаем к левому краю */
+}
+
+.page-title {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 auto; /* Центрируем с помощью margin */
+    font-family: 'Russo One', sans-serif;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    background: linear-gradient(45deg, var(--accent-green), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    width: fit-content; /* Ширина по содержимому */
+}

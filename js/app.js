@@ -60,36 +60,40 @@ const app = {
     },
     
     async initModules() {
-    // Сначала инициализируем authModule, но без вызова showMain
-    await authModule.init(this);
-    
-    // Инициализируем модуль инициализации
-    await initModule.init(this);
-    
-    // Инициализируем остальные модули
-    navigationModule.init(this);
-    matchesModule.init(this);
-    teamsModule.init(this);
-    eventsModule.init(this);
-    commentsModule.init(this);
-    mapModule.init(this);
-    eloModule.init(this);
-    
-    // ДОБАВЛЕНО: Инициализируем модуль профиля
-    if (typeof profileModule !== 'undefined') {
-        profileModule.init(this);
-    }
-    
-    // Теперь, если пользователь уже авторизован, показываем главный экран
-    if (authModule.isAuthenticated()) {
-        console.log('👤 Пользователь уже авторизован, показываем главный экран');
-        setTimeout(() => {
-            if (typeof navigationModule.showMain === 'function') {
-                navigationModule.showMain();
-            }
-        }, 500);
-    }
-},
+        // Сначала инициализируем authModule, но без вызова showMain
+        await authModule.init(this);
+        
+        // Инициализируем модуль инициализации
+        await initModule.init(this);
+        
+        // Инициализируем остальные модули
+        navigationModule.init(this);
+        matchesModule.init(this);
+        teamsModule.init(this);
+        eventsModule.init(this);
+        commentsModule.init(this);
+        mapModule.init(this);
+        eloModule.init(this);
+        
+        // ДОБАВЛЕНО: Инициализируем модуль профиля
+        if (typeof profileModule !== 'undefined') {
+            profileModule.init(this);
+        }
+        
+        // Теперь, если пользователь уже авторизован, показываем главный экран
+        if (authModule.isAuthenticated()) {
+            console.log('👤 Пользователь уже авторизован, показываем главный экран');
+            setTimeout(() => {
+                if (typeof navigationModule.showMain === 'function') {
+                    navigationModule.showMain();
+                }
+                // ДОБАВЛЕНО: Инициализируем аватар в шапке
+                if (typeof profileModule !== 'undefined' && profileModule.initHeaderAvatar) {
+                    profileModule.initHeaderAvatar();
+                }
+            }, 500);
+        }
+    },
     
     // ========== ПРОКСИ-МЕТОДЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ ==========
     
@@ -98,10 +102,10 @@ const app = {
         return navigationModule.showRoleSelection();
     },
     
-	showTeamWithMatchRoster(teamId, matchId) {
-    teamModule.show(teamId, matchId);
-},
-	
+    showTeamWithMatchRoster(teamId, matchId) {
+        teamModule.show(teamId, matchId);
+    },
+    
     selectRole(role) {
         return navigationModule.selectRole(role);
     },
@@ -120,55 +124,60 @@ const app = {
     
     // Исправлено: теперь вызываем authModule.login вместо navigationModule.handleLogin
     async handleLogin() {
-    try {
-        // Собираем данные из формы входа
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
+        try {
+            // Собираем данные из формы входа
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
 
-        // Валидация
-        if (!email || !password) {
-            alert('Пожалуйста, введите email и пароль');
-            return;
-        }
-
-        // Вызываем метод входа из authModule
-        const result = await authModule.login({
-            email,
-            password
-        });
-
-        if (result.success) {
-            console.log('✅ Вход выполнен успешно');
-
-            // Обновляем UI
-            if (typeof navigationModule !== 'undefined' && navigationModule.updateUserUI) {
-                navigationModule.updateUserUI();
+            // Валидация
+            if (!email || !password) {
+                alert('Пожалуйста, введите email и пароль');
+                return;
             }
 
-            // ПОКАЗЫВАЕМ НИЖНЕЕ МЕНЮ
-            const bottomNav = document.getElementById('bottom-nav');
-            if (bottomNav) {
-                bottomNav.classList.remove('hidden');
-                bottomNav.style.display = 'flex';
-            }
+            // Вызываем метод входа из authModule
+            const result = await authModule.login({
+                email,
+                password
+            });
 
-            // Показываем главный экран
-            setTimeout(() => {
-                if (typeof navigationModule !== 'undefined' && navigationModule.showMain) {
-                    navigationModule.showMain();
+            if (result.success) {
+                console.log('✅ Вход выполнен успешно');
+
+                // Обновляем UI
+                if (typeof navigationModule !== 'undefined' && navigationModule.updateUserUI) {
+                    navigationModule.updateUserUI();
                 }
-            }, 100);
-        } else {
-            alert('Ошибка входа: ' + (result.error || 'Неизвестная ошибка'));
-        }
+                
+                // ДОБАВЛЕНО: Инициализируем аватар в шапке
+                if (typeof profileModule !== 'undefined' && profileModule.initHeaderAvatar) {
+                    setTimeout(() => {
+                        profileModule.initHeaderAvatar();
+                    }, 300);
+                }
 
-    } catch (error) {
-        console.error('❌ Ошибка в методе handleLogin:', error);
-        alert('Произошла ошибка при входе в систему');
-    }
-	
-	
-},
+                // ПОКАЗЫВАЕМ НИЖНЕЕ МЕНЮ
+                const bottomNav = document.getElementById('bottom-nav');
+                if (bottomNav) {
+                    bottomNav.classList.remove('hidden');
+                    bottomNav.style.display = 'flex';
+                }
+
+                // Показываем главный экран
+                setTimeout(() => {
+                    if (typeof navigationModule !== 'undefined' && navigationModule.showMain) {
+                        navigationModule.showMain();
+                    }
+                }, 100);
+            } else {
+                alert('Ошибка входа: ' + (result.error || 'Неизвестная ошибка'));
+            }
+
+        } catch (error) {
+            console.error('❌ Ошибка в методе handleLogin:', error);
+            alert('Произошла ошибка при входе в систему');
+        }
+    },
     
     // Исправлено: теперь вызываем authModule.resetPassword вместо navigationModule.showForgotPassword
     async showForgotPassword() {
@@ -221,6 +230,13 @@ const app = {
                 // Обновляем UI
                 if (typeof navigationModule !== 'undefined' && navigationModule.updateUserUI) {
                     navigationModule.updateUserUI();
+                }
+                
+                // ДОБАВЛЕНО: Инициализируем аватар в шапке
+                if (typeof profileModule !== 'undefined' && profileModule.initHeaderAvatar) {
+                    setTimeout(() => {
+                        profileModule.initHeaderAvatar();
+                    }, 500);
                 }
                 
                 // Если пользователь выбрал роль организатора, показываем платежное окно
@@ -349,8 +365,8 @@ const app = {
             return null;
         }
     },
-	
-	// Получение текста формата игры
+    
+    // Получение текста формата игры
     getFormatText(format) {
         const formatMap = {
             '2x2': '2 на 2',
@@ -435,10 +451,6 @@ const app = {
         };
         return names[type] || type;
     }
-	
-	
-	
-	
 };
 
 // Инициализация при загрузке

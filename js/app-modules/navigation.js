@@ -192,11 +192,65 @@ const navigationModule = {
             nameEl.textContent = user.nickname;
         }
         
-        // Обновляем роль пользователя
-        const userRole = await this.getUserRoleWithTeamInfo(user.id);
+        // 1. Обновляем роль (просто роль, без команд)
         const roleEl = document.getElementById('profile-role-modern');
         if (roleEl) {
-            roleEl.textContent = userRole;
+            if (user.role === 'organizer') {
+                roleEl.textContent = authModule.isProActive() ? 'Организатор PRO' : 'Организатор';
+            } else {
+                roleEl.textContent = 'Болельщик';
+            }
+        }
+        
+        // 2. Получаем информацию о командах
+        try {
+            const userId = authModule.getUserId();
+            const { data: teamPlayers, error } = await this.app.supabase
+                .from('team_players')
+                .select(`
+                    teams (id, name, logo_url)
+                `)
+                .eq('user_id', userId)
+                .eq('invitation_status', 'accepted')
+                .order('created_at', { ascending: false });
+
+            // 3. Обновляем строки с названиями команд
+            const teamLine1El = document.getElementById('profile-team-line1');
+            const teamLine2El = document.getElementById('profile-team-line2');
+            
+            if (teamPlayers && teamPlayers.length > 0) {
+                const teams = teamPlayers.map(tp => tp.teams);
+                
+                if (teams.length >= 1 && teamLine1El) {
+                    const teamName = teams[0].name;
+                    teamLine1El.textContent = teamName.length > 20 
+                        ? `${teamName.substring(0, 18)}...` 
+                        : teamName;
+                    teamLine1El.style.display = 'block';
+                }
+                
+                if (teams.length >= 2 && teamLine2El) {
+                    const teamName = teams[1].name;
+                    teamLine2El.textContent = teamName.length > 20 
+                        ? `${teamName.substring(0, 18)}...` 
+                        : teamName;
+                    teamLine2El.style.display = 'block';
+                } else if (teamLine2El) {
+                    teamLine2El.style.display = 'none';
+                }
+            } else {
+                // Нет команд - скрываем строки
+                if (teamLine1El) teamLine1El.style.display = 'none';
+                if (teamLine2El) teamLine2El.style.display = 'none';
+            }
+            
+        } catch (error) {
+            console.error('Ошибка загрузки команд:', error);
+            // Скрываем строки команд при ошибке
+            const teamLine1El = document.getElementById('profile-team-line1');
+            const teamLine2El = document.getElementById('profile-team-line2');
+            if (teamLine1El) teamLine1El.style.display = 'none';
+            if (teamLine2El) teamLine2El.style.display = 'none';
         }
         
         // PRO бейдж
@@ -205,18 +259,26 @@ const navigationModule = {
             proBadgeModern.classList.toggle('hidden', !authModule.isProActive());
         }
         
-        // ОДИН раз обновляем подписку и приглашения
+        // Обновляем подписку и приглашения
         await this.renderSubscriptionCard(user);
         await this.loadInvitations();
-        
-        // НЕ вызываем profileModule.updateModernUI() здесь - пусть профиль сам обновляется при входе
     }
 },
     
     // ОБНОВЛЕН: Метод для получения роли пользователя с информацией о команде
     async getUserRoleWithTeamInfo(userId) {
     try {
-        // Проверяем, является ли пользователем игроком команды
+        const user = authModule.currentUser;
+        
+        // Определяем базовую роль для первой строки
+        let baseRole = '';
+        if (user.role === 'organizer') {
+            baseRole = authModule.isProActive() ? 'Организатор PRO' : 'Организатор';
+        } else {
+            baseRole = 'Болельщик';
+        }
+
+        // Получаем информацию о командах для второй строки
         const { data: teamPlayers, error } = await this.app.supabase
             .from('team_players')
             .select(`
@@ -228,41 +290,58 @@ const navigationModule = {
 
         if (error) {
             console.error('Ошибка загрузки информации о команде:', error);
-            // Возвращаем базовую роль при ошибке
-            const user = authModule.currentUser;
-            return user.role === 'organizer' ? 'Организатор PRO' : 'Болельщик';
+            return { 
+                roleLine: baseRole, 
+                teamLine1: '', 
+                teamLine2: '' 
+            };
         }
 
-        // Если пользователь состоит в одной или нескольких командах
+        let teamLine1 = '';
+        let teamLine2 = '';
+        
         if (teamPlayers && teamPlayers.length > 0) {
             const teams = teamPlayers.map(tp => tp.teams);
             
-            // Если только одна команда
             if (teams.length === 1) {
+                // Одна команда
                 const teamName = teams[0].name;
-                // Обрезаем длинное название команды
-                if (teamName.length > 30) {
-                    return `Игрок команды "${teamName.substring(0, 17)}..."`;
+                if (teamName.length > 20) {
+                    teamLine1 = `Команда "${teamName.substring(0, 18)}..."`;
+                } else {
+                    teamLine1 = `Команда "${teamName}"`;
                 }
-                return `Игрок команды "${teamName}"`;
+            } else if (teams.length === 2) {
+                // Две команды
+                teamLine1 = `Команда "${teams[0].name}"`;
+                teamLine2 = `Команда "${teams[1].name}"`;
+            } else if (teams.length > 2) {
+                // Три и более команд
+                teamLine1 = `${teams.length} команд`;
+                teamLine2 = `Игрок`;
             }
-            
-            // Если несколько команд
-            return `Игрок (${teams.length} команд)`;
         }
 
-        // Если пользователь не состоит в командах, возвращаем базовую роль
-        const user = authModule.currentUser;
-        if (user.role === 'organizer') {
-            return authModule.isProActive() ? 'Организатор PRO' : 'Организатор';
-        } else {
-            return 'Болельщик';
-        }
+        return { 
+            roleLine: baseRole, 
+            teamLine1, 
+            teamLine2 
+        };
         
     } catch (error) {
         console.error('Ошибка в getUserRoleWithTeamInfo:', error);
         const user = authModule.currentUser;
-        return user.role === 'organizer' ? 'Организатор PRO' : 'Болельщик';
+        let baseRole = '';
+        if (user.role === 'organizer') {
+            baseRole = authModule.isProActive() ? 'Организатор PRO' : 'Организатор';
+        } else {
+            baseRole = 'Болельщик';
+        }
+        return { 
+            roleLine: baseRole, 
+            teamLine1: '', 
+            teamLine2: '' 
+        };
     }
 },
 
@@ -456,52 +535,7 @@ const navigationModule = {
         }).join('');
     },
     
-    // Метод для отображения приглашений
-    renderInvitations(invitations) {
-        const container = document.getElementById('invitations-list');
-        if (!container) return;
-
-        if (!invitations || invitations.length === 0) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
-                    <i class="fas fa-envelope-open" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                    <p>У вас нет новых приглашений</p>
-                </div>
-            `;
-            return;
-        }
-
-        // Показываем секцию с приглашениями
-        document.getElementById('invitations-section').classList.remove('hidden');
-
-        container.innerHTML = invitations.map(inv => `
-            <div class="invitation-card" data-id="${inv.id}" data-team-id="${inv.team_id}">
-                <div class="invitation-header">
-                    <div class="invitation-team-avatar">
-                        ${inv.teams.logo_url ? 
-                            `<img src="${inv.teams.logo_url}" alt="${inv.teams.name}">` : 
-                            `<span>${inv.teams.name.charAt(0)}</span>`
-                        }
-                    </div>
-                    <div class="invitation-info">
-                        <div class="invitation-team-name">${inv.teams.name}</div>
-                        <div class="invitation-details">
-                            <span class="invitation-sport">${app.getSportName(inv.teams.sport)}</span>
-                            <span class="invitation-city">${inv.teams.city}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="invitation-actions">
-                    <button class="btn btn-accept" onclick="navigationModule.acceptInvitation('${inv.id}')">
-                        <i class="fas fa-check"></i> Принять
-                    </button>
-                    <button class="btn btn-reject" onclick="navigationModule.rejectInvitation('${inv.id}')">
-                        <i class="fas fa-times"></i> Отклонить
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    },
+    
 
     // Метод для принятия приглашения
     async acceptInvitation(invitationId) {

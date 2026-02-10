@@ -170,52 +170,51 @@
         </section>
 
         <!-- Screen: Main -->
-        <section id="screen-main" class="screen">
-            <header class="header">
-                <button class="city-selector" onclick="app.showCitySelection()">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span id="current-city-name">Город</span>
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <button class="user-avatar" onclick="app.showProfile()">
-                    <span id="avatar-letter">U</span>
-                    <span class="pro-badge hidden" id="pro-badge">PRO</span>
-                </button>
-            </header>
+<section id="screen-main" class="screen">
+    <header class="header">
+        <div class="header-top-row">
+            <button class="city-selector" onclick="app.showCitySelection()">
+                <i class="fas fa-map-marker-alt"></i>
+                <span id="current-city-name">Город</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <h2 class="page-title">Матчи</h2>
+        </div>
+    </header>
 
-            <div id="paywall-banner" class="paywall-banner hidden">
-                <div class="paywall-text">
-                    <div class="paywall-title">Подписка PRO истекла</div>
-                    <div class="paywall-subtitle">Возобнови доступ</div>
-                </div>
-                <button class="paywall-btn" onclick="app.showPayment()">299 ₽</button>
-            </div>
+    <div id="paywall-banner" class="paywall-banner hidden">
+        <div class="paywall-text">
+            <div class="paywall-title">Подписка PRO истекла</div>
+            <div class="paywall-subtitle">Возобнови доступ</div>
+        </div>
+        <button class="paywall-btn" onclick="app.showPayment()">299 ₽</button>
+    </div>
 
-            <h2 class="section-title">Матчи</h2>
+    <!-- Убираем старый заголовок "Матчи" -->
+    <!-- <h2 class="section-title">Матчи</h2> -->
 
-            <div class="filters">
-                <button class="filter-btn active" onclick="app.filterSport('all')">Все</button>
-                <button class="filter-btn" onclick="app.filterSport('football')">Футбол</button>
-                <button class="filter-btn" onclick="app.filterSport('volleyball')">Волейбол</button>
-                <button class="filter-btn" onclick="app.filterSport('basketball')">Баскетбол</button>
-                <button class="filter-btn" onclick="app.filterSport('hockey')">Хоккей</button>
-                <button class="filter-btn" onclick="app.filterSport('tabletennis')">Настольный теннис</button>
-            </div>
+    <div class="filters">
+        <button class="filter-btn active" onclick="app.filterSport('all')">Все</button>
+        <button class="filter-btn" onclick="app.filterSport('football')">Футбол</button>
+        <button class="filter-btn" onclick="app.filterSport('volleyball')">Волейбол</button>
+        <button class="filter-btn" onclick="app.filterSport('basketball')">Баскетбол</button>
+        <button class="filter-btn" onclick="app.filterSport('hockey')">Хоккей</button>
+        <button class="filter-btn" onclick="app.filterSport('tabletennis')">Настольный теннис</button>
+    </div>
 
-            <div class="matches-list" id="matches-list"></div>
-
-           
-        </section>
+    <div class="matches-list" id="matches-list"></div>
+</section>
 
         <!-- Screen: Hub -->
         <section id="screen-hub" class="screen">
-            <div class="container">
-                <header class="header">
-                    <h2 class="section-title">Хаб событий</h2>
-                    <button class="user-avatar" onclick="app.showProfile()">
+    <header class="header">
+        <div class="header-top-row">
+            <h2 class="page-title">Хаб событий</h2>
+                  <!--  <button class="user-avatar" onclick="app.showProfile()">
                         <i class="fas fa-user"></i>
-                    </button>
-                </header>
+                    </button> -->
+                 </div>
+    </header>
 
                 <div class="hub-filters">
                     <button class="hub-filter active" onclick="app.filterHub('all')">Всё</button>
@@ -252,13 +251,15 @@
 
         <!-- Screen: Teams -->
         <section id="screen-teams" class="screen">
-            <div class="container">
-                <header class="header">
-                    <h2 class="section-title">Мои команды</h2>
-                    <button class="user-avatar" onclick="app.showProfile()">
+    <header class="header">
+        <div class="header-top-row">
+            <h2 class="page-title">Мои команды</h2>
+                 <!--   <button class="user-avatar" onclick="app.showProfile()">
                         <i class="fas fa-user"></i>
-                    </button>
-                </header>
+                    </button> -->
+                             </div>
+    </header>
+
                 <div class="teams-list" id="teams-list"></div>
                 <button class="btn btn-primary" onclick="app.showCreateTeam()" style="margin-top: 20px;">
                     <i class="fas fa-plus"></i> Создать команду
@@ -329,11 +330,12 @@
 
         <!-- Screen: Create Match -->
 <section id="screen-create-match" class="screen">
-    <div class="container">
-        <button class="back-btn" onclick="app.showMain()">
-            <i class="fas fa-arrow-left"></i> Назад
-        </button>
-        <h2 class="section-title">Новый матч</h2>
+    <header class="header">
+        <div class="header-top-row">
+            
+            <h2 class="page-title">Новый матч</h2>
+			</div>
+    </header>
         <form class="form-section" onsubmit="event.preventDefault(); app.createMatch();">
             <div class="form-group">
                 <label>Команда</label>
@@ -431,18 +433,17 @@
        <section id="screen-profile" class="screen">
     <div class="container">
         <!-- Кнопка назад в контейнере, но не в шапке профиля -->
-        <button class="back-btn" onclick="app.showMain()" style="margin-bottom: 10px;">
-            <i class="fas fa-arrow-left"></i> Назад
-        </button>
+        
         
         <!-- Шапка профиля БЕЗ кнопки назад -->
         <div class="profile-header-modern">
             <div class="profile-avatar-section">
                 <div class="profile-avatar-large" id="profile-avatar-large">
-                    <span id="profile-avatar-text">U</span>
-                    <div class="profile-status-dot"></div>
-                    <div class="pro-badge-large hidden" id="profile-pro-badge-large">PRO</div>
-                </div>
+    <img id="profile-avatar-img" class="hidden" src="" alt="Аватар">
+    <span id="profile-avatar-text">U</span>
+    <div class="profile-status-dot"></div>
+    <div class="pro-badge-large hidden" id="profile-pro-badge-large">PRO</div>
+</div>
                 
                 <div class="profile-info-main">
                     <h1 id="profile-name-modern" class="profile-name-modern">User Name</h1>
@@ -679,16 +680,17 @@
 
         <!-- Аватар -->
         <div class="avatar-edit-section">
-            <div class="avatar-edit-container">
-                <div class="avatar-preview-large" id="edit-avatar-preview">
-                    <span id="edit-avatar-text">U</span>
-                    <button class="avatar-change-btn" onclick="profileModule.changeAvatar()">
-                        <i class="fas fa-camera"></i>
-                    </button>
-                </div>
-                <div class="avatar-hint">Нажмите, чтобы изменить фото</div>
-            </div>
+    <div class="avatar-edit-container">
+        <div class="avatar-preview-large" id="edit-avatar-preview" onclick="profileModule.openAvatarPicker()">
+            <img id="edit-avatar-img" class="hidden" src="" alt="Аватар">
+            <span id="edit-avatar-text">U</span>
+           
         </div>
+        <div class="avatar-hint">Нажмите для загрузки фото</div>
+        <input type="file" id="avatar-upload-input" accept="image/*" style="display: none;" 
+               onchange="profileModule.handleAvatarUpload(event)">
+    </div>
+</div>
 
         <!-- Форма редактирования -->
         <form id="profile-edit-form-modern" class="edit-form-modern" onsubmit="event.preventDefault(); profileModule.saveProfileModern();">

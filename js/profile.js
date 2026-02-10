@@ -2,6 +2,7 @@ const profileModule = {
     app: null,
     isSaving: false,
     isInitialized: false,
+    pendingAvatar: null,
     
     init(appInstance) {
         if (this.isInitialized) return;
@@ -14,6 +15,7 @@ const profileModule = {
         if (authModule.isAuthenticated()) {
             setTimeout(() => {
                 this.onPageLoad();
+                this.initHeaderAvatar(); // Инициализируем аватар в шапке
             }, 100);
         }
     },
@@ -56,6 +58,378 @@ const profileModule = {
                 }
             });
         }
+    },
+    
+    // ========== МЕТОДЫ ДЛЯ АВАТАРА ==========
+
+    // Открыть диалог выбора файла
+    openAvatarPicker() {
+        document.getElementById('avatar-upload-input').click();
+    },
+
+    // Обработка загрузки аватара
+    async handleAvatarUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Проверка размера файла (макс. 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Файл слишком большой. Максимальный размер: 5MB');
+            return;
+        }
+
+        // Проверка типа файла
+        if (!file.type.match('image/jpeg') && !file.type.match('image/png') && !file.type.match('image/webp')) {
+            alert('Пожалуйста, выберите файл в формате JPEG, PNG или WebP');
+            return;
+        }
+
+        try {
+            // Показываем прогресс загрузки
+            this.showUploadProgress();
+
+            // Чтение файла для предпросмотра
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                // Сохраняем данные для предпросмотра
+                this.pendingAvatar = {
+                    dataUrl: e.target.result,
+                    file: file,
+                    type: file.type
+                };
+
+                // Показываем предпросмотр
+                this.updateAvatarPreviewImage(e.target.result);
+            };
+            reader.readAsDataURL(file);
+
+        } catch (error) {
+            console.error('❌ Ошибка загрузки аватара:', error);
+            alert('Ошибка загрузки файла');
+        }
+    },
+
+    // Показать прогресс загрузки
+    showUploadProgress() {
+        const progressBar = document.createElement('div');
+        progressBar.className = 'upload-progress';
+        progressBar.innerHTML = `
+            <div class="upload-progress-bar"></div>
+            <div class="upload-progress-text">Загрузка...</div>
+        `;
+        document.body.appendChild(progressBar);
+
+        setTimeout(() => {
+            progressBar.remove();
+        }, 2000);
+    },
+
+    // Обновить изображение предпросмотра аватара
+    updateAvatarPreviewImage(dataUrl) {
+        const img = document.getElementById('edit-avatar-img');
+        const text = document.getElementById('edit-avatar-text');
+        
+        if (img && text) {
+            img.src = dataUrl;
+            img.classList.remove('hidden');
+            text.style.display = 'none';
+        }
+    },
+
+    // Загрузить аватар в Supabase Storage
+    async uploadAvatarToStorage() {
+        if (!this.pendingAvatar || !this.pendingAvatar.file) {
+            return null;
+        }
+
+        try {
+            const userId = authModule.getUserId();
+            if (!userId) {
+                throw new Error('Пользователь не авторизован');
+            }
+
+            // Генерируем уникальное имя файла
+            const timestamp = Date.now();
+            const fileExt = this.pendingAvatar.file.name.split('.').pop();
+            const fileName = `avatar_${userId}_${timestamp}.${fileExt}`;
+
+            console.log('📤 Загрузка аватара в Storage:', fileName, 'Type:', this.pendingAvatar.file.type);
+
+            // 1. Получаем токен доступа
+            const { data: { session } } = await this.app.supabase.auth.getSession();
+            if (!session) {
+                throw new Error('Сессия не найдена');
+            }
+
+            const token = session.access_token;
+            const uploadUrl = `https://anqvyvtwqljqvldcljat.supabase.co/storage/v1/object/avatars/${fileName}`;
+
+            console.log('🔗 URL загрузки:', uploadUrl);
+            console.log('🔑 Токен:', token ? 'Есть' : 'Нет');
+
+            // 2. Используем FileReader для получения ArrayBuffer
+            const fileReader = new FileReader();
+            const fileBuffer = await new Promise((resolve, reject) => {
+                fileReader.onload = () => resolve(fileReader.result);
+                fileReader.onerror = reject;
+                fileReader.readAsArrayBuffer(this.pendingAvatar.file);
+            });
+
+            // 3. Загружаем через fetch с правильными заголовками
+            const response = await fetch(uploadUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': this.pendingAvatar.file.type,
+                    'X-Client-Info': 'supabase-js-web',
+                    'cache-control': '3600',
+                    'x-upsert': 'true'
+                },
+                body: fileBuffer
+            });
+
+            console.log('📤 Ответ сервера:', response.status, response.statusText);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ Ошибка загрузки:', errorText);
+                
+                // Пробуем альтернативный метод с FormData
+                console.log('🔄 Пробуем метод с FormData...');
+                
+                const formData = new FormData();
+                formData.append('file', this.pendingAvatar.file);
+                
+                const formResponse = await fetch(uploadUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                if (!formResponse.ok) {
+                    const formErrorText = await formResponse.text();
+                    throw new Error(`Upload failed: ${formResponse.status} - ${formErrorText}`);
+                }
+                
+                const result = await formResponse.json();
+                console.log('✅ Файл загружен через FormData:', result);
+            } else {
+                const result = await response.json();
+                console.log('✅ Файл загружен:', result);
+            }
+
+            // 4. Получаем публичный URL
+            const publicUrl = `https://anqvyvtwqljqvldcljat.supabase.co/storage/v1/object/public/avatars/${fileName}`;
+            
+            console.log('🔗 Публичный URL:', publicUrl);
+
+            // Удаляем старый аватар, если он существует
+            await this.deleteOldAvatar(userId);
+
+            return publicUrl;
+
+        } catch (error) {
+            console.error('❌ Ошибка загрузки аватара:', error);
+            throw error;
+        }
+    },
+
+    // Удалить старый аватар из Storage
+    async deleteOldAvatar(userId) {
+        try {
+            // Получаем текущий аватар пользователя
+            const { data: profile, error } = await this.app.supabase
+                .from('profiles')
+                .select('avatar_url')
+                .eq('id', userId)
+                .single();
+
+            if (error || !profile || !profile.avatar_url) {
+                return;
+            }
+
+            // Извлекаем имя файла из URL
+            const urlParts = profile.avatar_url.split('/');
+            const oldFileName = urlParts[urlParts.length - 1];
+            if (!oldFileName || !oldFileName.includes('avatar_')) {
+                console.log('❌ Не удалось извлечь имя файла:', profile.avatar_url);
+                return;
+            }
+
+            console.log('🗑️ Удаление старого аватара:', oldFileName);
+
+            // Удаляем старый файл через REST API
+            const { data: { session } } = await this.app.supabase.auth.getSession();
+            const token = session?.access_token;
+            
+            if (!token) {
+                console.warn('⚠️ Нет токена для удаления файла');
+                return;
+            }
+
+            const deleteUrl = `https://anqvyvtwqljqvldcljat.supabase.co/storage/v1/object/avatars/${oldFileName}`;
+            
+            const response = await fetch(deleteUrl, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                console.log('✅ Старый аватар удален:', oldFileName);
+            } else {
+                console.warn('⚠️ Не удалось удалить старый аватар:', await response.text());
+            }
+
+        } catch (error) {
+            console.warn('⚠️ Ошибка при удалении старого аватара:', error);
+        }
+    },
+
+    // Обновить аватар ВО ВСЕХ МЕСТАХ (главный метод)
+    updateAllAvatars(avatarUrl, nickname) {
+        console.log('🔄 Обновление аватара во всех местах:', avatarUrl);
+        
+        // 1. Обновляем в шапке главного экрана
+        this.updateHeaderAvatar(avatarUrl, nickname);
+        
+        // 2. Обновляем в шапках других экранов
+        this.updateOtherHeaders(avatarUrl, nickname);
+        
+        // 3. Обновляем в профиле
+        this.updateProfileAvatar(avatarUrl, nickname);
+    },
+
+    // Обновить аватар в шапке главного экрана
+    updateHeaderAvatar(avatarUrl, nickname) {
+        const headerImg = document.getElementById('header-avatar-img');
+        const headerLetter = document.getElementById('header-avatar-letter');
+        
+        if (headerImg && headerLetter) {
+            if (avatarUrl) {
+                headerImg.src = avatarUrl;
+                headerImg.classList.remove('hidden');
+                headerLetter.style.display = 'none';
+            } else {
+                headerImg.classList.add('hidden');
+                headerLetter.style.display = 'block';
+                if (nickname) {
+                    headerLetter.textContent = nickname[0].toUpperCase();
+                }
+            }
+        }
+    },
+
+    // Обновить аватар в шапках других экранов
+    updateOtherHeaders(avatarUrl, nickname) {
+        // Находим все кнопки user-avatar, кроме основной
+        const userAvatars = document.querySelectorAll('.user-avatar:not([id*="header-avatar"])');
+        
+        userAvatars.forEach(avatar => {
+            // Проверяем, есть ли внутри img
+            let img = avatar.querySelector('img');
+            let textSpan = avatar.querySelector('span:not(.pro-badge)');
+            let icon = avatar.querySelector('i.fa-user');
+            
+            if (avatarUrl) {
+                // Если изображения нет, создаем его
+                if (!img) {
+                    img = document.createElement('img');
+                    img.className = 'header-avatar-img';
+                    avatar.insertBefore(img, avatar.firstChild);
+                }
+                img.src = avatarUrl;
+                img.classList.remove('hidden');
+                
+                // Скрываем текст/иконку
+                if (textSpan) textSpan.style.display = 'none';
+                if (icon) icon.style.display = 'none';
+            } else {
+                // Показываем текст/иконку
+                if (textSpan) {
+                    textSpan.style.display = 'block';
+                    if (nickname && !textSpan.querySelector('i')) {
+                        textSpan.textContent = nickname[0].toUpperCase();
+                    }
+                }
+                if (icon) icon.style.display = 'block';
+                
+                // Скрываем изображение, если есть
+                if (img) {
+                    img.classList.add('hidden');
+                }
+            }
+        });
+    },
+
+    // Обновить аватар в профиле
+    updateProfileAvatar(avatarUrl, nickname) {
+        // В профиле редактирования
+        const editImg = document.getElementById('edit-avatar-img');
+        const editText = document.getElementById('edit-avatar-text');
+        
+        if (editImg && editText) {
+            if (avatarUrl) {
+                editImg.src = avatarUrl;
+                editImg.classList.remove('hidden');
+                editText.style.display = 'none';
+            } else {
+                editImg.classList.add('hidden');
+                editText.style.display = 'block';
+                if (nickname) {
+                    editText.textContent = nickname[0].toUpperCase();
+                }
+            }
+        }
+
+        // В основном профиле
+        const profileImg = document.getElementById('profile-avatar-img');
+        const profileText = document.getElementById('profile-avatar-text');
+        
+        if (profileImg && profileText) {
+            if (avatarUrl) {
+                profileImg.src = avatarUrl;
+                profileImg.classList.remove('hidden');
+                profileText.style.display = 'none';
+            } else {
+                profileImg.classList.add('hidden');
+                profileText.style.display = 'block';
+                if (nickname) {
+                    profileText.textContent = nickname[0].toUpperCase();
+                }
+            }
+        }
+    },
+
+    // Инициализировать аватар в шапке при загрузке
+    initHeaderAvatar() {
+        if (!authModule.isAuthenticated()) return;
+        
+        const user = authModule.currentUser;
+        console.log('👤 Инициализация аватара для пользователя:', user);
+        
+        // Загружаем данные профиля для получения аватара
+        this.app.supabase
+            .from('profiles')
+            .select('avatar_url, nickname')
+            .eq('id', user.id)
+            .single()
+            .then(({ data, error }) => {
+                if (!error && data) {
+                    console.log('✅ Загружен аватар профиля:', data.avatar_url);
+                    this.updateAllAvatars(data.avatar_url, data.nickname || user.nickname);
+                } else if (error && error.code === 'PGRST116') {
+                    console.log('📝 Профиль не найден, используем никнейм');
+                    this.updateAllAvatars(null, user.nickname);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Ошибка загрузки аватара для шапки:', error);
+                this.updateAllAvatars(null, user.nickname);
+            });
     },
     
     // Показать экран редактирования профиля (модерн версия)
@@ -114,6 +488,9 @@ const profileModule = {
             // Заполняем модерн форму
             this.fillModernForm(data, user);
             
+            // Загружаем аватар
+            this.loadAvatarFromProfile(data);
+            
             // Обновляем счетчик био
             const bioCounter = document.getElementById('bio-counter-modern');
             if (bioCounter && data.bio) {
@@ -127,7 +504,23 @@ const profileModule = {
             console.error('❌ Ошибка загрузки данных профиля:', error);
         }
     },
-    
+
+    // Загрузить аватар из данных профиля
+    loadAvatarFromProfile(profileData) {
+        if (profileData.avatar_url) {
+            this.updateProfileAvatar(profileData.avatar_url, profileData.nickname);
+        } else {
+            // Скрываем изображение и показываем букву
+            const editImg = document.getElementById('edit-avatar-img');
+            const editText = document.getElementById('edit-avatar-text');
+            
+            if (editImg && editText) {
+                editImg.classList.add('hidden');
+                editText.style.display = 'block';
+            }
+        }
+    },
+
     // Заполнить модерн форму данными
     fillModernForm(profileData, userData) {
         console.log('📝 Заполнение формы данными профиля...');
@@ -198,23 +591,29 @@ const profileModule = {
             console.log('⚠️ Сохранение уже в процессе, пропускаем...');
             return;
         }
-        
+
         this.isSaving = true;
-        
+
         if (!authModule.isAuthenticated()) {
             alert('Сначала войдите в систему');
             this.isSaving = false;
             return;
         }
-        
+
         const userId = authModule.getUserId();
         const btn = document.querySelector('.btn-save-large');
         const originalText = btn ? btn.innerHTML : '';
-        
+
         try {
             if (btn) {
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
                 btn.disabled = true;
+            }
+            
+            // Загружаем аватар, если есть
+            let avatarUrl = null;
+            if (this.pendingAvatar) {
+                avatarUrl = await this.uploadAvatarToStorage();
             }
             
             // Собираем данные из модерн формы
@@ -229,7 +628,12 @@ const profileModule = {
                 updated_at: new Date().toISOString()
             };
             
-            console.log('📤 Отправка данных профиля (один раз):', profileData);
+            // Добавляем URL аватара, если он был загружен
+            if (avatarUrl) {
+                profileData.avatar_url = avatarUrl;
+            }
+            
+            console.log('📤 Отправка данных профиля:', profileData);
             
             // Проверка возраста
             if (profileData.age && (profileData.age < 1 || profileData.age > 120)) {
@@ -260,10 +664,17 @@ const profileModule = {
                 };
             }
             
+            // Обновляем аватар ВО ВСЕХ МЕСТАХ
+            const nickname = this.getValue('edit-nickname') || authModule.currentUser.nickname;
+            this.updateAllAvatars(avatarUrl, nickname);
+            
+            // Сбрасываем pending avatar
+            this.pendingAvatar = null;
+            
             // Показываем уведомление об успехе
             this.showSuccessMessage();
             
-            // Возвращаемся к профилю БЕЗ дополнительных вызовов
+            // Возвращаемся к профилю
             setTimeout(() => {
                 this.backToProfile();
                 this.isSaving = false;
@@ -441,17 +852,6 @@ const profileModule = {
                 notification.remove();
             }, 300);
         }, 2000);
-    },
-    
-    // Вернуться к профилю
-    backToProfile() {
-        screenManager.show('screen-profile');
-        // Обновляем данные на экране профиля
-        if (typeof navigationModule !== 'undefined' && navigationModule.showProfile) {
-            navigationModule.showProfile();
-        }
-        // Обновляем модерн UI
-        this.updateModernUI();
     },
     
     // Обновить отображение личной информации в профиле (старая версия)
@@ -737,11 +1137,8 @@ const profileModule = {
             nameEl.textContent = profileData.nickname || userData.nickname || 'User';
         }
         
-        // Аватар
-        const avatarTextEl = document.getElementById('profile-avatar-text');
-        if (avatarTextEl) {
-            avatarTextEl.textContent = (profileData.nickname || userData.nickname || 'U')[0].toUpperCase();
-        }
+        // Обновляем аватар ВО ВСЕХ МЕСТАХ
+        this.updateAllAvatars(profileData.avatar_url, profileData.nickname || userData.nickname);
     },
     
     // Обновить элемент информации (помощник)
@@ -895,7 +1292,7 @@ const profileModule = {
             proBadge.classList.toggle('hidden', !authModule.isProActive());
         }
         
-        // Определяем текст роли
+        // Определяем текст роли (только роль, без команд)
         let roleText = '';
         
         if (user.role === 'organizer') {
@@ -906,25 +1303,6 @@ const profileModule = {
             }
         } else {
             roleText = 'Болельщик';
-        }
-        
-        // Проверяем, состоит ли пользователь в командах
-        try {
-            const userId = authModule.getUserId();
-            const { data: teamPlayers, error } = await this.app.supabase
-                .from('team_players')
-                .select(`
-                    teams (id, name)
-                `)
-                .eq('user_id', userId)
-                .eq('invitation_status', 'accepted');
-            
-            if (!error && teamPlayers && teamPlayers.length > 0) {
-                // Если состоит в командах, добавляем информацию о количестве команд
-                roleText += ` • ${teamPlayers.length} команд${teamPlayers.length > 1 ? 'ы' : 'а'}`;
-            }
-        } catch (error) {
-            console.error('Ошибка при проверке команд пользователя:', error);
         }
         
         roleEl.textContent = roleText;
@@ -989,11 +1367,6 @@ const profileModule = {
         if (avatarText) {
             avatarText.textContent = nickname[0].toUpperCase();
         }
-    },
-    
-    // Изменить аватар (заглушка - можно реализовать загрузку изображений)
-    changeAvatar() {
-        alert('Функция изменения фото профиля скоро будет доступна!');
     },
     
     // Отобразить приглашения в новом дизайне
