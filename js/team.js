@@ -88,7 +88,7 @@ hideLoading() {
         }
         document.getElementById('team-profile-name').textContent = team.name;
         document.getElementById('team-profile-city').textContent = 
-            `${app.cities[team.city]?.name || team.city} • ${this.getSportName(team.sport)}`;
+            `${initModule.cities[team.city]?.name || team.city} • ${this.getSportName(team.sport)}`;
 
         // Загружаем статистику команды
         await this.loadTeamStats(team.id);

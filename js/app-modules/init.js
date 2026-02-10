@@ -1,101 +1,126 @@
 const initModule = {
     app: null,
     
+    cities: {
+    kaluga: { name: 'Калуга', teams: 0, matches: 0, lat: 54.5293, lng: 36.2754 },
+    moscow: { name: 'Москва', teams: 0, matches: 0, lat: 55.7558, lng: 37.6173 },
+    obninsk: { name: 'Обнинск', teams: 0, matches: 0, lat: 55.0944, lng: 36.6122 }
+},
+    
     init(appInstance) {
-        this.app = appInstance;
-        return this.loadCities();
-    },
+    this.app = appInstance;
+    this.app.cities = this.cities; // Делаем cities доступным в app
+    this.renderCitySelection();
+},
     
-    // Загрузка городов из Supabase
-    async loadCities() {
+    async loadCityStats() {
         try {
-            const { data, error } = await this.app.supabase
-                .from('cities')
-                .select('*')
-                .order('name');
+            // Загружаем количество команд по городам
+            const { data: teamsData, error: teamsError } = await this.app.supabase
+                .from('teams')
+                .select('city');
             
-            if (error) throw error;
+            if (teamsError) throw teamsError;
             
-            if (!data || data.length === 0) {
-                return this.createDefaultCities();
-            }
+            // Загружаем количество предстоящих матчей по городам (status = 'upcoming')
+            const { data: matchesData, error: matchesError } = await this.app.supabase
+                .from('matches')
+                .select('city, status')
+                .eq('status', 'upcoming');
             
-            this.processCitiesData(data);
+            if (matchesError) throw matchesError;
+            
+            // Считаем команды по городам
+            const teamCounts = {};
+            teamsData.forEach(team => {
+                const city = team.city;
+                if (this.cities[city]) {
+                    teamCounts[city] = (teamCounts[city] || 0) + 1;
+                }
+            });
+            
+            // Считаем матчи по городам
+            const matchCounts = {};
+            matchesData.forEach(match => {
+                const city = match.city;
+                if (this.cities[city]) {
+                    matchCounts[city] = (matchCounts[city] || 0) + 1;
+                }
+            });
+            
+            // Обновляем данные в cities
+            Object.keys(this.cities).forEach(cityId => {
+                this.cities[cityId].teams = teamCounts[cityId] || 0;
+                this.cities[cityId].matches = matchCounts[cityId] || 0;
+            });
+            
+            console.log('✅ Статистика городов загружена:', this.cities);
             
         } catch (error) {
-            console.error('❌ Ошибка загрузки городов:', error);
-            this.createDefaultCities();
+            console.error('❌ Ошибка загрузки статистики городов:', error);
+            // При ошибке оставляем нули - пользователь увидит "0 команд / 0 игр"
         }
     },
     
-    // Создание базовых городов
-    async createDefaultCities() {
-        console.warn('Таблица городов пуста, создаем базовые города');
-        
-        const cities = [
-            { id: 'moscow', name: 'Москва', lat: 55.7558, lng: 37.6173, stats: '12 площадок • 48 команд' },
-            { id: 'kaluga', name: 'Калуга', lat: 54.5293, lng: 36.2754, stats: '5 площадок • 16 команд' },
-            { id: 'obninsk', name: 'Обнинск', lat: 55.0968, lng: 36.6101, stats: '3 площадки • 12 команд' }
-        ];
-        
-        this.processCitiesData(cities);
-        
-        // Пытаемся сохранить в базу
-        try {
-            await this.app.supabase
-                .from('cities')
-                .insert(cities)
-                .select();
-        } catch (error) {
-            console.warn('Не удалось создать города в базе:', error);
-        }
-    },
-    
-    // Обработка данных городов
-    processCitiesData(data) {
-        this.app.cities = {};
-        data.forEach(city => {
-            this.app.cities[city.id] = {
-                name: city.name,
-                lat: city.lat || 55.7558,
-                lng: city.lng || 37.6173,
-                stats: city.stats || '0 площадок • 0 команд'
-            };
-        });
-        
-        this.renderCities();
-    },
-    
-    // Отображение городов
-    renderCities() {
+    async renderCitySelection() {
+        // Показываем загрузку
         const container = document.getElementById('city-list');
-        if (!container || !this.app.cities) return;
+        if (!container) return;
         
-        container.innerHTML = '';
-        Object.entries(this.app.cities).forEach(([id, city]) => {
-            const card = document.createElement('button');
-            card.className = 'city-card';
-            card.onclick = () => this.selectCity(id);
-            card.innerHTML = `
-                <div>
-                    <div class="city-name">${city.name}</div>
-                    <div class="city-stats">${city.stats}</div>
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i> Загрузка...</div>';
+        
+        // Загружаем реальные данные
+        await this.loadCityStats();
+        
+        // Рендерим карточки городов
+        container.innerHTML = Object.entries(this.cities).map(([id, city]) => `
+            <button class="city-card" onclick="initModule.selectCity('${id}')">
+                <div class="city-name">${city.name}</div>
+                <div class="city-stats">
+                    <span class="stat">
+                        
+                        ${city.teams} ${this.pluralizeTeams(city.teams)}
+                    </span>
+                    <span class="stat">
+                       
+                        ${city.matches} ${this.pluralizeMatches(city.matches)}
+                    </span>
                 </div>
-                <i class="fas fa-chevron-right" style="color: var(--accent-green);"></i>
-            `;
-            container.appendChild(card);
-        });
+            </button>
+        `).join('');
     },
     
-    // Выбор города
+    // Склонение "команда"
+    pluralizeTeams(count) {
+        if (count === 1) return 'команда';
+        if (count >= 2 && count <= 4) return 'команды';
+        return 'команд';
+    },
+    
+    // Склонение "игра"
+    pluralizeMatches(count) {
+        if (count === 1) return 'игра';
+        if (count >= 2 && count <= 4) return 'игры';
+        return 'игр';
+    },
+    
     selectCity(cityId) {
         this.app.currentCity = cityId;
-        const cityName = this.app.cities[cityId]?.name || 'Город';
+        const cityName = this.cities[cityId].name;
         
-        document.querySelectorAll('#current-city-name').forEach(el => {
-            el.textContent = cityName;
-        });
+        // Обновляем отображение города в шапке
+        const cityNameEl = document.getElementById('current-city-name');
+        if (cityNameEl) {
+            cityNameEl.textContent = cityName;
+        }
         
+        // Сохраняем в localStorage для следующих сессий
+        localStorage.setItem('selectedCity', cityId);
+        
+        // Показываем главный экран
         navigationModule.showMain();
     }
 };
+
+// Экспортируем глобально
+window.initModule = initModule;

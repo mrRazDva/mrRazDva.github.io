@@ -128,65 +128,74 @@ const commentsModule = {
     
     // Комментарии
     async renderComments(matchId) {
-        const container = document.getElementById('comments-list');
-        const countBadge = document.getElementById('comments-count');
-        if (!container) return;
+    const container = document.getElementById('comments-list');
+    const countBadge = document.getElementById('comments-count');
+    if (!container) return;
+    
+    try {
+        const { data: comments, error } = await this.app.supabase
+            .from('comments')
+            .select(`
+                *,
+                user:profiles(id, nickname, avatar_url)
+            `)
+            .eq('match_id', matchId)
+            .order('created_at', { ascending: false });
         
-        try {
-            const { data: comments, error } = await this.app.supabase
-                .from('comments')
-                .select(`
-                    *,
-                    user:profiles(nickname)
-                `)
-                .eq('match_id', matchId)
-                .order('created_at', { ascending: false });
+        if (error) {
+            console.error('Ошибка загрузки комментариев:', error);
+            if (countBadge) countBadge.textContent = '0';
+            container.innerHTML = '<div class="empty-comments">Пока нет комментариев. Будь первым!</div>';
+            return;
+        }
+        
+        if (countBadge) countBadge.textContent = comments?.length || 0;
+        
+        if (!comments || comments.length === 0) {
+            container.innerHTML = '<div class="empty-comments">Пока нет комментариев. Будь первым!</div>';
+            return;
+        }
+        
+        container.innerHTML = comments.map(comment => {
+            const userName = comment.user?.nickname || 'Пользователь';
+            const avatarUrl = comment.user?.avatar_url;
+            const timeAgo = this.app.formatTimeAgo(comment.created_at);
             
-            if (error) {
-                console.error('Ошибка загрузки комментариев:', error);
-                if (countBadge) countBadge.textContent = '0';
-                container.innerHTML = '<div class="empty-comments">Пока нет комментариев. Будь первым!</div>';
-                return;
-            }
-            
-            if (countBadge) countBadge.textContent = comments?.length || 0;
-            
-            if (!comments || comments.length === 0) {
-                container.innerHTML = '<div class="empty-comments">Пока нет комментариев. Будь первым!</div>';
-                return;
-            }
-            
-            container.innerHTML = comments.map(comment => {
-                const userName = comment.user?.nickname || 'Пользователь';
+            // Формируем HTML для аватарки
+            let avatarHtml;
+            if (avatarUrl) {
+                avatarHtml = `<img src="${avatarUrl}" alt="${userName}" class="comment-avatar-img">`;
+            } else {
                 const avatarLetter = userName[0].toUpperCase();
-                const timeAgo = this.app.formatTimeAgo(comment.created_at);
-                
-                return `
-                    <div class="comment-item" data-comment-id="${comment.id}">
-                        <div class="comment-avatar">${avatarLetter}</div>
-                        <div class="comment-content">
-                            <div class="comment-header">
-                                <span class="comment-author">${userName}</span>
-                                <span class="comment-time">${timeAgo}</span>
-                            </div>
-                            <div class="comment-text">${comment.text}</div>
-                            <div class="comment-actions">
-                                <button class="comment-like" 
-                                        onclick="event.stopPropagation(); event.preventDefault(); commentsModule.likeComment('${comment.id}')">
-                                    <i class="fas fa-heart"></i>
-                                    <span class="like-count">${comment.likes || 0}</span>
-                                </button>
-                            </div>
+                avatarHtml = `<span class="comment-avatar-letter">${avatarLetter}</span>`;
+            }
+            
+            return `
+                <div class="comment-item" data-comment-id="${comment.id}">
+                    <div class="comment-avatar">${avatarHtml}</div>
+                    <div class="comment-content">
+                        <div class="comment-header">
+                            <span class="comment-author">${userName}</span>
+                            <span class="comment-time">${timeAgo}</span>
+                        </div>
+                        <div class="comment-text">${comment.text}</div>
+                        <div class="comment-actions">
+                            <button class="comment-like" 
+                                    onclick="event.stopPropagation(); event.preventDefault(); commentsModule.likeComment('${comment.id}')">
+                                <i class="fas fa-heart"></i>
+                                <span class="like-count">${comment.likes || 0}</span>
+                            </button>
                         </div>
                     </div>
-                `;
-            }).join('');
-            
-        } catch (error) {
-            console.error('❌ Ошибка загрузки комментариев:', error);
-            container.innerHTML = '<div class="empty-comments">Ошибка загрузки комментариев</div>';
-        }
-    },
+                </div>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки комментариев:', error);
+        container.innerHTML = '<div class="empty-comments">Ошибка загрузки комментариев</div>';
+    }
+},
     
     async addComment(matchId, text) {
         if (!authModule.isAuthenticated()) {

@@ -499,68 +499,63 @@
             </button>
         </div>
 
-        <!-- Личная информация (карточка) -->
-        <div class="card-section" id="personal-info-card">
-    <div class="card-header">
-        <h3 class="card-title">
-            <i class="fas fa-user-circle"></i>
-            Личная информация
-        </h3>
-       
+        <!-- НОВАЯ ВЕРСИЯ: О себе (стиль соц.сетей) -->
+<div class="profile-about-section" id="personal-info-card">
+    <!-- Заголовок секции -->
+    <div class="about-header">
+        <h3 class="about-title">Личная информация</h3>
     </div>
-            
-            <div class="info-grid">
-                <div class="info-item" id="profile-full-name-item">
-                    <div class="info-icon">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="info-content">
-                        <div class="info-label">ФИО</div>
-                        <div class="info-value" id="profile-full-name-value-modern">Не указано</div>
-                    </div>
-                </div>
-                
-                <div class="info-item" id="profile-age-item">
-                    <div class="info-icon">
-                        <i class="fas fa-birthday-cake"></i>
-                    </div>
-                    <div class="info-content">
-                        <div class="info-label">Возраст</div>
-                        <div class="info-value" id="profile-age-value-modern">Не указано</div>
-                    </div>
-                </div>
-                
-                <div class="info-item" id="profile-gender-item">
-                    <div class="info-icon">
-                        <i class="fas fa-venus-mars"></i>
-                    </div>
-                    <div class="info-content">
-                        <div class="info-label">Пол</div>
-                        <div class="info-value" id="profile-gender-value-modern">Не указан</div>
-                    </div>
-                </div>
-                
-                <div class="info-item" id="profile-vk-item">
-                    <div class="info-icon">
-                        <i class="fab fa-vk"></i>
-                    </div>
-                    <div class="info-content">
-                        <div class="info-label">ВКонтакте</div>
-                        <a href="#" target="_blank" class="info-value link" id="profile-vk-value-modern">Не указано</a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bio-section" id="profile-bio-item">
-                <div class="info-icon">
-                    <i class="fas fa-info-circle"></i>
-                </div>
-                <div class="bio-content">
-                    <div class="info-label">О себе</div>
-                    <div class="bio-value" id="profile-bio-value-modern">Расскажите о своих спортивных интересах и достижениях</div>
-                </div>
-            </div>
+    
+    <!-- 1. ИНФО-БЕЙДЖИ В РЯД (ФИО, возраст, пол) -->
+    <div class="about-badges">
+        <div class="about-badge hidden" id="profile-full-name-badge">
+            <i class="fas fa-user"></i>
+            <span id="profile-full-name-value-modern">Иванов Иван</span>
         </div>
+        
+        <div class="about-badge hidden" id="profile-age-badge">
+            <i class="fas fa-birthday-cake"></i>
+            <span id="profile-age-value-modern">25 лет</span>
+        </div>
+        
+        <div class="about-badge hidden" id="profile-gender-badge">
+            <i class="fas fa-venus-mars"></i>
+            <span id="profile-gender-value-modern">Мужской</span>
+        </div>
+    </div>
+    
+    <!-- 2. ССЫЛКИ НА СОЦСЕТИ -->
+    <div class="about-socials">
+        <a href="#" target="_blank" class="social-link hidden" id="profile-vk-link">
+            <div class="social-icon vk">
+                <i class="fab fa-vk"></i>
+            </div>
+            <span class="social-label">ВКонтакте</span>
+        </a>
+        
+        
+    </div>
+    
+    <!-- Разделитель -->
+    <div class="about-divider"></div>
+    
+    <!-- 3. БИОГРАФИЯ - В САМОМ НИЗУ -->
+    <div class="about-bio" id="profile-bio-container">
+        <div class="bio-header">
+            <i class="fas fa-quote-left"></i>
+            <span>О себе</span>
+        </div>
+        <p class="bio-text" id="profile-bio-value-modern">
+            Расскажите о своих спортивных интересах и достижениях
+        </p>
+    </div>
+    
+    <!-- Пустое состояние (когда нет данных) -->
+    <div class="about-empty hidden" id="about-empty-state">
+        <i class="fas fa-user-slash"></i>
+        <span>Информация не заполнена</span>
+    </div>
+</div>
 
         <!-- Мои команды (если есть) -->
         <div class="card-section hidden" id="my-teams-card">
@@ -802,17 +797,7 @@
                     <div class="form-hint">Ссылка на ваш профиль ВК</div>
                 </div>
                 
-                <div class="form-group-modern">
-                    <label class="form-label">
-                        <i class="fas fa-phone"></i>
-                        Телефон
-                    </label>
-                    <input type="tel" 
-                           id="edit-phone" 
-                           class="form-input-modern"
-                           placeholder="+7 (999) 123-45-67">
-                    <div class="form-hint">Для связи с капитанами</div>
-                </div>
+                
             </div>
 
             <!-- О себе -->

@@ -508,7 +508,7 @@ if (error) {
         
         const cityChip = document.getElementById('edit-team-city-chip');
         if (cityChip) {
-            cityChip.querySelector('span').textContent = app.cities[this.currentTeam.city]?.name || this.currentTeam.city;
+            cityChip.querySelector('span').textContent = initModule.cities[this.currentTeam.city]?.name || this.currentTeam.city;
         }
 
         // Описание и контакты

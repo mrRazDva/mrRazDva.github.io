@@ -1064,82 +1064,139 @@ const profileModule = {
     
     // Обновить элементы профиля
     updateProfileElements(profileData, userData) {
-        // ФИО
-        const fullNameEl = document.getElementById('profile-full-name-value-modern');
-        if (fullNameEl) {
-            fullNameEl.textContent = profileData.full_name || 'Не указано';
-            const container = document.getElementById('profile-full-name-item');
-            if (container) {
-                container.classList.toggle('hidden', !profileData.full_name);
-            }
+    // ФИО - показываем как бейдж
+    const fullNameValue = profileData.full_name;
+    const fullNameBadge = document.getElementById('profile-full-name-badge');
+    const fullNameEl = document.getElementById('profile-full-name-value-modern');
+    
+    if (fullNameBadge && fullNameEl) {
+        if (fullNameValue) {
+            fullNameEl.textContent = fullNameValue;
+            fullNameBadge.classList.remove('hidden');
+        } else {
+            fullNameBadge.classList.add('hidden');
         }
-        
-        // Возраст
-        const ageEl = document.getElementById('profile-age-value-modern');
-        if (ageEl) {
-            const ageText = profileData.age ? `${profileData.age} лет` : 'Не указано';
-            ageEl.textContent = ageText;
-            const container = document.getElementById('profile-age-item');
-            if (container) {
-                container.classList.toggle('hidden', !profileData.age);
-            }
+    }
+    
+    // Возраст - показываем как бейдж
+    const ageValue = profileData.age;
+    const ageBadge = document.getElementById('profile-age-badge');
+    const ageEl = document.getElementById('profile-age-value-modern');
+    
+    if (ageBadge && ageEl) {
+        if (ageValue) {
+            ageEl.textContent = ageValue + ' лет';
+            ageBadge.classList.remove('hidden');
+        } else {
+            ageBadge.classList.add('hidden');
         }
-        
-        // Пол
-        const genderEl = document.getElementById('profile-gender-value-modern');
-        if (genderEl) {
+    }
+    
+    // Пол - показываем как бейдж
+    const genderValue = profileData.gender;
+    const genderBadge = document.getElementById('profile-gender-badge');
+    const genderEl = document.getElementById('profile-gender-value-modern');
+    
+    if (genderBadge && genderEl) {
+        if (genderValue && genderValue !== 'not_set') {
             const genderMap = {
                 'male': 'Мужской',
-                'female': 'Женский',
-                'not_set': 'Не указан'
+                'female': 'Женский'
             };
-            genderEl.textContent = genderMap[profileData.gender] || 'Не указан';
-            const container = document.getElementById('profile-gender-item');
-            if (container) {
-                container.classList.toggle('hidden', !profileData.gender || profileData.gender === 'not_set');
-            }
+            genderEl.textContent = genderMap[genderValue] || genderValue;
+            genderBadge.classList.remove('hidden');
+        } else {
+            genderBadge.classList.add('hidden');
         }
-        
-        // ВК
-        const vkEl = document.getElementById('profile-vk-value-modern');
-        if (vkEl) {
-            if (profileData.vk_url) {
-                vkEl.href = profileData.vk_url;
-                vkEl.textContent = profileData.vk_url.replace('https://', '').replace('www.', '');
-            } else {
-                vkEl.textContent = 'Не указано';
-            }
-            const container = document.getElementById('profile-vk-item');
-            if (container) {
-                container.classList.toggle('hidden', !profileData.vk_url);
-            }
+    }
+    
+    // ВК - показываем как соц.ссылку
+    const vkValue = profileData.vk_url;
+    const vkLink = document.getElementById('profile-vk-link');
+    
+    if (vkLink) {
+        if (vkValue) {
+            vkLink.href = vkValue;
+            vkLink.classList.remove('hidden');
+        } else {
+            vkLink.classList.add('hidden');
         }
-        
-        // Био
-        const bioEl = document.getElementById('profile-bio-value-modern');
-        if (bioEl) {
-            bioEl.textContent = profileData.bio || 'Расскажите о своих спортивных интересах и достижениях';
-            const container = document.getElementById('profile-bio-item');
-            if (container) {
-                container.classList.toggle('hidden', !profileData.bio);
-            }
+    }
+    
+    // Телефон - показываем как соц.ссылку
+    const phoneValue = profileData.phone;
+    const phoneLink = document.getElementById('profile-phone-link');
+    
+    if (phoneLink) {
+        if (phoneValue) {
+            phoneLink.href = 'tel:' + phoneValue;
+            const phoneLabel = phoneLink.querySelector('.social-label');
+            if (phoneLabel) phoneLabel.textContent = phoneValue;
+            phoneLink.classList.remove('hidden');
+        } else {
+            phoneLink.classList.add('hidden');
         }
-        
-        // Город
-        const cityEl = document.getElementById('profile-city-modern');
-        if (cityEl && profileData.city) {
-            cityEl.textContent = this.getCityName(profileData.city);
+    }
+    
+    // Биография - основной текст
+    const bioValue = profileData.bio;
+    const bioContainer = document.getElementById('profile-bio-container');
+    const bioEl = document.getElementById('profile-bio-value-modern');
+    
+    if (bioContainer && bioEl) {
+        if (bioValue) {
+            bioEl.textContent = bioValue;
+            bioEl.classList.remove('placeholder');
+        } else {
+            bioEl.textContent = 'Расскажите о своих спортивных интересах и достижениях';
+            bioEl.classList.add('placeholder');
         }
-        
-        // Имя пользователя
-        const nameEl = document.getElementById('profile-name-modern');
-        if (nameEl) {
-            nameEl.textContent = profileData.nickname || userData.nickname || 'User';
+    }
+    
+    // Проверяем, есть ли вообще данные для показа
+    this.checkEmptyState();
+    
+    // Город
+    const cityEl = document.getElementById('profile-city-modern');
+    if (cityEl && profileData.city) {
+        cityEl.innerHTML = `<i class="fas fa-map-marker-alt" style="font-size: 0.7rem;"></i> ${this.getCityName(profileData.city)}`;
+    }
+    
+    // Имя пользователя
+    const nameEl = document.getElementById('profile-name-modern');
+    if (nameEl) {
+        nameEl.textContent = profileData.nickname || userData.nickname || 'User';
+    }
+    
+    // Обновляем аватар ВО ВСЕХ МЕСТАХ
+    this.updateAllAvatars(profileData.avatar_url, profileData.nickname || userData.nickname);
+},
+
+// Проверить, нужно ли показывать пустое состояние
+checkEmptyState() {
+    const hasFullName = !document.getElementById('profile-full-name-badge')?.classList.contains('hidden');
+    const hasAge = !document.getElementById('profile-age-badge')?.classList.contains('hidden');
+    const hasGender = !document.getElementById('profile-gender-badge')?.classList.contains('hidden');
+    const hasVk = !document.getElementById('profile-vk-link')?.classList.contains('hidden');
+    const hasPhone = !document.getElementById('profile-phone-link')?.classList.contains('hidden');
+    const hasBio = document.getElementById('profile-bio-value-modern')?.textContent && 
+                   !document.getElementById('profile-bio-value-modern')?.classList.contains('placeholder');
+
+    const hasAnyData = hasFullName || hasAge || hasGender || hasVk || hasPhone || hasBio;
+
+    const emptyState = document.getElementById('about-empty-state');
+    const contentElements = document.querySelectorAll('.about-bio, .about-badges, .about-socials');
+    
+    if (emptyState) {
+        if (hasAnyData) {
+            emptyState.classList.add('hidden');
+            contentElements.forEach(el => el.style.display = '');
+        } else {
+            emptyState.classList.remove('hidden');
+            contentElements.forEach(el => el.style.display = 'none');
         }
-        
-        // Обновляем аватар ВО ВСЕХ МЕСТАХ
-        this.updateAllAvatars(profileData.avatar_url, profileData.nickname || userData.nickname);
-    },
+    }
+},
     
     // Обновить элемент информации (помощник)
     updateInfoItemModern(containerId, valueId, value, placeholder, isLink = false) {
@@ -1252,25 +1309,25 @@ const profileModule = {
             const displayTeams = teams.slice(0, 3);
             
             teamsList.innerHTML = displayTeams.map(item => {
-                const team = item.teams;
-                return `
-                    <div class="team-card-mini" onclick="teamModule.show('${team.id}')">
-                        <div class="team-avatar-mini">
-                            ${team.logo_url ? 
-                                `<img src="${team.logo_url}" alt="${team.name}">` : 
-                                `<span>${team.name.charAt(0)}</span>`
-                            }
-                        </div>
-                        <div class="team-info-mini">
-                            <div class="team-name-mini">${team.name}</div>
-                            <div class="team-meta-mini">
-                                <span class="team-sport-mini">${app.getSportName(team.sport)}</span>
-                                <span class="team-city-mini">${team.city}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+    const team = item.teams;
+    return `
+        <div class="team-card-mini" onclick="teamModule.show('${team.id}')">
+            <div class="team-avatar-mini">
+                ${team.logo_url ? 
+                    `<img src="${team.logo_url}" alt="${team.name}">` : 
+                    `<span>${team.name.charAt(0)}</span>`
+                }
+            </div>
+            <div class="team-info-mini">
+                <div class="team-name-mini">${team.name}</div>
+                <div class="team-meta-mini">
+                    <span class="team-sport-mini">${app.getSportName(team.sport)}</span>
+                    <span class="team-city-mini">${initModule.cities[team.city]?.name || team.city}</span>
+                </div>
+            </div>
+        </div>
+    `;
+}).join('');
             
         } catch (error) {
             console.error('❌ Ошибка загрузки команд пользователя:', error);
@@ -1369,58 +1426,7 @@ const profileModule = {
         }
     },
     
-    // Отобразить приглашения в новом дизайне
-    renderInvitationsModern(invitations) {
-        const container = document.getElementById('invitations-list-modern');
-        if (!container) return;
-        
-        if (!invitations || invitations.length === 0) {
-            container.innerHTML = `
-                <div class="empty-invitations">
-                    <i class="fas fa-envelope-open"></i>
-                    <p>У вас нет новых приглашений</p>
-                </div>
-            `;
-            return;
-        }
-        
-        container.innerHTML = invitations.map(inv => {
-            const team = inv.teams;
-            return `
-                <div class="invitation-card-modern" data-id="${inv.id}" data-team-id="${inv.team_id}">
-                    <div class="invitation-header-modern">
-                        <div class="invitation-team-avatar-modern">
-                            ${team.logo_url ? 
-                                `<img src="${team.logo_url}" alt="${team.name}">` : 
-                                `<span>${team.name.charAt(0)}</span>`
-                            }
-                        </div>
-                        <div class="invitation-info-modern">
-                            <div class="invitation-team-name-modern">${team.name}</div>
-                            <div class="invitation-details-modern">
-                                <span class="invitation-sport-modern">
-                                    <i class="fas fa-${app.getSportIcon(team.sport)}"></i>
-                                    ${app.getSportName(team.sport)}
-                                </span>
-                                <span class="invitation-city-modern">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    ${team.city}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="invitation-actions-modern">
-                        <button class="btn btn-accept-modern" onclick="navigationModule.acceptInvitation('${inv.id}')">
-                            <i class="fas fa-check"></i> Принять
-                        </button>
-                        <button class="btn btn-reject-modern" onclick="navigationModule.rejectInvitation('${inv.id}')">
-                            <i class="fas fa-times"></i> Отклонить
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    },
+    
     
     // Инициализация при загрузке страницы
     onPageLoad() {

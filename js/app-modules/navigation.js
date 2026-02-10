@@ -517,7 +517,7 @@ const navigationModule = {
                                 </span>
                                 <span class="invitation-city-modern">
                                     <i class="fas fa-map-marker-alt"></i>
-                                    ${team.city}
+                                    ${initModule.cities[team.city]?.name || team.city}
                                 </span>
                             </div>
                         </div>
