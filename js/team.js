@@ -268,6 +268,9 @@ distributePlayersToVolleyballFormation(players) {
     return formation;
 },
 
+
+
+
 // Рендерит одного игрока на волейбольном поле
 renderPlayerOnVolleyballField(player) {
     const isCaptain = player.is_captain;
