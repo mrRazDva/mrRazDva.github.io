@@ -10,13 +10,25 @@ async show(teamId, matchId = null) {
     
     try {
         const { data: team, error } = await app.supabase
-            .from('teams')
-            .select(`
-                *,
-                players:team_players(*)
-            `)
-            .eq('id', teamId)
-            .single();
+    .from('teams')
+    .select(`
+        *,
+        players:team_players(
+            id,
+            name,
+            number,
+            photo_url,
+            role,
+            is_captain,
+            user_id,
+            invitation_status,
+            is_linked,
+            order_index,
+            info
+        )
+    `)
+    .eq('id', teamId)
+    .single();
 
         if (error) throw error;
 
@@ -178,14 +190,19 @@ renderVolleyballFieldRoster(players) {
                 Список игроков
             </h3>
             <div class="players-list-simple">
-                ${sortedPlayers.map((player, index) => `
-                    <div class="player-simple-item" style="animation-delay: ${index * 0.05}s">
-                        <span class="player-simple-number">${player.number || '-'}</span>
-                        <span class="player-simple-name">${player.name}</span>
-                        ${player.is_captain ? '<span class="captain-badge-small">К</span>' : ''}
-                    </div>
-                `).join('')}
+    ${sortedPlayers.map((player, index) => {
+        const clickHandler = player.user_id 
+            ? `profileModule.showUserProfile('${player.user_id}')` 
+            : `teamModule.showPlayerDetail('${player.id}')`;
+        return `
+            <div class="player-simple-item" style="animation-delay: ${index * 0.05}s" onclick="${clickHandler}">
+                <span class="player-simple-number">${player.number || '-'}</span>
+                <span class="player-simple-name">${player.name}</span>
+                ${player.is_captain ? '<span class="captain-badge-small">К</span>' : ''}
             </div>
+        `;
+    }).join('')}
+</div>
         </div>
     `;
 },
@@ -361,14 +378,19 @@ renderHockeyFieldRoster(players) {
                 Список игроков
             </h3>
             <div class="players-list-simple">
-                ${sortedPlayers.map((player, index) => `
-                    <div class="player-simple-item" style="animation-delay: ${index * 0.05}s">
-                        <span class="player-simple-number">${player.number || '-'}</span>
-                        <span class="player-simple-name">${player.name}</span>
-                        ${player.is_captain ? '<span class="captain-badge-small">К</span>' : ''}
-                    </div>
-                `).join('')}
+    ${sortedPlayers.map((player, index) => {
+        const clickHandler = player.user_id 
+            ? `profileModule.showUserProfile('${player.user_id}')` 
+            : `teamModule.showPlayerDetail('${player.id}')`;
+        return `
+            <div class="player-simple-item" style="animation-delay: ${index * 0.05}s" onclick="${clickHandler}">
+                <span class="player-simple-number">${player.number || '-'}</span>
+                <span class="player-simple-name">${player.name}</span>
+                ${player.is_captain ? '<span class="captain-badge-small">К</span>' : ''}
             </div>
+        `;
+    }).join('')}
+</div>
         </div>
     `;
 },
@@ -567,14 +589,19 @@ renderBasketballCourtRoster(players) {
                 Список игроков
             </h3>
             <div class="players-list-simple">
-                ${sortedPlayers.map((player, index) => `
-                    <div class="player-simple-item" style="animation-delay: ${index * 0.05}s">
-                        <span class="player-simple-number">${player.number || '-'}</span>
-                        <span class="player-simple-name">${player.name}</span>
-                        ${player.is_captain ? '<span class="captain-badge-small">К</span>' : ''}
-                    </div>
-                `).join('')}
+    ${sortedPlayers.map((player, index) => {
+        const clickHandler = player.user_id 
+            ? `profileModule.showUserProfile('${player.user_id}')` 
+            : `teamModule.showPlayerDetail('${player.id}')`;
+        return `
+            <div class="player-simple-item" style="animation-delay: ${index * 0.05}s" onclick="${clickHandler}">
+                <span class="player-simple-number">${player.number || '-'}</span>
+                <span class="player-simple-name">${player.name}</span>
+                ${player.is_captain ? '<span class="captain-badge-small">К</span>' : ''}
             </div>
+        `;
+    }).join('')}
+</div>
         </div>
     `;
 },
@@ -762,14 +789,19 @@ getBasketballPositionAbbreviation(role) {
                     Список игроков
                 </h3>
                 <div class="players-list-simple">
-                    ${sortedPlayers.map((player, index) => `
-                        <div class="player-simple-item" style="animation-delay: ${index * 0.05}s">
-                            <span class="player-simple-number">${player.number || '-'}</span>
-                            <span class="player-simple-name">${player.name}</span>
-                            ${player.is_captain ? '<span class="captain-badge-small">К</span>' : ''}
-                        </div>
-                    `).join('')}
-                </div>
+    ${sortedPlayers.map((player, index) => {
+        const clickHandler = player.user_id 
+            ? `profileModule.showUserProfile('${player.user_id}')` 
+            : `teamModule.showPlayerDetail('${player.id}')`;
+        return `
+            <div class="player-simple-item" style="animation-delay: ${index * 0.05}s" onclick="${clickHandler}">
+                <span class="player-simple-number">${player.number || '-'}</span>
+                <span class="player-simple-name">${player.name}</span>
+                ${player.is_captain ? '<span class="captain-badge-small">К</span>' : ''}
+            </div>
+        `;
+    }).join('')}
+</div>
             </div>
         `;
 

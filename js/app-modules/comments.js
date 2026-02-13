@@ -163,12 +163,12 @@ const commentsModule = {
             
             // Формируем HTML для аватарки
             let avatarHtml;
-            if (avatarUrl) {
-                avatarHtml = `<img src="${avatarUrl}" alt="${userName}" class="comment-avatar-img">`;
-            } else {
-                const avatarLetter = userName[0].toUpperCase();
-                avatarHtml = `<span class="comment-avatar-letter">${avatarLetter}</span>`;
-            }
+if (avatarUrl) {
+    avatarHtml = `<img src="${avatarUrl}" alt="${userName}" class="comment-avatar-img" onclick="profileModule.showUserProfile('${comment.user_id}')">`;
+} else {
+    const avatarLetter = userName[0].toUpperCase();
+    avatarHtml = `<span class="comment-avatar-letter" onclick="profileModule.showUserProfile('${comment.user_id}')">${avatarLetter}</span>`;
+}
             
             return `
                 <div class="comment-item" data-comment-id="${comment.id}">

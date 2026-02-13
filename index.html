@@ -14,7 +14,8 @@
     <link rel="stylesheet" href="./css/reset.css">
     <link rel="stylesheet" href="./css/components.css">
     <link rel="stylesheet" href="./css/screens.css">
-	 <link rel="stylesheet" href="./css/profiles.css">
+	<link rel="stylesheet" href="./css/profiles.css">
+	<link rel="stylesheet" href="./css/hub.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://api-maps.yandex.ru/2.1/?apikey=ваш_api_ключ&lang=ru_RU"></script>
 </head>
@@ -230,7 +231,13 @@
                     </h3>
                     <div id="hub-events-list" class="hub-list"></div>
                 </div>
-
+<div class="hub-section">
+    <h3 class="hub-section-title">
+        <i class="fas fa-history"></i>
+        Сводка за месяц
+    </h3>
+    <div id="hub-summary-list" class="hub-list"></div>
+</div>
                 <div class="hub-section">
                     <h3 class="hub-section-title">
                         <i class="fas fa-calendar-week"></i>
@@ -238,6 +245,17 @@
                     </h3>
                     <div id="hub-matches-list" class="hub-list"></div>
                 </div>
+
+<div class="hub-section">
+    <h3 class="hub-section-title">
+        <i class="fas fa-trophy"></i>
+        Топ команд города
+    </h3>
+    <div id="hub-top-teams-list" class="hub-list"></div>
+    <button id="show-more-teams-btn" class="btn-show-more hidden" onclick="eventsModule.showMoreTopTeams()">
+        Показать ещё
+    </button>
+</div>
 
                 <div class="hub-section">
                     <h3 class="hub-section-title">
@@ -248,6 +266,8 @@
                 </div>
             </div>
         </section>
+
+
 
         <!-- Screen: Teams -->
         <section id="screen-teams" class="screen">
@@ -1404,7 +1424,59 @@
     </div>
 </div>
 
-         
+         <!-- Screen: User Profile (просмотр чужого профиля) -->
+<section id="screen-user-profile" class="screen">
+    <div class="container">
+        <button class="back-btn" onclick="profileModule.closeUserProfile()">
+            <i class="fas fa-arrow-left"></i> Назад
+        </button>
+
+        <!-- Шапка профиля -->
+        <div class="profile-header-modern">
+            <div class="profile-avatar-section">
+                <div class="profile-avatar-large" id="view-profile-avatar">
+                    <img id="view-profile-avatar-img" class="hidden" src="" alt="Аватар">
+                    <span id="view-profile-avatar-text">U</span>
+                </div>
+                <div class="profile-info-main">
+                    <h1 id="view-profile-name" class="profile-name-modern">Загрузка...</h1>
+                    <div class="profile-meta">
+                        <span id="view-profile-role" class="profile-role-modern"></span>
+                        <span id="view-profile-city"><i class="fas fa-map-marker-alt"></i> </span>
+                    </div>
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="view-profile-matches">0</span>
+                            <span class="stat-label">Матчей</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="view-profile-teams">0</span>
+                            <span class="stat-label">Команд</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Личная информация (бейджи) -->
+        <div class="profile-about-section">
+            <div class="about-badges" id="view-about-badges"></div>
+            <div class="about-socials" id="view-about-socials"></div>
+            <div class="about-bio" id="view-profile-bio">
+                <p class="bio-text" id="view-profile-bio-text"></p>
+            </div>
+        </div>
+
+        <!-- Команды пользователя -->
+        <div class="card-section" id="view-user-teams-card">
+            <h3 class="card-title">
+                <i class="fas fa-users"></i>
+                Команды
+            </h3>
+            <div id="view-user-teams-list" class="teams-scroll"></div>
+        </div>
+    </div>
+</section>
 		
     </main>
 

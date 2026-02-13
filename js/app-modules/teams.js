@@ -384,13 +384,20 @@ async getAccessToken() {
             }
             
             const { data: teams, error } = await this.app.supabase
-                .from('teams')
-                .select(`
-                    *,
-                    players:team_players(*)
-                `)
-                .eq('owner_id', userId)
-                .order('created_at', { ascending: false });
+    .from('teams')
+    .select(`
+        id,
+        name,
+        city,
+        sport,
+        avatar,
+        logo_url,
+        description,
+        created_at,
+        players:team_players(count)
+    `)
+    .eq('owner_id', userId)
+    .order('created_at', { ascending: false });
             
             if (error) throw error;
             
@@ -402,7 +409,7 @@ async getAccessToken() {
             }
             
             container.innerHTML = teams.map(team => {
-        const playerCount = team.players?.length || 0;
+        const playerCount = team.players?.[0]?.count || 0;
         
         // Отладка
         console.log('Team:', team.name, 'Logo:', team.logo_url);

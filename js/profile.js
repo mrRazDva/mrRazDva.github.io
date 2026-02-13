@@ -236,6 +236,278 @@ const profileModule = {
         }
     },
 
+// ========== ПРОСМОТР ЧУЖОГО ПРОФИЛЯ ==========
+
+// Закрыть экран просмотра и вернуться назад
+closeUserProfile() {
+    screenManager.back(); // предполагается, что screenManager имеет метод back
+    // или screenManager.show('screen-main') или предыдущий экран
+    // В зависимости от реализации screenManager можно использовать:
+    // history.back() или screenManager.showPrevious();
+    // Для простоты можно использовать screenManager.back(), если он определён.
+    // Если нет — можно сделать так:
+    // const previousScreen = document.querySelector('.screen.active')?.id;
+    // if (previousScreen) screenManager.show(previousScreen);
+    // Но лучше доработать screenManager.
+    // Пока используем screenManager.back() — предположим, что он существует.
+    if (typeof screenManager !== 'undefined' && screenManager.back) {
+        screenManager.back();
+    } else {
+        // fallback — возврат на главный экран
+        screenManager.show('screen-main');
+    }
+},
+
+// Показать профиль другого пользователя
+async showUserProfile(userId) {
+    if (!userId) return;
+
+    try {
+        // Показываем экран с загрузкой
+        screenManager.show('screen-user-profile');
+        this.clearUserProfileView();
+
+
+
+        // 1. Загружаем данные профиля
+        const { data: profile, error } = await this.app.supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                // Профиль не найден
+                this.showUserProfileNotFound();
+                return;
+            }
+            throw error;
+        }
+
+        // 2. Загружаем список команд, в которых пользователь состоит
+        const { data: teamPlayers, error: teamsError } = await this.app.supabase
+            .from('team_players')
+            .select(`
+                teams (
+                    id,
+                    name,
+                    logo_url,
+                    sport,
+                    city
+                )
+            `)
+            .eq('user_id', userId)
+            .eq('invitation_status', 'accepted');
+
+        if (teamsError) console.warn('Ошибка загрузки команд пользователя:', teamsError);
+
+        const userTeams = teamPlayers?.map(tp => tp.teams) || [];
+
+        // 3. Заполняем UI
+        this.renderUserProfile(profile, userTeams);
+
+    } catch (error) {
+        console.error('❌ Ошибка загрузки профиля пользователя:', error);
+        alert('Не удалось загрузить профиль');
+        this.closeUserProfile();
+    }
+},
+
+// Очистить предыдущие данные на экране просмотра
+clearUserProfileView() {
+    const elements = {
+        avatarImg: document.getElementById('view-profile-avatar-img'),
+        avatarText: document.getElementById('view-profile-avatar-text'),
+        name: document.getElementById('view-profile-name'),
+        role: document.getElementById('view-profile-role'),
+        city: document.getElementById('view-profile-city'),
+        matches: document.getElementById('view-profile-matches'),
+        teams: document.getElementById('view-profile-teams'),
+        aboutBadges: document.getElementById('view-about-badges'),
+        aboutSocials: document.getElementById('view-about-socials'),
+        bioText: document.getElementById('view-profile-bio-text'),
+        teamsList: document.getElementById('view-user-teams-list')
+    };
+
+    if (elements.avatarImg) {
+        elements.avatarImg.src = '';
+        elements.avatarImg.classList.add('hidden');
+    }
+    if (elements.avatarText) {
+        elements.avatarText.textContent = 'U';
+        elements.avatarText.style.display = 'block';
+    }
+    if (elements.name) elements.name.textContent = 'Загрузка...';
+    if (elements.role) elements.role.textContent = '';
+    if (elements.city) elements.city.innerHTML = '<i class="fas fa-map-marker-alt"></i> ';
+    if (elements.matches) elements.matches.textContent = '0';
+    if (elements.teams) elements.teams.textContent = '0';
+    if (elements.aboutBadges) elements.aboutBadges.innerHTML = '';
+    if (elements.aboutSocials) elements.aboutSocials.innerHTML = '';
+    if (elements.bioText) elements.bioText.textContent = '';
+    if (elements.teamsList) elements.teamsList.innerHTML = '';
+},
+
+// Заполнить UI данными просматриваемого пользователя
+renderUserProfile(profile, userTeams) {
+    const elements = {
+        avatarImg: document.getElementById('view-profile-avatar-img'),
+        avatarText: document.getElementById('view-profile-avatar-text'),
+        name: document.getElementById('view-profile-name'),
+        role: document.getElementById('view-profile-role'),
+        city: document.getElementById('view-profile-city'),
+        matches: document.getElementById('view-profile-matches'),
+        teamsCount: document.getElementById('view-profile-teams'),
+        aboutBadges: document.getElementById('view-about-badges'),
+        aboutSocials: document.getElementById('view-about-socials'),
+        bioText: document.getElementById('view-profile-bio-text'),
+        teamsList: document.getElementById('view-user-teams-list')
+    };
+
+    // Аватар
+    if (profile.avatar_url) {
+        elements.avatarImg.src = profile.avatar_url;
+        elements.avatarImg.classList.remove('hidden');
+        elements.avatarText.style.display = 'none';
+    } else {
+        elements.avatarImg.classList.add('hidden');
+        elements.avatarText.style.display = 'block';
+        elements.avatarText.textContent = (profile.nickname?.[0] || 'U').toUpperCase();
+    }
+
+    // Имя
+    elements.name.textContent = profile.nickname || 'Пользователь';
+
+    // Роль
+    let roleText = '';
+    if (profile.role === 'organizer') {
+        roleText = 'Организатор';
+        // Можно проверить подписку, но для простоты оставим так
+    } else {
+        roleText = 'Болельщик';
+    }
+    elements.role.textContent = roleText;
+
+    // Город
+    if (profile.city) {
+        const cityName = this.getCityName(profile.city);
+        elements.city.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${cityName}`;
+    } else {
+        elements.city.innerHTML = '';
+    }
+
+    // Количество матчей (пока заглушка, можно посчитать позже)
+    elements.matches.textContent = '0';
+    elements.teamsCount.textContent = userTeams.length;
+
+    // Бейджи (ФИО, возраст, пол)
+    const badgesHtml = [];
+    if (profile.full_name) {
+        badgesHtml.push(`
+            <div class="about-badge">
+                <i class="fas fa-user"></i>
+                <span>${profile.full_name}</span>
+            </div>
+        `);
+    }
+    if (profile.age) {
+        badgesHtml.push(`
+            <div class="about-badge">
+                <i class="fas fa-birthday-cake"></i>
+                <span>${profile.age} лет</span>
+            </div>
+        `);
+    }
+    if (profile.gender && profile.gender !== 'not_set') {
+        const genderMap = { male: 'Мужской', female: 'Женский' };
+        badgesHtml.push(`
+            <div class="about-badge">
+                <i class="fas fa-venus-mars"></i>
+                <span>${genderMap[profile.gender] || profile.gender}</span>
+            </div>
+        `);
+    }
+    elements.aboutBadges.innerHTML = badgesHtml.join('');
+
+    // Социальные ссылки
+    const socialsHtml = [];
+    if (profile.vk_url) {
+        socialsHtml.push(`
+            <a href="${profile.vk_url}" target="_blank" class="social-link">
+                <div class="social-icon vk">
+                    <i class="fab fa-vk"></i>
+                </div>
+                <span class="social-label">ВКонтакте</span>
+            </a>
+        `);
+    }
+    if (profile.phone) {
+        socialsHtml.push(`
+            <a href="tel:${profile.phone}" class="social-link">
+                <div class="social-icon phone">
+                    <i class="fas fa-phone-alt"></i>
+                </div>
+                <span class="social-label">${profile.phone}</span>
+            </a>
+        `);
+    }
+    elements.aboutSocials.innerHTML = socialsHtml.join('');
+
+    // Биография
+    if (profile.bio) {
+        elements.bioText.textContent = profile.bio;
+        elements.bioText.classList.remove('placeholder');
+    } else {
+        elements.bioText.textContent = 'Пользователь не заполнил информацию о себе';
+        elements.bioText.classList.add('placeholder');
+    }
+
+    // Команды пользователя
+    if (userTeams.length > 0) {
+        const teamsHtml = userTeams.map(team => `
+            <div class="team-card-mini" onclick="teamModule.show('${team.id}')">
+                <div class="team-avatar-mini">
+                    ${team.logo_url ? 
+                        `<img src="${team.logo_url}" alt="${team.name}">` : 
+                        `<span>${team.name.charAt(0)}</span>`
+                    }
+                </div>
+                <div class="team-info-mini">
+                    <div class="team-name-mini">${team.name}</div>
+                    <div class="team-meta-mini">
+                        <span class="team-sport-mini">${this.app.getSportName(team.sport)}</span>
+                        <span class="team-city-mini">${this.getCityName(team.city)}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        elements.teamsList.innerHTML = teamsHtml;
+        document.getElementById('view-user-teams-card')?.classList.remove('hidden');
+    } else {
+        document.getElementById('view-user-teams-card')?.classList.add('hidden');
+    }
+},
+
+// Показать заглушку, если профиль не найден
+showUserProfileNotFound() {
+    const elements = {
+        name: document.getElementById('view-profile-name'),
+        avatarText: document.getElementById('view-profile-avatar-text'),
+        aboutBadges: document.getElementById('view-about-badges'),
+        aboutSocials: document.getElementById('view-about-socials'),
+        bioText: document.getElementById('view-profile-bio-text'),
+        teamsCard: document.getElementById('view-user-teams-card')
+    };
+    if (elements.name) elements.name.textContent = 'Пользователь не найден';
+    if (elements.avatarText) elements.avatarText.textContent = '?';
+    if (elements.aboutBadges) elements.aboutBadges.innerHTML = '';
+    if (elements.aboutSocials) elements.aboutSocials.innerHTML = '';
+    if (elements.bioText) elements.bioText.textContent = 'Профиль не заполнен';
+    if (elements.teamsCard) elements.teamsCard.classList.add('hidden');
+},
+
+
     // Удалить старый аватар из Storage
     async deleteOldAvatar(userId) {
         try {
@@ -1399,31 +1671,68 @@ renderPlayerStats(stats) {
         return;
     }
 
-    let html = '<div class="stats-cards">';
-    stats.forEach(stat => {
+    // Если только один вид спорта — простая карточка без табов
+    if (stats.length === 1) {
+        const stat = stats[0];
         const sportName = app.getSportName(stat.sport);
-        html += `
-            <div class="stat-card-sport">
-                <div class="sport-header">
-                    <span class="sport-name">${sportName}</span>
-                    <span class="matches-count">${stat.matches_played} матчей</span>
-                </div>
-                <div class="stats-grid">`;
+        container.innerHTML = this.renderStatCard(stat, sportName);
+        return;
+    }
 
-        if (stat.goals) html += `<div class="stat-item"><span class="stat-value">${stat.goals}</span><span class="stat-label">Голов</span></div>`;
-        if (stat.assists) html += `<div class="stat-item"><span class="stat-value">${stat.assists}</span><span class="stat-label">Передач</span></div>`;
-        if (stat.saves) html += `<div class="stat-item"><span class="stat-value">${stat.saves}</span><span class="stat-label">Сейвов</span></div>`;
-        if (stat.points) html += `<div class="stat-item"><span class="stat-value">${stat.points}</span><span class="stat-label">Очков</span></div>`;
-        if (stat.rebounds) html += `<div class="stat-item"><span class="stat-value">${stat.rebounds}</span><span class="stat-label">Подборов</span></div>`;
-        if (stat.penalty_minutes) html += `<div class="stat-item"><span class="stat-value">${stat.penalty_minutes}</span><span class="stat-label">Штр. мин</span></div>`;
-        if (stat.yellow_cards) html += `<div class="stat-item"><span class="stat-value">${stat.yellow_cards}</span><span class="stat-label">ЖК</span></div>`;
-        if (stat.red_cards) html += `<div class="stat-item"><span class="stat-value">${stat.red_cards}</span><span class="stat-label">КК</span></div>`;
+    // Несколько видов — строим табы
+    let tabsHtml = '<div class="stats-tabs">';
+    let panesHtml = '<div class="stats-tab-content">';
 
-        html += `</div></div>`;
+    stats.forEach((stat, index) => {
+        const sportName = app.getSportName(stat.sport);
+        const activeClass = index === 0 ? ' active' : '';
+        const paneId = `stat-pane-${index}`;
+
+        tabsHtml += `<button class="stats-tab-button${activeClass}" data-pane="${paneId}">${sportName}</button>`;
+        panesHtml += `<div id="${paneId}" class="stats-tab-pane${activeClass}">${this.renderStatCard(stat, sportName)}</div>`;
     });
-    html += '</div>';
 
-    container.innerHTML = html;
+    tabsHtml += '</div>';
+    panesHtml += '</div>';
+
+    container.innerHTML = tabsHtml + panesHtml;
+
+    // Обработчики кликов на табы
+    const tabButtons = container.querySelectorAll('.stats-tab-button');
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            tabButtons.forEach(b => b.classList.remove('active'));
+            container.querySelectorAll('.stats-tab-pane').forEach(p => p.classList.remove('active'));
+
+            btn.classList.add('active');
+            const paneId = btn.dataset.pane;
+            const pane = document.getElementById(paneId);
+            if (pane) pane.classList.add('active');
+        });
+    });
+},
+	
+	renderStatCard(stat, sportName) {
+    let html = `
+        <div class="stat-card-sport">
+            <div class="sport-header">
+                <span class="sport-name">${sportName}</span>
+                <span class="matches-count">${stat.matches_played || 0} матчей</span>
+            </div>
+            <div class="stats-grid">
+    `;
+
+    if (stat.goals) html += `<div class="stat-item"><span class="stat-value">${stat.goals}</span><span class="stat-label">Голов</span></div>`;
+    if (stat.assists) html += `<div class="stat-item"><span class="stat-value">${stat.assists}</span><span class="stat-label">Передач</span></div>`;
+    if (stat.saves) html += `<div class="stat-item"><span class="stat-value">${stat.saves}</span><span class="stat-label">Сейвов</span></div>`;
+    if (stat.points) html += `<div class="stat-item"><span class="stat-value">${stat.points}</span><span class="stat-label">Очков</span></div>`;
+    if (stat.rebounds) html += `<div class="stat-item"><span class="stat-value">${stat.rebounds}</span><span class="stat-label">Подборов</span></div>`;
+    if (stat.penalty_minutes) html += `<div class="stat-item"><span class="stat-value">${stat.penalty_minutes}</span><span class="stat-label">Штр. мин</span></div>`;
+    if (stat.yellow_cards) html += `<div class="stat-item"><span class="stat-value">${stat.yellow_cards}</span><span class="stat-label">ЖК</span></div>`;
+    if (stat.red_cards) html += `<div class="stat-item"><span class="stat-value">${stat.red_cards}</span><span class="stat-label">КК</span></div>`;
+
+    html += `</div></div>`;
+    return html;
 },
 	
     // Обновить бейдж приглашений

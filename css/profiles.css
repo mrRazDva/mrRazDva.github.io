@@ -2021,13 +2021,22 @@ button {
 }
 
 .stat-value {
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: var(--text-primary);
-    line-height: 1.2;
-    background: linear-gradient(135deg, #fff, #ccc);
+    font-family: var(--font-display);  /* единый стиль с логотипом и рейтингами */
+    font-size: 2rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+    line-height: 1.2;
+}
+
+/* Адаптация для маленьких экранов (чтобы цифры не съезжали) */
+@media (max-width: 480px) {
+    .stat-value {
+        font-size: 1.5rem;
+    }
 }
 
 .stat-label {
@@ -2150,3 +2159,47 @@ button {
         font-size: 1.1rem;
     }
 }
+
+/* Табы для статистики */
+.stats-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.stats-tab-button {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.stats-tab-button.active {
+    background: var(--accent-green);
+    border-color: var(--accent-green);
+    color: #000;
+}
+
+.stats-tab-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.stats-tab-pane {
+    display: none;
+}
+
+.stats-tab-pane.active {
+    display: block;
+}
+
+/* Корректировка отступов внутри панели */
+.stats-tab-pane .stat-card-sport {
+    margin-top: 0;
+}
+
