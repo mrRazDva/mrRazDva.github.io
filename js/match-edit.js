@@ -29,6 +29,7 @@ const matchEditModule = {
             }
 
             this.currentMatch = match;
+			this.ourTeamId = isTeam1Owner ? match.team1.id : match.team2.id;
             this.originalMatch = JSON.parse(JSON.stringify(match));
             this.isEditing = false;
             
@@ -313,6 +314,16 @@ const matchEditModule = {
                     class: 'btn-primary', 
                     handler: () => this.showRosterManagement() 
                 });
+				
+				if (this.ourTeamId) {
+    buttons.push({
+        text: 'Статистика игроков',
+        icon: 'fa-chart-simple',
+        class: 'btn-info',
+        handler: () => this.showPlayerStats(this.currentMatch.id, this.ourTeamId)
+    });
+}
+				
                 buttons.push({ 
                     text: 'Отменить матч', 
                     icon: 'fa-ban', 
@@ -731,16 +742,19 @@ const matchEditModule = {
     },
 
     adjustScore(change, teamNumber) {
-        if (this.currentMatch.status !== 'live') return;
-        
-        const input = document.getElementById(
-            teamNumber === 1 ? 'edit-match-score1' : 'edit-match-score2'
-        );
-        
-        let value = parseInt(input.value) || 0;
-        value = Math.max(0, value + change);
-        input.value = value;
-    },
+    if (this.currentMatch.status !== 'live') return;
+    
+    const input = document.getElementById(
+        teamNumber === 1 ? 'edit-match-score1' : 'edit-match-score2'
+    );
+    
+    let value = parseInt(input.value) || 0;
+    value = Math.max(0, value + change);
+    input.value = value;
+    
+    // Сохраняем счет в БД
+    this.updateScore();
+},
 
     openMapForLocation() {
         mapModule.openMapForLocation();
@@ -792,6 +806,9 @@ const matchEditModule = {
         }
     },
 
+
+
+
     back() {
         this.clearTimer();
         if (this.isEditing) {
@@ -802,5 +819,366 @@ const matchEditModule = {
         } else {
             screenManager.back();
         }
+    },
+	
+	async showPlayerStats(matchId, teamId) {
+    try {
+        // Загружаем матч
+        const { data: match, error } = await app.supabase
+            .from('matches')
+            .select('*, team1:teams!matches_team1_fkey(*), team2:teams!matches_team2_fkey(*)')
+            .eq('id', matchId)
+            .single();
+        if (error) throw error;
+        this.currentMatch = match;
+		this.ourTeamId = teamId;		
+
+        // Загружаем состав на матч (игроки команды)
+        const { data: roster, error: rosterError } = await app.supabase
+            .from('match_rosters')
+            .select('*, player:team_players(*)')
+            .eq('match_id', matchId)
+            .eq('team_id', teamId);
+        if (rosterError) throw rosterError;
+
+        // Загружаем текущую статистику для этого матча и команды
+        const { data: stats, error: statsError } = await app.supabase
+            .from('match_player_stats')
+            .select('*')
+            .eq('match_id', matchId)
+            .eq('team_id', teamId);
+        if (statsError) throw statsError;
+
+        const statsMap = {};
+        stats?.forEach(s => { statsMap[s.team_player_id] = s; });
+
+        // Показываем экран
+        screenManager.show('screen-match-player-stats');
+
+        // Рендерим форму
+        this.renderPlayerStatsForm(match, roster, statsMap, teamId);
+    } catch (error) {
+        console.error('❌ Ошибка загрузки статистики:', error);
+        alert('Не удалось загрузить данные статистики');
     }
+},
+
+renderPlayerStatsForm(match, roster, statsMap, teamId) {
+    const container = document.getElementById('match-player-stats-content');
+    if (!container) return;
+
+    const sport = match.sport;
+    const config = window.sportStatConfig?.[sport] || { fields: [] };
+    const validationInfo = this.getScoreValidationInfo(); // нужно убедиться, что this.ourTeamId уже установлен
+    const { scoreField, teamScore } = validationInfo || { scoreField: 'goals', teamScore: 0 };
+
+    // Предварительно подсчитаем уже распределенные голы/очки из statsMap
+    let currentTotal = 0;
+    roster.forEach(item => {
+        const stat = statsMap[item.player.id] || {};
+        currentTotal += stat[scoreField] || 0;
+    });
+
+    const remaining = Math.max(0, teamScore - currentTotal);
+
+    let html = `
+        <div class="player-stats-container">
+            <div class="stats-header">
+                <h2>Статистика игроков</h2>
+                <span class="sport-badge">${app.getSportName(sport)}</span>
+            </div>
+            <div class="score-progress-bar">
+                <div class="progress-info">
+                    <span>Счет команды: <strong>${teamScore}</strong></span>
+                    <span>Распределено: <strong>${currentTotal}</strong></span>
+                    <span class="${remaining === 0 ? 'text-success' : 'text-warning'}">Осталось: <strong>${remaining}</strong></span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: ${teamScore > 0 ? (currentTotal / teamScore * 100) : 0}%"></div>
+                </div>
+            </div>
+            <div class="player-stats-list">`;
+
+    roster.forEach(item => {
+        const player = item.player;
+        const stat = statsMap[player.id] || {};
+        html += `
+            <div class="player-stat-card">
+                <div class="player-info-row">
+                    <span class="player-number">${player.number || '-'}</span>
+                    <span class="player-name">${player.name}</span>
+                    ${player.is_captain ? '<span class="captain-badge">C</span>' : ''}
+                    <span class="player-role">${player.role || ''}</span>
+                </div>
+                <div class="stat-fields-row">`;
+
+        config.fields.forEach(field => {
+            // Проверка видимости (например, для вратарей)
+            if (field.visible && !field.visible(player.role)) return;
+
+            const value = stat[field.name] || 0;
+            html += `
+                <div class="stat-field">
+    <label>${field.label}</label>
+    <div class="stat-input-group">
+        <button type="button" class="stat-btn minus" 
+                onclick="matchEditModule.adjustPlayerStat('${player.id}', '${field.name}', -1)">−</button>
+        <input type="number" 
+               class="stat-input" 
+               data-player-id="${player.id}"
+               data-stat-name="${field.name}"
+               value="${value}"
+               min="0" 
+               max="${field.max || 99}">
+        <button type="button" class="stat-btn plus" 
+                onclick="matchEditModule.adjustPlayerStat('${player.id}', '${field.name}', 1)">+</button>
+    </div>
+</div>`;
+        });
+
+        html += `</div></div>`;
+    });
+
+    // Добавим кнопку быстрого распределения оставшихся голов/очков
+    html += `</div>
+        <div class="player-stats-actions">
+            ${remaining > 0 ? `
+            <button class="btn btn-secondary" onclick="matchEditModule.distributeRemainingScore(${remaining}, '${scoreField}')">
+                <i class="fas fa-magic"></i> Распределить ${remaining} ${scoreField === 'goals' ? 'голов' : 
+                                                                       scoreField === 'points' ? 'очков' : 
+                                                                       'побед'}
+            </button>
+            ` : ''}
+            <button class="btn btn-primary" onclick="matchEditModule.savePlayerStats('${match.id}', '${teamId}')">
+                <i class="fas fa-save"></i> Сохранить статистику
+            </button>
+            <button class="btn btn-secondary" onclick="matchEditModule.back()">Отмена</button>
+        </div>
+    </div>`;
+
+    container.innerHTML = html;
+    
+    // Добавляем обработчики для обновления прогресса при изменении инпутов
+    this.attachStatInputListeners(scoreField, teamScore);
+},
+
+adjustPlayerStat(playerId, statName, delta) {
+    const input = document.querySelector(`.stat-input[data-player-id="${playerId}"][data-stat-name="${statName}"]`);
+    if (!input) return;
+    
+    let value = parseInt(input.value) || 0;
+    const max = parseInt(input.getAttribute('max')) || 99;
+    value = Math.min(max, Math.max(0, value + delta));
+    input.value = value;
+    
+    // Обновляем прогресс-бар (если есть)
+    if (this._boundUpdateProgress) this._boundUpdateProgress();
+},
+
+distributeRemainingScore(remaining, scoreField) {
+    if (remaining <= 0) return;
+    
+    const inputs = Array.from(document.querySelectorAll('.stat-input'))
+        .filter(input => input.dataset.statName === scoreField);
+    
+    if (inputs.length === 0) return;
+    
+    // Простое распределение: добавляем по 1 к первому игроку
+    // Можно сделать более умное распределение, но для начала так
+    inputs[0].value = (parseInt(inputs[0].value) || 0) + remaining;
+    
+    // Обновляем прогресс
+    if (this._boundUpdateProgress) this._boundUpdateProgress();
+},
+
+attachStatInputListeners(scoreField, teamScore) {
+    // Создаём новую функцию обновления
+    const updateProgress = () => {
+        let total = 0;
+        document.querySelectorAll('.stat-input').forEach(input => {
+            if (input.dataset.statName === scoreField) {
+                total += parseInt(input.value) || 0;
+            }
+        });
+        const remaining = Math.max(0, teamScore - total);
+
+        const progressFill = document.querySelector('.progress-fill');
+        const distributedSpan = document.querySelector('.progress-info span:nth-child(2) strong');
+        const remainingSpan = document.querySelector('.progress-info span:last-child strong');
+
+        if (progressFill) {
+            progressFill.style.width = teamScore > 0 ? (total / teamScore * 100) + '%' : '0%';
+        }
+        if (distributedSpan) distributedSpan.textContent = total;
+        if (remainingSpan) {
+            remainingSpan.textContent = remaining;
+            const parent = remainingSpan.parentElement;
+            if (parent) {
+                parent.className = remaining === 0 ? 'text-success' : 'text-warning';
+            }
+        }
+    };
+
+    // Сохраняем привязанную версию
+    this._boundUpdateProgress = updateProgress.bind(this);
+
+    // Обновляем слушатели на всех input
+    document.querySelectorAll('.stat-input').forEach(input => {
+        input.removeEventListener('input', this._boundUpdateProgress);
+        input.addEventListener('input', this._boundUpdateProgress);
+    });
+},
+
+async savePlayerStats(matchId, teamId) {
+    const inputs = document.querySelectorAll('.stat-input');
+    const statsData = [];
+    const validationInfo = this.getScoreValidationInfo();
+    
+    if (!validationInfo) {
+        alert('Ошибка: не удалось определить данные для валидации');
+        return;
+    }
+
+    const { scoreField, teamScore } = validationInfo;
+
+    // Собираем данные и сразу считаем сумму голов/очков
+    let totalPlayerScore = 0;
+
+    inputs.forEach(input => {
+        const playerId = input.dataset.playerId;
+        const statName = input.dataset.statName;
+        const value = parseInt(input.value) || 0;
+
+        let playerStat = statsData.find(s => s.team_player_id === playerId);
+        if (!playerStat) {
+            playerStat = {
+                match_id: matchId,
+                team_player_id: playerId,
+                team_id: teamId,
+                sport: this.currentMatch.sport,
+                created_by: authModule.getUserId()
+            };
+            statsData.push(playerStat);
+        }
+        playerStat[statName] = value;
+
+        // Суммируем только то поле, которое отвечает за результативность
+        if (statName === scoreField) {
+            totalPlayerScore += value;
+        }
+    });
+
+    // ВАЛИДАЦИЯ: сумма голов/очков игроков не может превышать счет команды
+    if (totalPlayerScore > teamScore) {
+        alert(`Ошибка: суммарное количество ${scoreField === 'goals' ? 'голов' : 
+              scoreField === 'points' ? 'очков' : 'выигранных партий'} 
+              игроков (${totalPlayerScore}) превышает счет команды (${teamScore})`);
+        return;
+    }
+
+    try {
+        // Удаляем старую статистику
+        await app.supabase
+            .from('match_player_stats')
+            .delete()
+            .eq('match_id', matchId)
+            .eq('team_id', teamId);
+
+        // Вставляем новую
+        if (statsData.length > 0) {
+            const { error } = await app.supabase
+                .from('match_player_stats')
+                .insert(statsData);
+            if (error) throw error;
+        }
+
+        alert('Статистика сохранена!');
+        this.back();
+    } catch (error) {
+        console.error('❌ Ошибка сохранения статистики:', error);
+        alert('Ошибка при сохранении');
+    }
+},
+
+// Возвращает scoreField для данного спорта и значение счета нашей команды
+getScoreValidationInfo() {
+    const match = this.currentMatch;
+    if (!match) return null;
+
+    // Определяем, какое поле отвечает за результативные действия в этом спорте
+    let scoreField;
+    switch (match.sport) {
+        case 'football':
+        case 'hockey':
+            scoreField = 'goals';
+            break;
+        case 'basketball':
+        case 'volleyball':
+            scoreField = 'points';
+            break;
+        case 'tabletennis':
+            scoreField = 'games_won';
+            break;
+        default:
+            scoreField = 'goals'; // fallback
+    }
+
+    // Парсим счет матча
+    const [score1, score2] = (match.score || '0:0').split(':').map(Number);
+    
+    // Определяем счет нашей команды
+    let teamScore;
+    if (match.team1?.id === this.ourTeamId) {
+        teamScore = score1;
+    } else if (match.team2?.id === this.ourTeamId) {
+        teamScore = score2;
+    } else {
+        teamScore = 0;
+    }
+
+    return { scoreField, teamScore, teamId: this.ourTeamId };
+},
+
+async updateScore() {
+    if (this.currentMatch.status !== 'live') return;
+    
+    const score1 = parseInt(document.getElementById('edit-match-score1').value) || 0;
+    const score2 = parseInt(document.getElementById('edit-match-score2').value) || 0;
+    const newScore = `${score1}:${score2}`;
+    
+    // Если счет не изменился — не делаем запрос
+    if (this.currentMatch.score === newScore) return;
+    
+    try {
+        const { error } = await app.supabase
+            .from('matches')
+            .update({ 
+                score: newScore,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', this.currentMatch.id);
+        
+        if (error) throw error;
+        
+        // Обновляем локальные данные
+        this.currentMatch.score = newScore;
+        
+        // Обновляем список матчей на главном экране
+        if (typeof matchesModule !== 'undefined' && matchesModule.renderMatches) {
+            matchesModule.renderMatches();
+        }
+        
+        // Если открыт экран деталей этого матча — обновляем его
+        if (app.selectedMatch?.id === this.currentMatch.id) {
+            matchesModule.renderMatchDetail(this.currentMatch);
+        }
+        
+        console.log('✅ Счет обновлен:', newScore);
+    } catch (error) {
+        console.error('❌ Ошибка обновления счета:', error);
+    }
+}
+	
+	
+	
 };

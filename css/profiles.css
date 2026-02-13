@@ -1694,3 +1694,459 @@ button {
     }
 }
 
+/* ===== СТАТИСТИКА ИГРОКОВ В МАТЧЕ ===== */
+
+.player-stats-container {
+    padding: 20px 0;
+}
+
+.stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.stats-header h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-green), #00cc6a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+
+/* Прогресс-бар распределения голов/очков */
+.score-progress-bar {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.progress-info span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.progress-info strong {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    margin-left: 4px;
+}
+
+.text-success {
+    color: var(--accent-green) !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.progress-track {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-green), #00cc6a);
+    border-radius: 4px;
+    transition: width 0.2s ease;
+}
+
+/* Список карточек игроков */
+.player-stats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.player-stat-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s;
+}
+
+.player-stat-card:hover {
+    border-color: rgba(0, 255, 136, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 255, 136, 0.1);
+}
+
+.player-info-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.player-number {
+    background: var(--accent-green);
+    color: #000;
+    font-weight: 800;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 8px rgba(0, 255, 136, 0.3);
+}
+
+.player-name {
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--text-primary);
+}
+
+.captain-badge {
+    background: gold;
+    color: #000;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.player-role {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-fields-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.stat-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 80px;
+}
+
+.stat-field label {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.stat-field input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 8px 10px;
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 1rem;
+    width: 80px;
+    transition: all 0.2s;
+}
+
+.stat-field input:focus {
+    border-color: var(--accent-green);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.2);
+}
+
+.stat-field input[type="number"]::-webkit-inner-spin-button,
+.stat-field input[type="number"]::-webkit-outer-spin-button {
+    opacity: 0.5;
+}
+
+/* Действия с кнопками */
+.player-stats-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-wrap: wrap;
+}
+
+.player-stats-actions .btn {
+    flex: 1 1 auto;
+    padding: 12px 16px;
+    font-weight: 600;
+    border-radius: 12px;
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+    .stat-fields-row {
+        gap: 12px;
+    }
+    
+    .stat-field {
+        min-width: 70px;
+    }
+    
+    .stat-field input {
+        width: 70px;
+        padding: 6px;
+    }
+    
+    .player-info-row {
+        gap: 8px;
+    }
+    
+    .player-name {
+        font-size: 0.95rem;
+    }
+}
+
+/* ===== СТАТИСТИКА В ПРОФИЛЕ ===== */
+
+.profile-stats-section {
+    background: rgba(10, 10, 10, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stats-section-title {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--accent-green);
+    font-weight: 600;
+}
+
+.stats-section-title i {
+    font-size: 1.1rem;
+}
+
+.stats-content {
+    min-height: 80px;
+}
+
+.empty-stats {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--text-secondary);
+    font-style: italic;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.stats-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.stat-card-sport {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 16px;
+    padding: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.2s;
+}
+
+.stat-card-sport:hover {
+    border-color: rgba(0, 255, 136, 0.2);
+}
+
+.sport-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sport-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--accent-blue);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.matches-count {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.08);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 16px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+}
+
+.stat-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.2;
+    background: linear-gradient(135deg, #fff, #ccc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Адаптация для маленьких экранов */
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+    
+    .stat-value {
+        font-size: 1.3rem;
+    }
+    
+    .stat-label {
+        font-size: 0.65rem;
+    }
+    
+    .sport-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
+/* ===== КНОПКИ +/– ДЛЯ СТАТИСТИКИ ===== */
+
+.stat-input-group {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.stat-input-group input {
+    border: none;
+    border-radius: 0;
+    width: 50px;
+    text-align: center;
+    background: transparent;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-primary);
+    padding: 8px 0;
+    -moz-appearance: textfield; /* Убирает стрелки в Firefox */
+}
+
+/* Полностью скрываем стандартные стрелки в браузерах */
+.stat-input-group input::-webkit-outer-spin-button,
+.stat-input-group input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.stat-input-group input:focus {
+    outline: none;
+    box-shadow: none;
+    border-color: transparent;
+}
+
+.stat-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.stat-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--accent-green);
+}
+
+.stat-btn:active {
+    background: rgba(0, 255, 136, 0.2);
+    color: var(--accent-green);
+}
+
+.stat-btn.minus {
+    border-right: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-btn.plus {
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-btn:disabled {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 480px) {
+    .stat-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.4rem;
+    }
+    
+    .stat-input-group input {
+        width: 60px;
+        font-size: 1.1rem;
+    }
+}

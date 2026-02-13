@@ -518,6 +518,10 @@ const profileModule = {
                 editImg.classList.add('hidden');
                 editText.style.display = 'block';
             }
+			
+			if (typeof profileModule !== 'undefined' && profileModule.loadPlayerStats) {
+    profileModule.loadPlayerStats();
+}
         }
     },
 
@@ -960,7 +964,9 @@ const profileModule = {
         
         // Обновляем бейджи приглашений
         await this.updateInvitationsBadge();
-    },
+		
+		await this.loadPlayerStats(); 
+},
     
     // Загрузить статистику профиля
     async loadProfileStats() {
@@ -1365,6 +1371,61 @@ checkEmptyState() {
         roleEl.textContent = roleText;
     },
     
+	async loadPlayerStats() {
+    const userId = authModule.getUserId();
+    if (!userId) return;
+
+    try {
+        const { data: stats, error } = await app.supabase
+            .from('player_career_stats')
+            .select('*')
+            .eq('user_id', userId)
+            .order('matches_played', { ascending: false });
+
+        if (error) throw error;
+
+        this.renderPlayerStats(stats || []);
+    } catch (error) {
+        console.error('❌ Ошибка загрузки статистики игрока:', error);
+    }
+},
+
+renderPlayerStats(stats) {
+    const container = document.getElementById('profile-stats-content');
+    if (!container) return;
+
+    if (!stats || stats.length === 0) {
+        container.innerHTML = '<div class="empty-stats">Нет данных о выступлениях</div>';
+        return;
+    }
+
+    let html = '<div class="stats-cards">';
+    stats.forEach(stat => {
+        const sportName = app.getSportName(stat.sport);
+        html += `
+            <div class="stat-card-sport">
+                <div class="sport-header">
+                    <span class="sport-name">${sportName}</span>
+                    <span class="matches-count">${stat.matches_played} матчей</span>
+                </div>
+                <div class="stats-grid">`;
+
+        if (stat.goals) html += `<div class="stat-item"><span class="stat-value">${stat.goals}</span><span class="stat-label">Голов</span></div>`;
+        if (stat.assists) html += `<div class="stat-item"><span class="stat-value">${stat.assists}</span><span class="stat-label">Передач</span></div>`;
+        if (stat.saves) html += `<div class="stat-item"><span class="stat-value">${stat.saves}</span><span class="stat-label">Сейвов</span></div>`;
+        if (stat.points) html += `<div class="stat-item"><span class="stat-value">${stat.points}</span><span class="stat-label">Очков</span></div>`;
+        if (stat.rebounds) html += `<div class="stat-item"><span class="stat-value">${stat.rebounds}</span><span class="stat-label">Подборов</span></div>`;
+        if (stat.penalty_minutes) html += `<div class="stat-item"><span class="stat-value">${stat.penalty_minutes}</span><span class="stat-label">Штр. мин</span></div>`;
+        if (stat.yellow_cards) html += `<div class="stat-item"><span class="stat-value">${stat.yellow_cards}</span><span class="stat-label">ЖК</span></div>`;
+        if (stat.red_cards) html += `<div class="stat-item"><span class="stat-value">${stat.red_cards}</span><span class="stat-label">КК</span></div>`;
+
+        html += `</div></div>`;
+    });
+    html += '</div>';
+
+    container.innerHTML = html;
+},
+	
     // Обновить бейдж приглашений
     async updateInvitationsBadge() {
         try {

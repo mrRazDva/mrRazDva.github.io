@@ -473,7 +473,16 @@
                 </button>
             </div>
         </div>
-
+<!-- Блок спортивной статистики -->
+<div class="profile-stats-section" id="profile-stats-section">
+    <h3 class="stats-section-title">
+        <i class="fas fa-chart-bar"></i>
+        Моя статистика
+    </h3>
+    <div id="profile-stats-content" class="stats-content">
+        <!-- Динамическая загрузка -->
+    </div>
+</div>
         <!-- Быстрые действия -->
         <div class="quick-actions">
             <button class="quick-action-btn2" onclick="app.showPayment()">
@@ -506,6 +515,8 @@
         <h3 class="about-title">Личная информация</h3>
     </div>
     
+	
+	
     <!-- 1. ИНФО-БЕЙДЖИ В РЯД (ФИО, возраст, пол) -->
     <div class="about-badges">
         <div class="about-badge hidden" id="profile-full-name-badge">
@@ -1315,6 +1326,18 @@
 </section>
 
 
+<!-- Screen: Match Player Stats -->
+<section id="screen-match-player-stats" class="screen">
+    <div class="container">
+        <button class="back-btn" onclick="matchEditModule.back()">
+            <i class="fas fa-arrow-left"></i> Назад
+        </button>
+        <div id="match-player-stats-content">
+            <!-- Контент заполняется динамически -->
+        </div>
+    </div>
+</section>
+
 <!-- Модальное окно для выбора на карте -->
 	<div id="location-picker-modal" class="modal-overlay hidden">
     <div class="modal-content" style="width: 95%; max-width: 600px; padding: 0; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
@@ -1431,6 +1454,7 @@
 	<script src="./js/app-modules/elo.js"></script>
 	<script src="./js/match-roster.js"></script>
 	<script src="./js/profile.js"></script>
+	<script src="./js/stat-config.js"></script>
 
 	<!-- Компоненты -->
 	<script src="./js/team.js"></script>

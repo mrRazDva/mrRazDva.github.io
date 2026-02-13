@@ -1363,30 +1363,150 @@ if (error) {
     },
 
     async deleteTeam() {
-        if (!confirm('Удалить команду?\n\nВсе данные будут безвозвратно удалены. Это действие нельзя отменить.')) {
-            return;
+    if (!this.currentTeam) {
+        alert('Команда не загружена');
+        return;
+    }
+
+    const teamId = this.currentTeam.id;
+    const teamName = this.currentTeam.name;
+
+    if (!confirm(`Вы уверены, что хотите полностью удалить команду "${teamName}"?\nЭто действие необратимо.`)) {
+        return;
+    }
+    if (!confirm('⚠️ ВСЕ данные команды будут удалены: состав, статистика, матчи, вызовы. Продолжить?')) {
+        return;
+    }
+
+    try {
+        // ========== 1. Получаем ВСЕ матчи, где команда участвует ==========
+        const { data: matches, error: matchesError } = await app.supabase
+            .from('matches')
+            .select('id, team1, team2')
+            .or(`team1.eq.${teamId},team2.eq.${teamId}`);
+
+        if (matchesError) throw matchesError;
+
+        const matchIds = matches?.map(m => m.id) || [];
+        console.log(`📊 Найдено матчей с участием команды: ${matchIds.length}`);
+
+        // ========== 2. Если есть матчи — ОБНУЛЯЕМ ссылки на команду ==========
+        if (matchIds.length > 0) {
+            // Обновляем team1 -> NULL для матчей, где команда была team1
+            await app.supabase
+                .from('matches')
+                .update({ team1: null })
+                .eq('team1', teamId)
+                .in('id', matchIds);
+            
+            // Обновляем team2 -> NULL для матчей, где команда была team2
+            await app.supabase
+                .from('matches')
+                .update({ team2: null })
+                .eq('team2', teamId)
+                .in('id', matchIds);
+            
+            console.log('✅ Ссылки на команду в матчах обнулены');
         }
-        
-        try {
-            // Удаляем игроков
-            await app.supabase.from('team_players').delete().eq('team_id', this.currentTeam.id);
-            
-            // Удаляем команду
-            await app.supabase.from('teams').delete().eq('id', this.currentTeam.id);
-            
-            alert('Команда удалена');
-            
-            if (navigationModule && navigationModule.showTeams) {
-                navigationModule.showTeams();
-            } else {
-                screenManager.show('screen-teams');
+
+        // ========== 3. Удаляем все зависимые записи по match_id ==========
+        if (matchIds.length > 0) {
+            // 3.1 Статистика игроков
+            await app.supabase
+                .from('match_player_stats')
+                .delete()
+                .in('match_id', matchIds);
+            console.log('✅ Удалена статистика игроков');
+
+            // 3.2 Составы на матчи
+            await app.supabase
+                .from('match_rosters')
+                .delete()
+                .in('match_id', matchIds);
+            console.log('✅ Удалены составы');
+
+            // 3.3 Вызовы, связанные с этими матчами
+            await app.supabase
+                .from('challenges')
+                .delete()
+                .in('match_id', matchIds);
+            console.log('✅ Удалены вызовы по match_id');
+
+            // 3.4 Комментарии
+            await app.supabase
+                .from('comments')
+                .delete()
+                .in('match_id', matchIds);
+            console.log('✅ Удалены комментарии');
+
+            // 3.5 Реакции
+            await app.supabase
+                .from('reactions')
+                .delete()
+                .in('match_id', matchIds);
+            console.log('✅ Удалены реакции');
+
+            // ========== 4. Пытаемся удалить сами матчи ==========
+            try {
+                const { error: deleteMatchesError } = await app.supabase
+                    .from('matches')
+                    .delete()
+                    .in('id', matchIds);
+                
+                if (deleteMatchesError) {
+                    console.warn('⚠️ Не удалось удалить матчи (возможно, нет прав):', deleteMatchesError.message);
+                } else {
+                    console.log(`✅ Удалено ${matchIds.length} матчей`);
+                }
+            } catch (e) {
+                console.warn('⚠️ Ошибка при удалении матчей:', e.message);
             }
-            
-        } catch (error) {
-            console.error('❌ Ошибка удаления команды:', error);
-            alert('Ошибка удаления: ' + error.message);
         }
-    },
+
+        // ========== 5. Удаляем вызовы, где команда является отправителем ==========
+        await app.supabase
+            .from('challenges')
+            .delete()
+            .eq('from_team_id', teamId);
+        console.log('✅ Удалены вызовы (отправитель)');
+
+        // ========== 6. Удаляем игроков команды ==========
+        await app.supabase
+            .from('team_players')
+            .delete()
+            .eq('team_id', teamId);
+        console.log('✅ Удалены игроки команды');
+
+        // ========== 7. Удаляем историю смены названия ==========
+        await app.supabase
+            .from('team_name_changes')
+            .delete()
+            .eq('team_id', teamId);
+        console.log('✅ Удалена история названий');
+
+        // ========== 8. Удаляем саму команду ==========
+        const { error: deleteTeamError } = await app.supabase
+            .from('teams')
+            .delete()
+            .eq('id', teamId);
+
+        if (deleteTeamError) throw deleteTeamError;
+
+        console.log(`✅ Команда "${teamName}" полностью удалена`);
+        alert('Команда успешно удалена');
+
+        navigationModule.showTeams();
+
+    } catch (error) {
+        console.error('❌ Ошибка при удалении команды:', error);
+        
+        let errorMessage = error.message || 'неизвестная ошибка';
+        if (error.code === '23503') {
+            errorMessage = 'Невозможно удалить команду, так как есть связанные матчи. Мы обнулили ссылки, но удалить матчи не удалось. Попробуйте удалить их вручную через интерфейс матча.';
+        }
+        alert('Не удалось удалить команду: ' + errorMessage);
+    }
+},
 
     back() {
         if (navigationModule && navigationModule.showTeams) {
