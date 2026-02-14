@@ -258,6 +258,13 @@ const matchWizardModule = {
     // ===== ШАГ 3: ВЫБОР СОСТАВА =====
 
 async loadStep3() {
+    // Сразу обновляем счетчики в шапке, используя уже имеющиеся данные
+    const requiredPlayers = this.getRequiredPlayersCount(this.formData.format);
+    const requiredSpan = document.getElementById('roster-required-count');
+    if (requiredSpan) requiredSpan.textContent = requiredPlayers;
+    const selectedSpan = document.getElementById('roster-selected-count');
+    if (selectedSpan) selectedSpan.textContent = this.formData.roster.length;
+
     const container = document.getElementById('wizard-roster-container');
     
     // Загружаем игроков команды
@@ -476,6 +483,10 @@ updateRosterCounter() {
     if (progressPercent) progressPercent.textContent = `${Math.round((selectedCount / requiredPlayers) * 100)}%`;
     
     // Обновляем счетчик в шапке wizard
+    const selectedCountSpan = document.getElementById('roster-selected-count');
+    if (selectedCountSpan) {
+        selectedCountSpan.textContent = selectedCount;
+    }
     const headerCounterEl = document.querySelector('.roster-progress-mini');
     if (headerCounterEl) {
         const isReady = selectedCount >= requiredPlayers;
