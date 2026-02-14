@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="./css/screens.css">
 	<link rel="stylesheet" href="./css/profiles.css">
 	<link rel="stylesheet" href="./css/hub.css">
+	<link rel="stylesheet" href="./css/match-on.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://api-maps.yandex.ru/2.1/?apikey=ваш_api_ключ&lang=ru_RU"></script>
 </head>
@@ -348,61 +349,188 @@
     </div>
 </section>
 
-        <!-- Screen: Create Match -->
-<section id="screen-create-match" class="screen">
-    <header class="header">
-        <div class="header-top-row">
-            
-            <h2 class="page-title">Новый матч</h2>
-			</div>
-    </header>
-        <form class="form-section" onsubmit="event.preventDefault(); app.createMatch();">
-            <div class="form-group">
-                <label>Команда</label>
-                <select id="match-team" required></select>
+        <!-- Screen: Create Match Wizard (новый онбординг) -->
+<section id="screen-create-match-wizard" class="screen">
+    <div class="wizard-container">
+        <!-- Прогресс-бар -->
+        <div class="wizard-progress">
+            <div class="progress-track">
+                <div class="progress-fill" id="wizard-progress-fill" style="width: 33%"></div>
             </div>
-            <div class="form-group">
-                <label>Соперник</label>
-                <select id="match-opponent">
-                    <option value="">Открытый матч</option>
-                </select>
+            <div class="progress-steps">
+                <span class="step-dot active" data-step="1">1</span>
+                <span class="step-dot" data-step="2">2</span>
+                <span class="step-dot" data-step="3">3</span>
+                <span class="step-dot" data-step="4">4</span>
             </div>
-            
-            <div class="form-group">
-                <label>Формат игры</label>
-                <select id="match-format" required>
-                    <option value="2x2">2 на 2</option>
-                    <option value="3x3">3 на 3</option>
-                    <option value="4x4">4 на 4</option>
-                    <option value="5x5">5 на 5</option>
-                    <option value="7x7">7 на 7</option>
-                    <option value="11x11">11 на 11</option>
-                </select>
+            <div class="step-labels">
+                <span class="active">Команда</span>
+                <span>Формат</span>
+                <span>Состав</span>
+                <span>Детали</span>
+            </div>
+        </div>
+
+        <!-- Шаг 1: Выбор команды -->
+        <div class="wizard-step active" id="step-1">
+            <div class="step-header">
+                <h2 class="step-title">Выберите команду</h2>
+                <p class="step-subtitle">Какая команда будет играть?</p>
             </div>
             
-            <div class="form-group">
-                <label>Дата и время</label>
-                <input type="datetime-local" id="match-datetime" required>
+            <div class="teams-selection-grid" id="wizard-teams-grid">
+                <!-- Загружается динамически -->
+                <div class="loading-skeleton">
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Место</label>
-                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                    <input type="text" id="match-location" placeholder="Стадион" required style="flex: 1;">
-                    <button type="button" class="btn btn-secondary" onclick="app.openMapForLocation()" 
-                            style="width: auto; padding: 10px 15px; font-size: 0.85rem; white-space: nowrap;">
-                        <i class="fas fa-map-marker-alt"></i> На карте
+            
+            <div class="empty-state hidden" id="no-teams-state">
+                <div class="empty-icon">⚽</div>
+                <h3>У вас пока нет команд</h3>
+                <p>Создайте команду, чтобы начать создавать матчи</p>
+                <button class="btn btn-primary" onclick="navigationModule.showCreateTeam()">
+                    <i class="fas fa-plus"></i> Создать команду
+                </button>
+            </div>
+        </div>
+
+        <!-- Шаг 2: Выбор формата -->
+        <div class="wizard-step" id="step-2">
+            <div class="step-header">
+                <h2 class="step-title">Формат игры</h2>
+                <p class="step-subtitle" id="format-sport-subtitle">Футбол</p>
+            </div>
+            
+            <div class="format-cards-grid" id="format-cards">
+                <!-- Форматы генерируются по спорту -->
+            </div>
+            
+            <div class="format-hint" id="format-hint">
+                <i class="fas fa-lightbulb"></i>
+                <span>5 на 5 — самый популярный формат для мини-футбола</span>
+            </div>
+        </div>
+
+        <!-- Шаг 3: Выбор состава (интеграция существующего UI) -->
+        <div class="wizard-step" id="step-3">
+            <div class="step-header compact">
+                <h2 class="step-title">Выберите состав</h2>
+                <div class="roster-progress-mini">
+                    <span id="roster-selected-count">0</span> из <span id="roster-required-count">5</span>
+                </div>
+            </div>
+            
+            <!-- Сюда встраиваем твой текущий UI из match-roster.js -->
+            <div id="wizard-roster-container" class="wizard-roster-wrapper">
+                <!-- Контент загружается из matchRosterModule -->
+            </div>
+        </div>
+
+        <!-- Шаг 4: Детали матча -->
+        <div class="wizard-step" id="step-4">
+            <div class="step-header">
+                <h2 class="step-title">Детали матча</h2>
+                <p class="step-subtitle">Когда и где состоится игра?</p>
+            </div>
+            
+            <!-- Режим матча -->
+            <div class="match-mode-selector">
+                <h3 class="section-label">Режим матча</h3>
+                <div class="mode-cards">
+                    <button type="button" class="mode-card active" data-mode="open" onclick="matchWizardModule.setMatchMode('open')">
+                        <div class="mode-icon open">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <div class="mode-info">
+                            <span class="mode-title">Открытый матч</span>
+                            <span class="mode-desc">Любая команда может бросить вызов</span>
+                        </div>
+                        <i class="fas fa-check-circle mode-check"></i>
+                    </button>
+                    
+                    <button type="button" class="mode-card" data-mode="private" onclick="matchWizardModule.setMatchMode('private')">
+                        <div class="mode-icon private">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="mode-info">
+                            <span class="mode-title">Приватный</span>
+                            <span class="mode-desc">Только по приглашению</span>
+                        </div>
+                        <i class="fas fa-check-circle mode-check"></i>
                     </button>
                 </div>
-                <div id="location-coordinates" style="font-size: 0.85rem; color: var(--text-secondary); padding: 8px 0;">
-                    <i class="fas fa-info-circle"></i> Координаты не выбраны
+            </div>
+
+            <!-- Дата и время -->
+            <div class="datetime-section">
+                <h3 class="section-label">Когда?</h3>
+                <div class="datetime-picker-modern">
+                    <div class="date-input-wrapper">
+                        <i class="fas fa-calendar"></i>
+                        <input type="date" id="wizard-match-date" required>
+                    </div>
+                    <div class="time-input-wrapper">
+                        <i class="fas fa-clock"></i>
+                        <input type="time" id="wizard-match-time" required>
+                    </div>
+                </div>
+                
+            </div>
+
+            <!-- Локация -->
+            <div class="location-section">
+                <h3 class="section-label">Где?</h3>
+                <div class="location-input-modern" onclick="matchWizardModule.openLocationPicker()">
+                    <div class="location-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="location-text" id="wizard-location-text">
+                        <span class="placeholder">Выберите место на карте</span>
+                    </div>
+                    <div class="location-chevron">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+                <div class="location-preview-mini hidden" id="wizard-location-preview">
+                    <div class="map-thumb" id="wizard-map-thumb"></div>
+                    <button type="button" class="btn-change-location" onclick="matchWizardModule.openLocationPicker()">
+                        Изменить
+                    </button>
                 </div>
             </div>
 
-            <input type="hidden" id="match-lat">
-            <input type="hidden" id="match-lng">
+            <!-- Итоговая карточка -->
+            <div class="match-summary-card" id="match-summary">
+                <h4>Проверьте детали</h4>
+                <div class="summary-row">
+                    <span class="summary-label">Команда:</span>
+                    <span class="summary-value" id="summary-team">-</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Формат:</span>
+                    <span class="summary-value" id="summary-format">-</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Состав:</span>
+                    <span class="summary-value" id="summary-roster">- игроков</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Когда:</span>
+                    <span class="summary-value" id="summary-datetime">-</span>
+                </div>
+            </div>
+			
+			<div class="step4-controls-footer">
+    <button class="step4-next-btn" id="step4-next-btn" onclick="matchWizardModule.createMatch()" disabled>
+        <span>Создать матч</span>
+        <i class="fas fa-check"></i>
+    </button>
+</div>
+        </div>
 
-            <button type="submit" class="btn btn-primary">Создать матч</button>
-        </form>
+        
     </div>
 </section>
 
@@ -1365,71 +1493,7 @@
     </div>
 </section>
 
-<!-- Модальное окно для выбора на карте -->
-	<div id="location-picker-modal" class="modal-overlay hidden">
-    <div class="modal-content" style="width: 95%; max-width: 600px; padding: 0; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
-        <!-- Заголовок с градиентом -->
-        <div style="background: linear-gradient(135deg, var(--accent-green), var(--accent-blue)); padding: 20px 24px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <h3 class="modal-title" style="font-size: 1.2rem; margin: 0; color: #000; font-weight: 700;">Выберите место на карте</h3>
-                    
-                </div>
-                <button class="close-btn" onclick="app.closeLocationPicker()" 
-                        style="background: rgba(0, 0, 0, 0.2); color: #000; border: none; width: 36px; height: 36px; border-radius: 50%;">
-                    &times;
-                </button>
-            </div>
-        </div>
 
-        <div style="background: var(--bg-card);">
-            <!-- Карта -->
-            <div id="location-map" class="map-container" 
-                 style="height: 250px; margin: 0; border: none; border-bottom: 1px solid var(--border-color); border-radius: 0;"></div>
-            
-            <!-- Форма под картой -->
-<div style="padding: 24px;">
-    
-    
-    <div class="form-group" style="margin-bottom: 20px;">
-        <label style="font-size: 0.9rem; margin-bottom: 8px; display: block; color: var(--text-secondary); font-weight: 500;">
-            <i class="fas fa-tag" style="margin-right: 8px; color: var(--accent-blue);"></i>
-            Название места
-        </label>
-        <input type="text" id="location-name" placeholder="Например: Стадион 'Белкино'" 
-               class="modal-input">
-    </div>
-    
-    <div class="form-group" style="margin-bottom: 20px;">
-        <label style="font-size: 0.9rem; margin-bottom: 8px; display: block; color: var(--text-secondary); font-weight: 500;">
-            <i class="fas fa-road" style="margin-right: 8px; color: var(--accent-blue);"></i>
-            Адрес
-        </label>
-        <textarea id="location-address" rows="2" placeholder="Улица, дом, район..." 
-                  class="modal-textarea"></textarea>
-    </div>
-    
-    <div style="display: flex; gap: 12px; margin-top: 28px;">
-        <button class="btn btn-primary" onclick="app.confirmLocation()" 
-                style="flex: 1; padding: 14px; font-size: 1rem; border-radius: 12px; background: linear-gradient(135deg, var(--accent-green), #00cc6a); color: #000; border: none; font-weight: 700; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);">
-            <i class="fas fa-check-circle" style="margin-right: 8px;"></i>Выбрать место
-        </button>
-        <button class="btn btn-secondary" onclick="app.closeLocationPicker()" 
-                style="flex: 1; padding: 14px; font-size: 1rem; border-radius: 12px; background: transparent; border: 2px solid var(--border); color: var(--text-secondary); font-weight: 600;">
-            <i class="fas fa-times" style="margin-right: 8px;"></i>Отмена
-        </button>
-    </div>
-    
-    <div style="margin-top: 20px; padding: 12px; background: rgba(0, 204, 255, 0.05); border-radius: 10px; text-align: center;">
-        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0; line-height: 1.4;">
-            <i class="fas fa-lightbulb" style="color: var(--accent-blue); margin-right: 6px;"></i>
-            Кликните на карте, чтобы выбрать место проведения матча
-        </p>
-    </div>
-</div>
-        </div>
-    </div>
-</div>
 
          <!-- Screen: User Profile (просмотр чужого профиля) -->
 <section id="screen-user-profile" class="screen">
@@ -1534,6 +1598,7 @@
 	<script src="./js/match-roster.js"></script>
 	<script src="./js/profile.js"></script>
 	<script src="./js/stat-config.js"></script>
+	<script src="./js/match-wizard.js"></script>
 
 	<!-- Компоненты -->
 	<script src="./js/team.js"></script>
@@ -1542,5 +1607,73 @@
 
 	<!-- Главный app.js в самом конце -->
 	<script src="./js/app.js"></script>
+	
+	
+	<!-- Модальное окно для выбора на карте -->
+	<div id="location-picker-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="width: 95%; max-width: 600px; padding: 0; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
+        <!-- Заголовок с градиентом -->
+        <div style="background: linear-gradient(135deg, var(--accent-green), var(--accent-blue)); padding: 20px 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 class="modal-title" style="font-size: 1.2rem; margin: 0; color: #000; font-weight: 700;">Выберите место на карте</h3>
+                    
+                </div>
+                <button class="close-btn" onclick="app.closeLocationPicker()" 
+                        style="background: rgba(0, 0, 0, 0.2); color: #000; border: none; width: 36px; height: 36px; border-radius: 50%;">
+                    &times;
+                </button>
+            </div>
+        </div>
+
+        <div style="background: var(--bg-card);">
+            <!-- Карта -->
+            <div id="location-map" class="map-container" 
+                 style="height: 250px; margin: 0; border: none; border-bottom: 1px solid var(--border-color); border-radius: 0;"></div>
+            
+            <!-- Форма под картой -->
+<div style="padding: 24px;">
+    
+    
+    <div class="form-group" style="margin-bottom: 20px;">
+        <label style="font-size: 0.9rem; margin-bottom: 8px; display: block; color: var(--text-secondary); font-weight: 500;">
+            <i class="fas fa-tag" style="margin-right: 8px; color: var(--accent-blue);"></i>
+            Название места
+        </label>
+        <input type="text" id="location-name" placeholder="Например: Стадион 'Белкино'" 
+               class="modal-input">
+    </div>
+    
+    <div class="form-group" style="margin-bottom: 20px;">
+        <label style="font-size: 0.9rem; margin-bottom: 8px; display: block; color: var(--text-secondary); font-weight: 500;">
+            <i class="fas fa-road" style="margin-right: 8px; color: var(--accent-blue);"></i>
+            Адрес
+        </label>
+        <textarea id="location-address" rows="2" placeholder="Улица, дом, район..." 
+                  class="modal-textarea"></textarea>
+    </div>
+    
+    <div style="display: flex; gap: 12px; margin-top: 28px;">
+        <button class="btn btn-primary" onclick="app.confirmLocation()" 
+                style="flex: 1; padding: 14px; font-size: 1rem; border-radius: 12px; background: linear-gradient(135deg, var(--accent-green), #00cc6a); color: #000; border: none; font-weight: 700; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);">
+            <i class="fas fa-check-circle" style="margin-right: 8px;"></i>Выбрать место
+        </button>
+        <button class="btn btn-secondary" onclick="app.closeLocationPicker()" 
+                style="flex: 1; padding: 14px; font-size: 1rem; border-radius: 12px; background: transparent; border: 2px solid var(--border); color: var(--text-secondary); font-weight: 600;">
+            <i class="fas fa-times" style="margin-right: 8px;"></i>Отмена
+        </button>
+    </div>
+    
+    <div style="margin-top: 20px; padding: 12px; background: rgba(0, 204, 255, 0.05); border-radius: 10px; text-align: center;">
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0; line-height: 1.4;">
+            <i class="fas fa-lightbulb" style="color: var(--accent-blue); margin-right: 6px;"></i>
+            Кликните на карте, чтобы выбрать место проведения матча
+        </p>
+    </div>
+</div>
+        </div>
+    </div>
+</div>
+	
 </body>
 </html>

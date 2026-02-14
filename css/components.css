@@ -4509,21 +4509,7 @@ select:focus {
     font-size: 0.8rem;
 }
 
-.page-title {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-    text-align: center;
-    flex-grow: 1;
-    font-family: 'Russo One', sans-serif;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    background: linear-gradient(45deg, var(--accent-green), var(--accent-blue));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
+
 
 /* Простой и эффективный вариант */
 .header-top-row {

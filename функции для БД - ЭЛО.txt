@@ -1,0 +1,145 @@
+-- ============================================
+-- ПОЛИТИКИ ДЛЯ ТАБЛИЦЫ teams (исправленные)
+-- ============================================
+
+-- 1. Включаем RLS
+ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
+
+-- 2. Удаляем старые политики (если есть)
+DROP POLICY IF EXISTS "Users can update own team" ON public.teams;
+DROP POLICY IF EXISTS "Users can view all teams" ON public.teams;
+DROP POLICY IF EXISTS "Users can insert own team" ON public.teams;
+
+-- 3. SELECT - все могут просматривать команды
+CREATE POLICY "Anyone can view teams"
+ON public.teams FOR SELECT
+USING (true);
+
+-- 4. INSERT - только организаторы могут создавать команды
+CREATE POLICY "Organizers can insert teams"
+ON public.teams FOR INSERT
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid() AND role = 'organizer'
+    )
+);
+
+-- 5. UPDATE - ВЛАДЕЛЕЦ ИЛИ СИСТЕМА (для ELO/статистики)
+-- ВАЖНО: Разрешаем обновление если:
+-- а) Пользователь - владелец команды (для редактирования)
+-- б) Это сервисная роль/функция (для обновления рейтинга после матча)
+CREATE POLICY "Team owners or service can update"
+ON public.teams FOR UPDATE
+USING (
+    owner_id = auth.uid() 
+    OR 
+    EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid() AND role = 'admin'
+    )
+)
+WITH CHECK (
+    owner_id = auth.uid() 
+    OR 
+    EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid() AND role = 'admin'
+    )
+);
+
+-- ============================================
+-- АЛЬТЕРНАТИВНЫЙ ВАРИАНТ: Функция для обновления рейтинга
+-- ============================================
+
+-- Создаем функцию, которая обходит RLS (SECURITY DEFINER)
+CREATE OR REPLACE FUNCTION update_team_elo_after_match(
+    p_match_id UUID,
+    p_team1_id UUID,
+    p_team2_id UUID,
+    p_score TEXT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER -- Выполняется с правами создателя функции
+AS $$
+DECLARE
+    v_team1_rating INTEGER;
+    v_team2_rating INTEGER;
+    v_team1_wins INTEGER;
+    v_team1_losses INTEGER;
+    v_team1_draws INTEGER;
+    v_team2_wins INTEGER;
+    v_team2_losses INTEGER;
+    v_team2_draws INTEGER;
+    v_score1 INTEGER;
+    v_score2 INTEGER;
+    v_expected1 NUMERIC;
+    v_expected2 NUMERIC;
+    v_k_factor INTEGER := 32;
+    v_new_rating1 INTEGER;
+    v_new_rating2 INTEGER;
+BEGIN
+    -- Получаем текущие данные команд
+    SELECT elo_rating, wins, losses, draws 
+    INTO v_team1_rating, v_team1_wins, v_team1_losses, v_team1_draws
+    FROM teams WHERE id = p_team1_id;
+    
+    SELECT elo_rating, wins, losses, draws 
+    INTO v_team2_rating, v_team2_wins, v_team2_losses, v_team2_draws
+    FROM teams WHERE id = p_team2_id;
+    
+    -- Разбираем счет
+    v_score1 := split_part(p_score, ':', 1)::INTEGER;
+    v_score2 := split_part(p_score, ':', 2)::INTEGER;
+    
+    -- Расчет ELO
+    v_expected1 := 1 / (1 + power(10, (v_team2_rating - v_team1_rating)::NUMERIC / 400));
+    v_expected2 := 1 / (1 + power(10, (v_team1_rating - v_team2_rating)::NUMERIC / 400));
+    
+    IF v_score1 > v_score2 THEN
+        -- Победа команды 1
+        v_new_rating1 := round(v_team1_rating + v_k_factor * (1 - v_expected1));
+        v_new_rating2 := round(v_team2_rating + v_k_factor * (0 - v_expected2));
+        v_team1_wins := v_team1_wins + 1;
+        v_team2_losses := v_team2_losses + 1;
+    ELSIF v_score2 > v_score1 THEN
+        -- Победа команды 2
+        v_new_rating1 := round(v_team1_rating + v_k_factor * (0 - v_expected1));
+        v_new_rating2 := round(v_team2_rating + v_k_factor * (1 - v_expected2));
+        v_team2_wins := v_team2_wins + 1;
+        v_team1_losses := v_team1_losses + 1;
+    ELSE
+        -- Ничья
+        v_new_rating1 := round(v_team1_rating + v_k_factor * (0.5 - v_expected1));
+        v_new_rating2 := round(v_team2_rating + v_k_factor * (0.5 - v_expected2));
+        v_team1_draws := v_team1_draws + 1;
+        v_team2_draws := v_team2_draws + 1;
+    END IF;
+    
+    -- Обновляем команду 1
+    UPDATE teams SET 
+        elo_rating = v_new_rating1,
+        wins = v_team1_wins,
+        losses = v_team1_losses,
+        draws = v_team1_draws,
+        updated_at = NOW()
+    WHERE id = p_team1_id;
+    
+    -- Обновляем команду 2
+    UPDATE teams SET 
+        elo_rating = v_new_rating2,
+        wins = v_team2_wins,
+        losses = v_team2_losses,
+        draws = v_team2_draws,
+        updated_at = NOW()
+    WHERE id = p_team2_id;
+    
+    -- Записываем в историю
+    INSERT INTO elo_history (match_id, team_id, old_rating, new_rating, rating_change, created_at)
+    VALUES 
+        (p_match_id, p_team1_id, v_team1_rating, v_new_rating1, v_new_rating1 - v_team1_rating, NOW()),
+        (p_match_id, p_team2_id, v_team2_rating, v_new_rating2, v_new_rating2 - v_team2_rating, NOW());
+    
+END;
+$$;

@@ -160,19 +160,18 @@ const navigationModule = {
     
     // Создание матча
     showCreateMatch() {
-        if (!authModule.isAuthenticated()) {
-            alert('Сначала войдите в систему');
-            return;
-        }
-        
-        if (!authModule.hasRole('organizer') || !authModule.isProActive()) {
-            alert('Только организаторы с активной подпиской могут создавать матчи');
-            return;
-        }
-        
-        screenManager.show('screen-create-match');
-        matchesModule.loadUserTeamsForMatch();
-    },
+    if (!authModule.isAuthenticated()) {
+        alert('Сначала войдите в систему');
+        return;
+    }
+    
+    if (!authModule.hasRole('organizer') || !authModule.isProActive()) {
+        alert('Только организаторы с активной подпиской могут создавать матчи');
+        return;
+    }
+    
+    matchWizardModule.show();
+},
     
     // Профиль
     async showProfile() {

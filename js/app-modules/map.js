@@ -81,7 +81,6 @@ initLocationMap() {
     const mapContainer = document.getElementById('location-map');
     if (!mapContainer) return;
     
-    // Устанавливаем высоту контейнера в соответствии с новым дизайном
     mapContainer.style.minHeight = '250px';
     mapContainer.style.height = '100%';
     
@@ -94,47 +93,50 @@ initLocationMap() {
         controls: ['zoomControl', 'searchControl', 'fullscreenControl']
     });
     
-    this.locationMap.events.add('click', (e) => {
-        this.handleMapClick(e);
-    });
+    this.locationMap.events.add('click', (e) => this.handleMapClick(e));
     
-    const lat = document.getElementById('match-lat').value;
-    const lng = document.getElementById('match-lng').value;
-    
-    if (lat && lng) {
-        this.showSelectedPoint([parseFloat(lat), parseFloat(lng)]);
-        this.reverseGeocode([parseFloat(lat), parseFloat(lng)]);
+    // Безопасно читаем скрытые поля, если они существуют
+    const latInput = document.getElementById('match-lat');
+    const lngInput = document.getElementById('match-lng');
+    if (latInput && lngInput && latInput.value && lngInput.value) {
+        const lat = parseFloat(latInput.value);
+        const lng = parseFloat(lngInput.value);
+        if (!isNaN(lat) && !isNaN(lng)) {
+            this.showSelectedPoint([lat, lng]);
+            this.reverseGeocode([lat, lng]);
+        }
     }
+
 },
     
     // Обработка клика на карту
     handleMapClick(e) {
-        const coords = e.get('coords');
-        
-        if (this.selectedPlacemark) {
-            this.locationMap.geoObjects.remove(this.selectedPlacemark);
-        }
-        
-        this.selectedPlacemark = new ymaps.Placemark(coords, {
-            hintContent: 'Выбранное место',
-            balloonContent: 'Место проведения матча'
-        }, {
-            preset: 'islands#redDotIcon',
-            draggable: true
-        });
-        
-        this.locationMap.geoObjects.add(this.selectedPlacemark);
-        this.selectedCoords = coords;
-       
-        this.reverseGeocode(coords);
-        
-        this.selectedPlacemark.events.add('dragend', () => {
-            const newCoords = this.selectedPlacemark.geometry.getCoordinates();
-            this.selectedCoords = newCoords;
-            this.updateCoordinatesDisplay(newCoords);
-            this.reverseGeocode(newCoords);
-        });
-    },
+    const coords = e.get('coords');
+    
+    if (this.selectedPlacemark) {
+        this.locationMap.geoObjects.remove(this.selectedPlacemark);
+    }
+    
+    this.selectedPlacemark = new ymaps.Placemark(coords, {
+        hintContent: 'Выбранное место',
+        balloonContent: 'Место проведения матча'
+    }, {
+        preset: 'islands#redDotIcon',
+        draggable: true
+    });
+    
+    this.locationMap.geoObjects.add(this.selectedPlacemark);
+    this.selectedCoords = coords;
+   
+    this.reverseGeocode(coords);
+    
+    this.selectedPlacemark.events.add('dragend', () => {
+        const newCoords = this.selectedPlacemark.geometry.getCoordinates();
+        this.selectedCoords = newCoords;
+        // this.updateCoordinatesDisplay(newCoords); // ❌ Удалите эту строку
+        this.reverseGeocode(newCoords);
+    });
+},
     
     
     
