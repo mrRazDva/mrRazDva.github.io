@@ -10,29 +10,34 @@ async show(teamId, matchId = null) {
     
     try {
         const { data: team, error } = await app.supabase
-    .from('teams')
-    .select(`
-        *,
-        players:team_players(
-            id,
-            name,
-            number,
-            photo_url,
-            role,
-            is_captain,
-            user_id,
-            invitation_status,
-            is_linked,
-            order_index,
-            info
-        )
-    `)
-    .eq('id', teamId)
-    .single();
+        .from('teams')
+        .select(`
+            *,
+            players:team_players(
+                id,
+                name,
+                number,
+                photo_url,
+                role,
+                is_captain,
+                user_id,
+                invitation_status,
+                is_linked,
+                order_index,
+                info
+            )
+        `)
+        .eq('id', teamId)
+        .single();
 
-        if (error) throw error;
+    if (error) throw error;
 
-        this.currentTeam = team;
+    // ✅ Фильтруем игроков: показываем только принятых или непривязанных
+    team.players = (team.players || []).filter(p => 
+        p.invitation_status === 'accepted' || p.invitation_status === 'none'
+    );
+
+    this.currentTeam = team;
         
         // Если передан matchId, загружаем состав на матч
         if (matchId && typeof matchRosterModule !== 'undefined') {

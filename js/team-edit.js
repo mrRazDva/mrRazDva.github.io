@@ -82,7 +82,7 @@ const teamEditModule = {
             <div class="nickname-input-container" style="margin-bottom: 10px;">
                 <input type="text" 
                        id="add-player-nickname" 
-                       placeholder="@никнейм"
+                       placeholder="никнейм"
                        class="nickname-input"
                        oninput="teamEditModule.checkNickname(this.value)"
                        style="width: 100%; padding: 12px 15px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg-card); color: var(--text-primary); font-size: 1rem;">
@@ -709,26 +709,30 @@ if (error) {
     },
 
     renderRoster() {
-        const container = document.getElementById('edit-roster-list');
-        const players = this.currentTeam?.players || [];
-        const countBadge = document.getElementById('players-count');
-        
-        if (countBadge) countBadge.textContent = players.length;
-        
-        if (players.length === 0) {
-            if (container) container.innerHTML = '';
-            const emptyState = document.getElementById('empty-roster-state');
-            if (emptyState) emptyState.classList.remove('hidden');
-            return;
-        }
-        
+    const container = document.getElementById('edit-roster-list');
+    const players = this.currentTeam?.players || [];
+    const countBadge = document.getElementById('players-count');
+    
+    if (countBadge) countBadge.textContent = players.length;
+    
+    if (players.length === 0) {
+        if (container) container.innerHTML = '';
         const emptyState = document.getElementById('empty-roster-state');
-        if (emptyState) emptyState.classList.add('hidden');
+        if (emptyState) emptyState.classList.remove('hidden');
+        return;
+    }
+    
+    const emptyState = document.getElementById('empty-roster-state');
+    if (emptyState) emptyState.classList.add('hidden');
+    
+    if (!container) return;
+    
+    container.innerHTML = players.map((player, index) => {
+        // Добавляем класс player-pending для игроков, ожидающих подтверждения
+        const pendingClass = player.invitation_status === 'pending' ? 'player-pending' : '';
         
-        if (!container) return;
-        
-        container.innerHTML = players.map((player, index) => `
-            <div class="player-card-modern ${player.is_captain ? 'captain' : ''}" 
+        return `
+            <div class="player-card-modern ${player.is_captain ? 'captain' : ''} ${pendingClass}" 
                  data-id="${player.id}" 
                  draggable="${this.isSortMode}"
                  ondragstart="teamEditModule.handleDragStart(event, '${player.id}')"
@@ -747,7 +751,7 @@ if (error) {
                     <div class="player-name-modern">
                         ${player.name}
                         ${player.invitation_status === 'pending' ? 
-                            '<span class="invitation-badge">ожидает</span>' : 
+                            '<span class="invitation-badge">ждем ответа</span>' : 
                             player.is_linked ? '<span class="linked-badge">✓</span>' : ''
                         }
                     </div>
@@ -764,8 +768,9 @@ if (error) {
                     </button>
                 </div>
             </div>
-        `).join('');
-    },
+        `;
+    }).join('');
+},
 
     handleDragStart(e, playerId) {
         e.dataTransfer.setData('text/plain', playerId);
