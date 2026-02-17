@@ -966,3 +966,54 @@
     width: 100%;
     margin-bottom: 4px; /* сохранение отступа, как у обычного названия */
 }
+
+@keyframes marquee-alternate {
+    0% { transform: translateX(0); }
+    45% { transform: translateX(calc(-1 * var(--shift))); }
+    55% { transform: translateX(calc(-1 * var(--shift))); }
+    100% { transform: translateX(0); }
+}
+
+/* Цветные бейджи видов спорта */
+.team-select-sport {
+    /* Базовые стили уже есть, переопределим фон и цвет текста */
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Футбол */
+.team-select-sport.sport-football {
+    background: #00ff88;
+    color: #000;
+}
+
+/* Волейбол */
+.team-select-sport.sport-volleyball {
+    background: #ffaa00;
+    color: #000;
+}
+
+/* Баскетбол */
+.team-select-sport.sport-basketball {
+    background: #ff5500;
+    color: #fff;
+}
+
+/* Хоккей */
+.team-select-sport.sport-hockey {
+    background: #0066ff;
+    color: #fff;
+}
+
+/* Настольный теннис */
+.team-select-sport.sport-tabletennis {
+    background: #ff3366;
+    color: #fff;
+}

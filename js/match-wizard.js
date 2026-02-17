@@ -143,11 +143,11 @@ const matchWizardModule = {
             }
 
             container.innerHTML = teams.map(team => {
-    const isLongName = team.name.length > 25;
-    const nameContainerClass = isLongName ? 'team-select-name long-name-container' : 'team-select-name';
-    const nameContent = isLongName 
-        ? `<marquee behavior="alternate" direction="left" scrollamount="2">${team.name}</marquee>`
-        : team.name;
+            const isLongName = team.name.length > 25;
+            const nameContainerClass = isLongName ? 'team-select-name long-name-container' : 'team-select-name';
+            
+            let nameContent = team.name;
+            let marqueeId = '';
 
     return `
         <div class="team-select-card ${this.formData.teamId === team.id ? 'selected' : ''}" 
@@ -163,10 +163,10 @@ const matchWizardModule = {
                 <div class="team-select-meta">
                     ${app.cities[team.city]?.name || team.city}
                 </div>
-                <span class="team-select-sport">
-                    <i class="fas fa-${app.getSportIcon(team.sport)}"></i>
-                    ${app.getSportName(team.sport)}
-                </span>
+                <span class="team-select-sport sport-${team.sport}">
+    <i class="fas fa-${app.getSportIcon(team.sport)}"></i>
+    ${app.getSportName(team.sport)}
+</span>
             </div>
         </div>
     `;
