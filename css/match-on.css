@@ -912,26 +912,56 @@
     font-size: 1.1rem;
 }
 
-/* Анимации */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Toast-уведомления */
+.toast-notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--bg-card);
+    border-left: 4px solid var(--accent-blue);
+    border-radius: 12px;
+    padding: 12px 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1000;
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    max-width: 90%;
+    width: auto;
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
 }
 
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 20px rgba(0, 255, 136, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(0, 255, 136, 0);
-    }
+.toast-notification i {
+    color: var(--accent-blue);
+    font-size: 1.2rem;
+}
+
+.toast-notification span {
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.toast-notification.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* Для разных типов сообщений (опционально) */
+.toast-notification.warning {
+    border-left-color: var(--accent-pink);
+}
+.toast-notification.warning i {
+    color: var(--accent-pink);
+}
+.toast-notification.success {
+    border-left-color: var(--accent-green);
+}
+.toast-notification.success i {
+    color: var(--accent-green);
 }

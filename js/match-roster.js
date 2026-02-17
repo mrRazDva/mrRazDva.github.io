@@ -6,11 +6,11 @@ const matchRosterModule = {
     selectedPlayers: [],
     isOurTeam: true,
 
+    // Полноэкранный режим (без изменений)
     async show(matchId, teamId, isOurTeam = true) {
         try {
             this.isOurTeam = isOurTeam;
             
-            // Загружаем данные матча
             const { data: match, error } = await app.supabase
                 .from('matches')
                 .select(`
@@ -25,7 +25,6 @@ const matchRosterModule = {
 
             this.currentMatch = match;
             
-            // Загружаем данные команды
             const { data: team, error: teamError } = await app.supabase
                 .from('teams')
                 .select('*')
@@ -36,7 +35,6 @@ const matchRosterModule = {
             
             this.currentTeam = team;
 
-            // Проверяем права
             const userId = authModule.getUserId();
             const isOwner = this.currentTeam?.owner_id === userId;
             
@@ -45,7 +43,6 @@ const matchRosterModule = {
                 return;
             }
 
-            // Загружаем доступных игроков и выбранных для матча
             await this.loadAvailablePlayers();
             await this.loadSelectedPlayers();
             
@@ -58,6 +55,55 @@ const matchRosterModule = {
         }
     },
 
+    // Рендеринг в указанный контейнер (для вкладок)
+    async renderTo(containerId, matchId, teamId, isEditable = true) {
+        try {
+            const { data: match, error } = await app.supabase
+                .from('matches')
+                .select(`
+                    *,
+                    team1:teams!matches_team1_fkey(*),
+                    team2:teams!matches_team2_fkey(*)
+                `)
+                .eq('id', matchId)
+                .single();
+
+            if (error) throw error;
+
+            this.currentMatch = match;
+            
+            const { data: team, error: teamError } = await app.supabase
+                .from('teams')
+                .select('*')
+                .eq('id', teamId)
+                .single();
+                
+            if (teamError) throw teamError;
+            
+            this.currentTeam = team;
+
+            const userId = authModule.getUserId();
+            const isOwner = this.currentTeam?.owner_id === userId;
+            
+            if (!isOwner && isEditable) {
+                isEditable = false; // если нет прав, только просмотр
+            }
+
+            await this.loadAvailablePlayers();
+            await this.loadSelectedPlayers();
+            
+            this.renderInline(containerId, isEditable);
+
+        } catch (error) {
+            console.error('❌ Ошибка загрузки данных для inline:', error);
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = '<p class="error-message" style="color: var(--accent-pink); text-align: center;">Ошибка загрузки состава</p>';
+            }
+        }
+    },
+
+    // Вспомогательные методы загрузки
     async loadAvailablePlayers() {
         try {
             const { data: players, error } = await app.supabase
@@ -67,7 +113,6 @@ const matchRosterModule = {
                 .order('number');
 
             if (error) throw error;
-
             this.availablePlayers = players || [];
         } catch (error) {
             console.error('❌ Ошибка загрузки игроков:', error);
@@ -84,7 +129,6 @@ const matchRosterModule = {
                 .eq('team_id', this.currentTeam.id);
 
             if (error) throw error;
-
             this.selectedPlayers = selected.map(s => s.player_id);
         } catch (error) {
             console.error('❌ Ошибка загрузки выбранных игроков:', error);
@@ -104,6 +148,346 @@ const matchRosterModule = {
         return formatMap[format] || 5;
     },
 
+    // ========== INLINE-РЕНДЕРИНГ (полностью соответствующий wizard) ==========
+
+    showMaxPlayersToast(max) {
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.innerHTML = `
+            <i class="fas fa-info-circle"></i>
+            <span>Максимум ${max} игроков для формата ${this.currentMatch.format}</span>
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 10);
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    },
+
+    renderInline(containerId, isEditable) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const teamLabel = this.isOurTeam ? 'НАША КОМАНДА' : 'КОМАНДА СОПЕРНИКА';
+        const teamName = this.currentTeam?.name || 'Команда';
+        const matchFormat = this.currentMatch?.format || '5x5';
+        const requiredPlayers = this.getRequiredPlayersCount(matchFormat);
+        const selectedCount = this.selectedPlayers.length;
+        
+        let teamLogoHTML = '';
+        if (this.currentTeam?.logo_url) {
+            teamLogoHTML = `<img src="${this.currentTeam.logo_url}" alt="${teamName}" style="width:100%;height:100%;object-fit:cover;">`;
+        } else {
+            teamLogoHTML = `<span>${this.currentTeam?.avatar || '⚽'}</span>`;
+        }
+        
+        container.innerHTML = `
+            <!-- Шапка с командой -->
+            <div class="roster-header-main" style="margin-bottom: 20px;">
+                <div class="team-header-info" style="display: flex; align-items: center; gap: 15px;">
+                    <div class="team-logo-large" style="width: 60px; height: 60px; border-radius: 50%; overflow: hidden; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                        ${teamLogoHTML}
+                    </div>
+                    <div class="team-header-text">
+                        <h2 class="roster-title" style="margin: 0 0 5px; font-size: 1.2rem;">Состав на матч</h2>
+                        <div class="team-name-badge">
+                            <span class="team-label-badge" style="background: var(--accent-blue); color: #000; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 700;">${teamLabel}</span>
+                            <span class="team-name-large" style="font-weight: 700; margin-left: 8px;">${teamName}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карточка требований и прогресс (как в wizard) -->
+            <div class="roster-requirements-card">
+                <div class="requirements-header">
+                    <div class="format-badge-large">
+                        <i class="fas fa-trophy"></i>
+                        <span>Формат: ${matchFormat.replace('x', ' на ')}</span>
+                    </div>
+                    <div class="player-requirement">
+                        <i class="fas fa-users"></i>
+                        <span>${requiredPlayers} игроков</span>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="inline-roster-progress" 
+                         style="width: ${Math.min(100, (selectedCount / requiredPlayers) * 100)}%"></div>
+                    <div class="progress-text">
+                        <span>Выбрано: <strong id="inline-roster-count">${selectedCount}</strong> из <strong>${requiredPlayers}</strong></span>
+                        <span class="progress-percent" id="inline-roster-percent">
+                            ${Math.round((selectedCount / requiredPlayers) * 100)}%
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Сетка игроков -->
+            <div class="roster-grid-container">
+                <h3 class="section-label">
+                    <i class="fas fa-list-ol"></i>
+                    Доступные игроки
+                    <span class="count-badge">${this.availablePlayers.length}</span>
+                </h3>
+                
+                <div class="roster-grid" id="inline-roster-grid">
+                    ${this.renderPlayersGridInline(isEditable)}
+                </div>
+                
+                ${this.availablePlayers.length === 0 ? `
+                    <div class="empty-roster-state">
+                        <div class="empty-icon-large">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <h3>Нет игроков в команде</h3>
+                        <p>Добавьте игроков в состав команды через меню управления командой</p>
+                        <button class="btn btn-primary" onclick="teamEditModule.show('${this.currentTeam.id}')">
+                            <i class="fas fa-users"></i> Управление командой
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+
+            <!-- Панель управления (стилизованная как в wizard) -->
+            ${isEditable ? `
+            <div class="roster-controls-footer">
+                <button class="roster-next-btn" id="inline-roster-save-btn" onclick="matchRosterModule.saveRosterInline('${containerId}')" ${selectedCount < requiredPlayers ? 'disabled' : ''}>
+                    <span>${selectedCount < requiredPlayers ? `Выбрано ${selectedCount} из ${requiredPlayers}` : 'Сохранить состав'}</span>
+                    <i class="fas fa-${selectedCount < requiredPlayers ? 'arrow-right' : 'save'}"></i>
+                </button>
+            </div>
+            ` : `
+            <div class="roster-viewonly-note" style="margin-top: 20px; text-align: center; color: var(--text-secondary);">
+                <i class="fas fa-eye"></i> Просмотр состава (редактирование недоступно)
+            </div>
+            `}
+        `;
+
+        if (!isEditable) {
+            document.querySelectorAll(`#${containerId} .roster-player-card`).forEach(card => {
+                card.onclick = null;
+                card.style.cursor = 'default';
+            });
+        }
+    },
+
+    renderPlayersGridInline(isEditable) {
+        if (this.availablePlayers.length === 0) return '';
+
+        const sortedPlayers = [...this.availablePlayers].sort((a, b) => {
+            if (a.is_captain && !b.is_captain) return -1;
+            if (!a.is_captain && b.is_captain) return 1;
+            
+            const aSelected = this.selectedPlayers.includes(a.id);
+            const bSelected = this.selectedPlayers.includes(b.id);
+            if (aSelected && !bSelected) return -1;
+            if (!aSelected && bSelected) return 1;
+            
+            return (a.number || 99) - (b.number || 99);
+        });
+
+        return sortedPlayers.map(player => {
+            const isSelected = this.selectedPlayers.includes(player.id);
+            const isCaptain = player.is_captain;
+            
+            let photoHTML = '';
+            if (player.photo_url) {
+                photoHTML = `<img src="${player.photo_url}" alt="${player.name}" class="player-photo" style="width:100%;height:100%;object-fit:cover;">`;
+            } else {
+                const initial = player.name ? player.name.charAt(0).toUpperCase() : '?';
+                photoHTML = `<div class="player-initial">${initial}</div>`;
+            }
+            
+            const position = this.getPositionAbbreviation(player.role);
+            
+            return `
+                <div class="roster-player-card ${isSelected ? 'selected' : ''} ${isCaptain ? 'captain' : ''}" 
+                     data-player-id="${player.id}"
+                     style="cursor: ${isEditable ? 'pointer' : 'default'};"
+                     ${isEditable ? `onclick="matchRosterModule.togglePlayerInline('${player.id}')"` : ''}>
+                    
+                    <div class="player-card-header">
+                        <div class="player-number-bubble">${player.number || '-'}</div>
+                        <div class="player-position-badge">${position}</div>
+                        <div class="selection-indicator">
+                            <i class="fas fa-${isSelected ? 'check-circle' : 'circle'}"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="player-photo-container">
+                        ${photoHTML}
+                        ${isCaptain ? '<div class="captain-corner-badge">C</div>' : ''}
+                    </div>
+                    
+                    <div class="player-info">
+                        <div class="player-name-truncate" title="${player.name}">${player.name}</div>
+                        <div class="player-role-small">${player.role || 'Игрок'}</div>
+                    </div>
+                    
+                    <div class="player-status">
+                        <span class="status-dot ${isSelected ? 'active' : ''}"></span>
+                        <span class="status-text">${isSelected ? 'В составе' : 'В запасе'}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    getPositionAbbreviation(role) {
+        if (!role) return 'ИГР';
+        const roleLower = role.toLowerCase();
+        const positions = {
+            'вратарь': 'ВРТ', 'голкипер': 'ВРТ',
+            'защитник': 'ЗЩТ', 'дефендер': 'ЗЩТ',
+            'полузащитник': 'ПЗЩ', 'мидфилдер': 'ПЗЩ',
+            'нападающий': 'НАП', 'форвард': 'НАП',
+            'связующий': 'СВ', 'сеттер': 'СВ',
+            'диагональный': 'ДИ', 'оппозит': 'ДИ',
+            'центральный блокирующий': 'ЦБ', 'либеро': 'ЛИ',
+            'разыгрывающий': 'РГ', 'атакующий защитник': 'АЗ'
+        };
+        for (const [key, value] of Object.entries(positions)) {
+            if (roleLower.includes(key)) return value;
+        }
+        return 'ИГР';
+    },
+
+    togglePlayerInline(playerId) {
+        const index = this.selectedPlayers.indexOf(playerId);
+        const requiredPlayers = this.getRequiredPlayersCount(this.currentMatch.format);
+        
+        if (index === -1) {
+            if (this.selectedPlayers.length >= requiredPlayers) {
+                this.showMaxPlayersToast(requiredPlayers);
+                return;
+            }
+            this.selectedPlayers.push(playerId);
+        } else {
+            this.selectedPlayers.splice(index, 1);
+        }
+        
+        this.updateInlineUI();
+    },
+
+    updateInlineUI() {
+          const requiredPlayers = this.getRequiredPlayersCount(this.currentMatch.format);
+    const selectedCount = this.selectedPlayers.length;
+        
+        const progressBar = document.getElementById('inline-roster-progress');
+        const countSpan = document.getElementById('inline-roster-count');
+        const percentSpan = document.getElementById('inline-roster-percent');
+        
+        if (progressBar) {
+            progressBar.style.width = `${Math.min(100, (selectedCount / requiredPlayers) * 100)}%`;
+        }
+        if (countSpan) countSpan.textContent = selectedCount;
+        if (percentSpan) percentSpan.textContent = `${Math.round((selectedCount / requiredPlayers) * 100)}%`;
+        
+        const saveBtn = document.getElementById('inline-roster-save-btn');
+    if (saveBtn) {
+        const isReady = selectedCount >= requiredPlayers;
+        saveBtn.disabled = !isReady;
+        saveBtn.classList.toggle('active', isReady);
+        
+        if (isReady) {
+            saveBtn.innerHTML = `<span>Сохранить состав</span><i class="fas fa-save"></i>`;
+        } else {
+            saveBtn.innerHTML = `<span>Выбрано ${selectedCount} из ${requiredPlayers}</span><i class="fas fa-arrow-right"></i>`;
+        }
+    }
+        
+        this.availablePlayers.forEach(player => {
+            const isSelected = this.selectedPlayers.includes(player.id);
+            const card = document.querySelector(`#edit-tab-roster .roster-player-card[data-player-id="${player.id}"]`);
+            if (card) {
+                card.classList.toggle('selected', isSelected);
+                
+                const indicator = card.querySelector('.selection-indicator i');
+                if (indicator) {
+                    indicator.className = `fas fa-${isSelected ? 'check-circle' : 'circle'}`;
+                }
+                
+                const statusDot = card.querySelector('.status-dot');
+                const statusText = card.querySelector('.status-text');
+                if (statusDot && statusText) {
+                    statusDot.classList.toggle('active', isSelected);
+                    statusText.textContent = isSelected ? 'В составе' : 'В запасе';
+                }
+            }
+        });
+    },
+
+    async saveRosterInline(containerId) {
+        const requiredPlayers = this.getRequiredPlayersCount(this.currentMatch.format);
+        const selectedCount = this.selectedPlayers.length;
+        
+        if (selectedCount < requiredPlayers) {
+            alert(`Минимальное количество игроков: ${requiredPlayers}. Выбрано: ${selectedCount}`);
+            return;
+        }
+
+        try {
+            await app.supabase
+                .from('match_rosters')
+                .delete()
+                .eq('match_id', this.currentMatch.id)
+                .eq('team_id', this.currentTeam.id);
+
+            const rosterData = this.selectedPlayers.map(playerId => ({
+                match_id: this.currentMatch.id,
+                team_id: this.currentTeam.id,
+                player_id: playerId,
+                is_starting: true,
+                created_at: new Date().toISOString()
+            }));
+
+            const { error } = await app.supabase
+                .from('match_rosters')
+                .insert(rosterData);
+
+            if (error) throw error;
+
+            const container = document.getElementById(containerId);
+            const successMsg = document.createElement('div');
+            successMsg.className = 'save-success-message';
+            successMsg.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                <span>Состав сохранен для матча!</span>
+            `;
+            container.appendChild(successMsg);
+            
+            setTimeout(() => {
+                successMsg.classList.add('show');
+                setTimeout(() => {
+                    successMsg.classList.remove('show');
+                    setTimeout(() => {
+                        if (successMsg.parentNode) {
+                            successMsg.parentNode.removeChild(successMsg);
+                        }
+                    }, 300);
+                }, 2000);
+            }, 100);
+
+        } catch (error) {
+            console.error('❌ Ошибка сохранения состава:', error);
+            alert('Ошибка сохранения состава');
+        }
+    },
+
+    closeInline() {
+        if (typeof matchEditModule !== 'undefined') {
+            matchEditModule.switchTab('main');
+        }
+    },
+
+    // ========== ПОЛНОЭКРАННЫЙ РЕЖИМ (без изменений) ==========
+
     render() {
         const container = document.getElementById('match-roster-content');
         if (!container) return;
@@ -114,7 +498,6 @@ const matchRosterModule = {
         const requiredPlayers = this.getRequiredPlayersCount(matchFormat);
         const selectedCount = this.selectedPlayers.length;
         
-        // Логотип команды
         let teamLogoHTML = '';
         if (this.currentTeam?.logo_url) {
             teamLogoHTML = `<img src="${this.currentTeam.logo_url}" alt="${teamName}" class="team-logo-image">`;
@@ -123,10 +506,7 @@ const matchRosterModule = {
         }
         
         container.innerHTML = `
-            <!-- Шапка -->
             <div class="roster-header-main">
-               
-                
                 <div class="team-header-info">
                     <div class="team-logo-large">
                         ${teamLogoHTML}
@@ -141,7 +521,6 @@ const matchRosterModule = {
                 </div>
             </div>
 
-            <!-- Прогресс и требования -->
             <div class="roster-requirements-card">
                 <div class="requirements-header">
                     <div class="format-badge-large">
@@ -170,9 +549,6 @@ const matchRosterModule = {
                 ` : ''}
             </div>
 
-            
-
-            <!-- Список игроков -->
             <div class="roster-grid-container">
                 <h3 class="section-label">
                     <i class="fas fa-list-ol"></i>
@@ -198,7 +574,6 @@ const matchRosterModule = {
                 ` : ''}
             </div>
 
-            <!-- Панель управления -->
             <div class="roster-controls-footer">
                 <div class="roster-status">
                     <div class="status-indicator ${selectedCount >= requiredPlayers ? 'ready' : 'warning'}">
@@ -227,7 +602,6 @@ const matchRosterModule = {
     renderPlayersGrid() {
         if (this.availablePlayers.length === 0) return '';
 
-        // Сортируем: капитан первый, затем выбранные, затем по номеру
         const sortedPlayers = [...this.availablePlayers].sort((a, b) => {
             if (a.is_captain && !b.is_captain) return -1;
             if (!a.is_captain && b.is_captain) return 1;
@@ -244,7 +618,6 @@ const matchRosterModule = {
             const isSelected = this.selectedPlayers.includes(player.id);
             const isCaptain = player.is_captain;
             
-            // Фото или инициалы
             let photoHTML = '';
             if (player.photo_url) {
                 photoHTML = `<img src="${player.photo_url}" alt="${player.name}" class="player-photo">`;
@@ -253,7 +626,6 @@ const matchRosterModule = {
                 photoHTML = `<div class="player-initial">${initial}</div>`;
             }
             
-            // Позиция
             const position = this.getPositionAbbreviation(player.role);
             
             return `
@@ -280,35 +652,11 @@ const matchRosterModule = {
                     
                     <div class="player-status">
                         <span class="status-dot ${isSelected ? 'active' : ''}"></span>
-                        <span class="status-text">${isSelected ? 'Выбран' : 'В запасе'}</span>
+                        <span class="status-text">${isSelected ? 'В составе' : 'В запасе'}</span>
                     </div>
                 </div>
             `;
         }).join('');
-    },
-
-    getPositionAbbreviation(role) {
-        if (!role) return 'ИГР';
-        const roleLower = role.toLowerCase();
-        
-        const positions = {
-            'вратарь': 'ВРТ', 'голкипер': 'ВРТ',
-            'защитник': 'ЗЩТ', 'дефендер': 'ЗЩТ',
-            'полузащитник': 'ПЗЩ', 'мидфилдер': 'ПЗЩ',
-            'нападающий': 'НАП', 'форвард': 'НАП',
-            'связующий': 'СВ', 'сеттер': 'СВ',
-            'диагональный': 'ДИ', 'оппозит': 'ДИ',
-            'центральный блокирующий': 'ЦБ',
-            'либеро': 'ЛИ',
-            'разыгрывающий': 'РГ', 'поинт гард': 'PG',
-            'атакующий защитник': 'АЗ', 'шутинг гард': 'SG'
-        };
-        
-        for (const [key, value] of Object.entries(positions)) {
-            if (roleLower.includes(key)) return value;
-        }
-        
-        return 'ИГР';
     },
 
     togglePlayer(playerId) {
@@ -316,7 +664,6 @@ const matchRosterModule = {
         const requiredPlayers = this.getRequiredPlayersCount(this.currentMatch.format);
         
         if (index === -1) {
-            // Проверяем максимальное количество игроков
             if (this.selectedPlayers.length >= requiredPlayers) {
                 alert(`Максимальное количество игроков: ${requiredPlayers}`);
                 return;
@@ -326,7 +673,6 @@ const matchRosterModule = {
             this.selectedPlayers.splice(index, 1);
         }
         
-        // Обновляем UI
         this.updateUI();
     },
 
@@ -334,7 +680,6 @@ const matchRosterModule = {
         const requiredPlayers = this.getRequiredPlayersCount(this.currentMatch.format);
         const selectedCount = this.selectedPlayers.length;
         
-        // Обновляем прогресс-бар
         const progressBar = document.querySelector('.progress-bar');
         const progressPercent = document.querySelector('.progress-percent');
         const progressText = document.querySelector('.progress-text strong:first-child');
@@ -349,7 +694,6 @@ const matchRosterModule = {
             progressText.textContent = selectedCount;
         }
         
-        // Обновляем кнопки быстрых действий
         document.querySelectorAll('.quick-action-btn').forEach(btn => {
             if (btn.querySelector('i.fa-times-circle')) {
                 btn.classList.toggle('disabled', selectedCount === 0);
@@ -359,7 +703,6 @@ const matchRosterModule = {
             }
         });
         
-        // Обновляем статус
         const statusIndicator = document.querySelector('.status-indicator');
         const statusIcon = statusIndicator?.querySelector('i');
         const statusText = statusIndicator?.querySelector('span');
@@ -376,13 +719,11 @@ const matchRosterModule = {
             }
         }
         
-        // Обновляем кнопку сохранения
         const saveBtn = document.querySelector('.roster-actions-final .btn-primary');
         if (saveBtn) {
             saveBtn.classList.toggle('disabled', selectedCount < requiredPlayers);
         }
         
-        // Обновляем карточки игроков
         this.availablePlayers.forEach(player => {
             const isSelected = this.selectedPlayers.includes(player.id);
             const card = document.querySelector(`[onclick*="${player.id}"]`);
@@ -398,7 +739,7 @@ const matchRosterModule = {
                 const statusText = card.querySelector('.status-text');
                 if (statusDot && statusText) {
                     statusDot.classList.toggle('active', isSelected);
-                    statusText.textContent = isSelected ? 'Выбран' : 'В запасе';
+                    statusText.textContent = isSelected ? 'В составе' : 'В запасе';
                 }
             }
         });
@@ -408,7 +749,6 @@ const matchRosterModule = {
         const requiredPlayers = this.getRequiredPlayersCount(this.currentMatch.format);
         const availableIds = this.availablePlayers.map(p => p.id);
         
-        // Берем первые N игроков по номеру
         const playersToSelect = availableIds.slice(0, requiredPlayers);
         this.selectedPlayers = playersToSelect;
         this.updateUI();
@@ -417,7 +757,6 @@ const matchRosterModule = {
     selectOptimal() {
         const requiredPlayers = this.getRequiredPlayersCount(this.currentMatch.format);
         
-        // Оптимальный выбор: капитан + игроки с наименьшими номерами
         const sortedPlayers = [...this.availablePlayers].sort((a, b) => {
             if (a.is_captain && !b.is_captain) return -1;
             if (!a.is_captain && b.is_captain) return 1;
@@ -447,14 +786,12 @@ const matchRosterModule = {
         }
 
         try {
-            // Удаляем старый состав
             await app.supabase
                 .from('match_rosters')
                 .delete()
                 .eq('match_id', this.currentMatch.id)
                 .eq('team_id', this.currentTeam.id);
 
-            // Добавляем новый состав
             const rosterData = this.selectedPlayers.map(playerId => ({
                 match_id: this.currentMatch.id,
                 team_id: this.currentTeam.id,
@@ -469,7 +806,6 @@ const matchRosterModule = {
 
             if (error) throw error;
 
-            // Показываем уведомление об успехе
             const successMsg = document.createElement('div');
             successMsg.className = 'save-success-message';
             successMsg.innerHTML = `
@@ -521,3 +857,5 @@ const matchRosterModule = {
         }
     }
 };
+
+window.matchRosterModule = matchRosterModule;
