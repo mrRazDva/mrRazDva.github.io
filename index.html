@@ -17,6 +17,7 @@
 	<link rel="stylesheet" href="./css/profiles.css">
 	<link rel="stylesheet" href="./css/hub.css">
 	<link rel="stylesheet" href="./css/match-on.css">
+	<link rel="stylesheet" href="./css/fut-modal.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://api-maps.yandex.ru/2.1/?apikey=ваш_api_ключ&lang=ru_RU"></script>
 </head>
@@ -1302,6 +1303,9 @@
             <input type="file" id="player-photo-input-screen" accept="image/*" hidden onchange="teamEditModule.handlePhotoUploadScreen(event)">
         </div>
 
+
+
+
         <!-- Форма -->
         <div class="player-edit-form">
             <div class="form-section">
@@ -1545,6 +1549,10 @@
             <div id="location-map" class="map-container" 
                  style="height: 250px; margin: 0; border: none; border-bottom: 1px solid var(--border-color); border-radius: 0;"></div>
             
+			
+			
+			
+			
             <!-- Форма под картой -->
 <div style="padding: 24px;">
     
@@ -1588,6 +1596,54 @@
         </div>
     </div>
 </div>
-	
+	<!-- Модальное окно детальной информации об игроке -->
+<div id="player-detail-modal" class="modal-overlay hidden" onclick="if(event.target === this) teamModule.closePlayerDetail()">
+    <div class="modal-content player-detail-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Информация об игроке</h3>
+            <button class="close-btn" onclick="teamModule.closePlayerDetail()">&times;</button>
+        </div>
+        <div class="player-detail-body">
+            <!-- Увеличенная карточка игрока в стиле FUT -->
+            <div class="player-detail-card fut-card large" id="player-detail-card">
+                <div class="fut-card-header">
+                    <div class="fut-rating" id="player-detail-number">10</div>
+                    <div class="fut-position" id="player-detail-position">НАП</div>
+                </div>
+                <div class="fut-card-image" id="player-detail-image">
+                    <!-- сюда будет подставлено фото или инициал -->
+                </div>
+                <div class="fut-name" id="player-detail-name">Имя</div>
+            </div>
+            <!-- Детальная информация -->
+            <div class="player-detail-info">
+                <div class="info-row">
+                    <span class="info-label">Полное имя:</span>
+                    <span class="info-value" id="player-detail-fullname">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Номер:</span>
+                    <span class="info-value" id="player-detail-number-value">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Позиция:</span>
+                    <span class="info-value" id="player-detail-role-value">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Капитан:</span>
+                    <span class="info-value" id="player-detail-captain">Нет</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">О себе:</span>
+                    <span class="info-value" id="player-detail-bio">-</span>
+                </div>
+                <div class="info-row" id="player-detail-linked-row" style="display: none;">
+                    <span class="info-label">Привязан к:</span>
+                    <span class="info-value" id="player-detail-linked">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

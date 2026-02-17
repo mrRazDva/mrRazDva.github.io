@@ -1,0 +1,140 @@
+#player-detail-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none; /* по умолчанию скрыто */
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+#player-detail-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0); /* прозрачный фон по умолчанию */
+    display: flex;
+    align-items: flex-end; /* прижимаем контент к низу */
+    justify-content: center;
+    z-index: 10000;
+    visibility: hidden;
+    transition: background-color 0.3s ease;
+}
+
+#player-detail-modal:not(.hidden) {
+    visibility: visible;
+    background-color: rgba(0, 0, 0, 0.5); /* затемнение при появлении */
+}
+
+.player-detail-content {
+    transform: translateY(100%); /* изначально скрыт внизу */
+    transition: transform 0.3s ease-out;
+    width: 98%;
+    max-width: 400px;
+    background: var(--bg-primary);
+    border-radius: 20px 20px 0 0; /* скругление только сверху */
+    overflow: hidden;
+    box-shadow: 0 -5px 30px rgba(0, 0, 0, 0.5);
+    margin: 0;
+    padding: 0 0 20px 0;
+}
+
+#player-detail-modal:not(.hidden) .player-detail-content {
+    transform: translateY(0); /* выезжает вверх */
+}
+
+/* Остальные стили для содержимого остаются без изменений */
+.player-detail-body {
+    padding: 20px;
+}
+
+.player-detail-card.fut-card.large {
+    width: 200px;
+    height: 280px;
+    margin: 0 auto 20px;
+    transform: scale(1);
+    transition: transform 0.3s;
+}
+
+.player-detail-card.fut-card.large .fut-rating {
+    font-size: 2rem;
+}
+
+.player-detail-card.fut-card.large .fut-position {
+    font-size: 1rem;
+}
+
+.player-detail-card.fut-card.large .fut-name {
+    font-size: 1rem;
+    height: 30px;
+}
+
+.player-detail-info {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: 15px;
+}
+
+.player-detail-info .info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.player-detail-info .info-row:last-child {
+    border-bottom: none;
+}
+
+.player-detail-info .info-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.player-detail-info .info-value {
+    color: var(--text-primary);
+    font-weight: 500;
+    text-align: right;
+}
+
+.player-detail-content .modal-header {
+    padding: 12px 16px;          /* компактные отступы */
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    background: var(--bg-primary);
+    border-radius: 20px 20px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.player-detail-content .modal-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.player-detail-content .close-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.player-detail-content .close-btn:hover {
+    background: rgba(255,255,255,0.2);
+    color: var(--text-primary);
+}

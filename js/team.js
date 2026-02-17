@@ -1013,20 +1013,56 @@ getPositionAbbreviation(role) {
 
     // Показывает детали игрока
     showPlayerDetail(playerId) {
-        const player = this.currentTeam?.players?.find(p => p.id === playerId);
-        if (!player) return;
+    const player = this.currentTeam?.players?.find(p => p.id === playerId);
+    if (!player) return;
 
-        // Можно расширить - показать модальное окно с деталями игрока
-        const info = [
-            `Имя: ${player.name}`,
-            player.number ? `Номер: ${player.number}` : '',
-            player.role ? `Позиция: ${player.role}` : '',
-            player.info ? `Инфо: ${player.info}` : '',
-            player.is_captain ? '⭐ Капитан команды' : ''
-        ].filter(Boolean).join('\n');
+    // Заполняем элементы модального окна
+    document.getElementById('player-detail-number').textContent = player.number || '-';
+    document.getElementById('player-detail-position').textContent = this.getPositionAbbreviation(player.role) || 'ИГР';
+    document.getElementById('player-detail-name').textContent = player.name;
+    document.getElementById('player-detail-fullname').textContent = player.name;
+    document.getElementById('player-detail-number-value').textContent = player.number || '-';
+    document.getElementById('player-detail-role-value').textContent = player.role || 'Не указана';
+    document.getElementById('player-detail-captain').textContent = player.is_captain ? 'Да' : 'Нет';
+    document.getElementById('player-detail-bio').textContent = player.info || 'Нет информации';
 
-        alert(info);
-    },
+    // Фото или инициал
+    const imageContainer = document.getElementById('player-detail-image');
+    if (player.photo_url) {
+        imageContainer.innerHTML = `<img src="${player.photo_url}" alt="${player.name}" style="width:100%;height:100%;object-fit:cover;">`;
+    } else {
+        const initial = player.name ? player.name.charAt(0).toUpperCase() : '?';
+        imageContainer.innerHTML = `<div class="fut-initial">${initial}</div>`;
+    }
+
+    // Отображение привязки к пользователю
+    if (player.user_id) {
+        document.getElementById('player-detail-linked-row').style.display = 'flex';
+        // Здесь можно подставить никнейм, если он доступен, но пока просто ID
+        document.getElementById('player-detail-linked').textContent = `ID: ${player.user_id}`;
+    } else {
+        document.getElementById('player-detail-linked-row').style.display = 'none';
+    }
+
+    // Добавляем класс капитана к карточке
+    const card = document.getElementById('player-detail-card');
+    if (player.is_captain) {
+        card.classList.add('captain');
+    } else {
+        card.classList.remove('captain');
+    }
+
+    // Показываем модальное окно
+    document.getElementById('player-detail-modal').classList.remove('hidden');
+},
+
+closePlayerDetail() {
+    document.getElementById('player-detail-modal').classList.add('hidden');
+},
+
+closePlayerDetail() {
+    document.getElementById('player-detail-modal').classList.add('hidden');
+},
 
     async renderEloRating(teamId) {
         try {
