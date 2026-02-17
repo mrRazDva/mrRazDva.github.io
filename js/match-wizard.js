@@ -142,27 +142,35 @@ const matchWizardModule = {
                 this.selectTeam(teams[0]);
             }
 
-            container.innerHTML = teams.map(team => `
-                <div class="team-select-card ${this.formData.teamId === team.id ? 'selected' : ''}" 
-                     onclick="matchWizardModule.selectTeam(${JSON.stringify(team).replace(/"/g, '&quot;')})">
-                    <div class="team-select-logo">
-                        ${team.logo_url 
-                            ? `<img src="${team.logo_url}" alt="${team.name}">`
-                            : `<span class="emoji">${team.avatar || '⚽'}</span>`
-                        }
-                    </div>
-                    <div class="team-select-info">
-                        <div class="team-select-name">${team.name}</div>
-                        <div class="team-select-meta">
-                            ${app.cities[team.city]?.name || team.city}
-                        </div>
-                        <span class="team-select-sport">
-                            <i class="fas fa-${app.getSportIcon(team.sport)}"></i>
-                            ${app.getSportName(team.sport)}
-                        </span>
-                    </div>
+            container.innerHTML = teams.map(team => {
+    const isLongName = team.name.length > 25;
+    const nameContainerClass = isLongName ? 'team-select-name long-name-container' : 'team-select-name';
+    const nameContent = isLongName 
+        ? `<marquee behavior="alternate" direction="left" scrollamount="2">${team.name}</marquee>`
+        : team.name;
+
+    return `
+        <div class="team-select-card ${this.formData.teamId === team.id ? 'selected' : ''}" 
+             onclick="matchWizardModule.selectTeam(${JSON.stringify(team).replace(/"/g, '&quot;')})">
+            <div class="team-select-logo">
+                ${team.logo_url 
+                    ? `<img src="${team.logo_url}" alt="${team.name}">`
+                    : `<span class="emoji">${team.avatar || '⚽'}</span>`
+                }
+            </div>
+            <div class="team-select-info">
+                <div class="${nameContainerClass}">${nameContent}</div>
+                <div class="team-select-meta">
+                    ${app.cities[team.city]?.name || team.city}
                 </div>
-            `).join('');
+                <span class="team-select-sport">
+                    <i class="fas fa-${app.getSportIcon(team.sport)}"></i>
+                    ${app.getSportName(team.sport)}
+                </span>
+            </div>
+        </div>
+    `;
+}).join('');
 
         } catch (error) {
             console.error('❌ Ошибка загрузки команд:', error);

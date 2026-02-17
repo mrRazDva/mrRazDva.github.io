@@ -186,11 +186,7 @@
     box-sizing: border-box;
 }
 
-.team-select-card:hover {
-    border-color: var(--accent-green);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 255, 136, 0.1);
-}
+
 
 .team-select-card.selected {
     border-color: var(--accent-green);
@@ -293,10 +289,7 @@
     box-sizing: border-box;
 }
 
-.format-card:hover {
-    border-color: var(--accent-blue);
-    transform: translateY(-3px);
-}
+
 
 .format-card.selected {
     border-color: var(--accent-green);
@@ -455,9 +448,7 @@
     box-sizing: border-box;
 }
 
-.mode-card:hover {
-    border-color: var(--accent-blue);
-}
+
 
 .mode-card.active {
     border-color: var(--accent-green);
@@ -614,10 +605,7 @@
     transition: all 0.2s;
 }
 
-.quick-time-buttons button:hover {
-    border-color: var(--accent-green);
-    color: var(--accent-green);
-}
+
 
 /* ===== LOCATION (Step 4) ===== */
 .location-section {
@@ -642,9 +630,7 @@
     box-sizing: border-box;
 }
 
-.location-input-modern:hover {
-    border-color: var(--accent-blue);
-}
+
 
 .location-input-modern.has-location {
     border-color: var(--accent-green);
@@ -964,4 +950,19 @@
 }
 .toast-notification.success i {
     color: var(--accent-green);
+}
+
+/* Бегущая строка для длинных названий команд (движение туда-сюда) */
+.team-select-name.long-name-container {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+.team-select-name.long-name-container marquee {
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 1.1rem;
+    width: 100%;
+    margin-bottom: 4px; /* сохранение отступа, как у обычного названия */
 }
