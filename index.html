@@ -1596,51 +1596,81 @@
         </div>
     </div>
 </div>
-	<!-- Модальное окно детальной информации об игроке -->
+	<!-- СУПЕР-СТИЛЬНОЕ модальное окно детальной информации об игроке -->
 <div id="player-detail-modal" class="modal-overlay hidden" onclick="if(event.target === this) teamModule.closePlayerDetail()">
-    <div class="modal-content player-detail-content">
-        <div class="modal-header">
-            <h3 class="modal-title">Информация об игроке</h3>
-            <button class="close-btn" onclick="teamModule.closePlayerDetail()">&times;</button>
-        </div>
+    <div class="modal-content player-detail-content glass">
+        <button class="close-btn-fancy" onclick="teamModule.closePlayerDetail()">
+            <i class="fas fa-times"></i>
+        </button>
+        
         <div class="player-detail-body">
-            <!-- Увеличенная карточка игрока в стиле FUT -->
+            <!-- Карточка игрока -->
             <div class="player-detail-card fut-card large" id="player-detail-card">
                 <div class="fut-card-header">
                     <div class="fut-rating" id="player-detail-number">10</div>
                     <div class="fut-position" id="player-detail-position">НАП</div>
                 </div>
-                <div class="fut-card-image" id="player-detail-image">
-                    <!-- сюда будет подставлено фото или инициал -->
-                </div>
+                <div class="fut-card-image" id="player-detail-image"></div>
                 <div class="fut-name" id="player-detail-name">Имя</div>
+                <div class="card-glow"></div>
             </div>
-            <!-- Детальная информация -->
-            <div class="player-detail-info">
-                <div class="info-row">
-                    <span class="info-label">Полное имя:</span>
-                    <span class="info-value" id="player-detail-fullname">-</span>
+
+            <!-- Информационные блоки (каждый занимает всю ширину) -->
+            <div class="player-detail-info-grid">
+                <div class="info-item">
+                    <div class="info-icon"><i class="fas fa-user"></i></div>
+                    <div class="info-content">
+                        <span class="info-label">Полное имя</span>
+                        <span class="info-value" id="player-detail-fullname">-</span>
+                    </div>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Номер:</span>
-                    <span class="info-value" id="player-detail-number-value">-</span>
+
+                <div class="info-item">
+                    <div class="info-icon"><i class="fas fa-shirt"></i></div>
+                    <div class="info-content">
+                        <span class="info-label">Номер</span>
+                        <span class="info-value" id="player-detail-number-value">-</span>
+                    </div>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Позиция:</span>
-                    <span class="info-value" id="player-detail-role-value">-</span>
+
+                <div class="info-item">
+                    <div class="info-icon"><i class="fas fa-futbol"></i></div>
+                    <div class="info-content">
+                        <span class="info-label">Позиция</span>
+                        <span class="info-value" id="player-detail-role-value">-</span>
+                    </div>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Капитан:</span>
-                    <span class="info-value" id="player-detail-captain">Нет</span>
+
+                <div class="info-item">
+                    <div class="info-icon"><i class="fas fa-crown"></i></div>
+                    <div class="info-content">
+                        <span class="info-label">Капитан</span>
+                        <span class="info-value" id="player-detail-captain">Нет</span>
+                    </div>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">О себе:</span>
-                    <span class="info-value" id="player-detail-bio">-</span>
+
+                <div class="info-item" id="player-detail-linked-row" style="display: none;">
+                    <div class="info-icon"><i class="fas fa-link"></i></div>
+                    <div class="info-content">
+                        <span class="info-label">Привязан к</span>
+                        <span class="info-value" id="player-detail-linked">-</span>
+                    </div>
                 </div>
-                <div class="info-row" id="player-detail-linked-row" style="display: none;">
-                    <span class="info-label">Привязан к:</span>
-                    <span class="info-value" id="player-detail-linked">-</span>
+
+                <div class="info-item">
+                    <div class="info-icon"><i class="fas fa-quote-right"></i></div>
+                    <div class="info-content">
+                        <span class="info-label">О себе</span>
+                        <span class="info-value" id="player-detail-bio">-</span>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Кнопка действия (если нужна) -->
+            <div class="player-detail-actions" id="player-detail-actions" style="display: none;">
+                <button class="btn btn-primary btn-message" onclick="teamModule.messagePlayer()">
+                    <i class="fas fa-paper-plane"></i> Написать сообщение
+                </button>
             </div>
         </div>
     </div>
